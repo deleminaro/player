@@ -102,7 +102,8 @@ const Home: React.FC = () => {
               window.clearInterval(progressInterval);
             }
           }, 500);
-          newSound._progressInterval = progressInterval;
+          // Cast to our extended type to allow the property assignment
+          (newSound as ExtendedHowl)._progressInterval = progressInterval;
         },
         onload: () => {
           setDuration(newSound.duration());
@@ -115,11 +116,13 @@ const Home: React.FC = () => {
         },
         onstop: () => {
           setIsPlaying(false);
-          if (newSound._progressInterval) {
-            window.clearInterval(newSound._progressInterval);
+          // Cast to our extended type to access the property
+          const extendedSound = newSound as ExtendedHowl;
+          if (extendedSound._progressInterval) {
+            window.clearInterval(extendedSound._progressInterval);
           }
         }
-      });
+      }) as ExtendedHowl;
 
       setSound(newSound);
       setCurrentTrack(track);
