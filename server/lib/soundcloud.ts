@@ -144,7 +144,7 @@ export async function searchTracks(query: string, limit: number = 20) {
         return transformed.slice(0, limit);
       }
     } catch (searchError) {
-      console.log("Deezer search endpoint failed:", searchError.message);
+      console.log("Deezer search endpoint failed:", searchError instanceof Error ? searchError.message : String(searchError));
     }
     
     // If all API attempts fail, return our real music data
@@ -212,7 +212,7 @@ export async function getTrack(id: number) {
         };
       }
     } catch (trackError) {
-      console.log("Deezer track endpoint failed:", trackError.message);
+      console.log("Deezer track endpoint failed:", trackError instanceof Error ? trackError.message : String(trackError));
     }
     
     // Find in our real tracks data as last resort
