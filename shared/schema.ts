@@ -20,7 +20,7 @@ export type User = typeof users.$inferSelect;
 // Track table for recently played history
 export const tracks = pgTable("tracks", {
   id: serial("id").primaryKey(),
-  soundcloud_id: integer("soundcloud_id").notNull(),
+  soundcloud_id: text("soundcloud_id").notNull(), // Changed to text to handle large IDs
   title: text("title").notNull(),
   artist: text("artist").notNull(),
   artwork_url: text("artwork_url"),
@@ -38,18 +38,18 @@ export const insertTrackSchema = createInsertSchema(tracks).omit({
 export type InsertTrack = z.infer<typeof insertTrackSchema>;
 export type Track = typeof tracks.$inferSelect;
 
-// SoundCloud API types
+// SoundCloud/Deezer API types
 export const soundCloudTrackSchema = z.object({
-  id: z.number(),
+  id: z.union([z.number(), z.string()]), // Allow both number and string IDs
   title: z.string(),
   permalink_url: z.string(),
   artwork_url: z.string().nullable(),
   duration: z.number(),
   playback_count: z.number().optional(),
   user: z.object({
-    id: z.number(),
+    id: z.number().optional(), // Make this optional for compatibility
     username: z.string(),
-    avatar_url: z.string().nullable(),
+    avatar_url: z.string().nullable().optional(),
   }),
   stream_url: z.string().optional(),
 });

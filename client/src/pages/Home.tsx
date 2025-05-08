@@ -55,13 +55,13 @@ const Home: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            soundcloud_id: track.id,
+            soundcloud_id: String(track.id), // Convert ID to string to handle large Deezer IDs
             title: track.title,
             artist: track.user.username,
             artwork_url: track.artwork_url,
             duration: track.duration,
             permalink_url: track.permalink_url,
-            playback_count: track.playback_count,
+            playback_count: track.playback_count || 0,
           }),
         });
         refetchHistory();
@@ -77,7 +77,19 @@ const Home: React.FC = () => {
           throw new Error("Failed to get stream URL");
         }
         const data = await response.json();
-        streamUrl = data.url;
+        
+        // Handle various response formats
+        if (typeof data.url === 'string') {
+          streamUrl = data.url;
+        } else if (data.url && typeof data.url.url === 'string') {
+          streamUrl = data.url.url;
+        } else if (track.stream_url) {
+          streamUrl = track.stream_url;
+        } else {
+          throw new Error("Invalid stream URL format");
+        }
+        
+        console.log("Using stream URL:", streamUrl);
       } catch (error) {
         console.error("Error getting stream URL:", error);
         toast({
