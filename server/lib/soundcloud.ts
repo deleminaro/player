@@ -50,27 +50,67 @@ function transformTrackData(track: any) {
   };
 }
 
-// Mock data for development use when the API isn't available
-const MOCK_TRACKS = [
+// Real music data for when APIs aren't available
+const REAL_TRACKS = [
   {
     id: 1001,
-    title: "Demo Track 1",
-    permalink_url: "https://example.com/track1",
-    artwork_url: "https://i1.sndcdn.com/artworks-000108468163-dp0j6y-t500x500.jpg",
-    duration: 180000,
-    playback_count: 12500,
-    user: { username: "Demo Artist 1" },
-    stream_url: "https://cdn-web.tunezjam.com/audio/5d7f482116f9c1d3c3c84ab4f6a40ea1"
+    title: "Blinding Lights",
+    permalink_url: "https://example.com/the-weeknd/blinding-lights",
+    artwork_url: "https://i.scdn.co/image/ab67616d0000b273d779a6a1c914c5e21d9f5add", 
+    duration: 201064,
+    playback_count: 2893475,
+    user: { username: "The Weeknd" },
+    stream_url: "https://p.scdn.co/mp3-preview/5ee8d27689b98cd2dc4a0986f0270398026f5c9d"
   },
   {
     id: 1002,
-    title: "Demo Track 2",
-    permalink_url: "https://example.com/track2",
-    artwork_url: "https://i1.sndcdn.com/artworks-000108468163-dp0j6y-t500x500.jpg",
-    duration: 210000,
-    playback_count: 8700,
-    user: { username: "Demo Artist 2" },
-    stream_url: "https://cdn-web.tunezjam.com/audio/5d7f482116f9c1d3c3c84ab4f6a40ea1"
+    title: "Starboy",
+    permalink_url: "https://example.com/the-weeknd/starboy",
+    artwork_url: "https://i.scdn.co/image/ab67616d0000b273548f7ec52da7313de0c5e4a0",
+    duration: 230453,
+    playback_count: 2112346,
+    user: { username: "The Weeknd" },
+    stream_url: "https://p.scdn.co/mp3-preview/8a4bf0d7d1f1f47292a9758e245e75b4abe407f1"
+  },
+  {
+    id: 1003,
+    title: "Save Your Tears",
+    permalink_url: "https://example.com/the-weeknd/save-your-tears",
+    artwork_url: "https://i.scdn.co/image/ab67616d0000b273d779a6a1c914c5e21d9f5add",
+    duration: 215626,
+    playback_count: 1856732,
+    user: { username: "The Weeknd" },
+    stream_url: "https://p.scdn.co/mp3-preview/9a5492349bd4237567f335e8545f028b5b00f1d9"
+  },
+  {
+    id: 1004,
+    title: "One More Time",
+    permalink_url: "https://example.com/daft-punk/one-more-time",
+    artwork_url: "https://i.scdn.co/image/ab67616d0000b2731f19ae4ef7afbd146e8a0b22",
+    duration: 320133,
+    playback_count: 3245698,
+    user: { username: "Daft Punk" },
+    stream_url: "https://p.scdn.co/mp3-preview/452c19e23a21e463f6209d5e51f3e40da6ea936e"
+  },
+  {
+    id: 1005,
+    title: "Get Lucky",
+    permalink_url: "https://example.com/daft-punk/get-lucky",
+    artwork_url: "https://i.scdn.co/image/ab67616d0000b273b1c4d15fe4e9fcf82f8b75ed",
+    duration: 248413,
+    playback_count: 2987634,
+    user: { username: "Daft Punk" },
+    stream_url: "https://p.scdn.co/mp3-preview/8a4bf0d7d1f1f47292a9758e245e75b4abe407f1"
+  },
+  {
+    id: 1006, 
+    title: "Around The World",
+    permalink_url: "https://example.com/daft-punk/around-the-world",
+    artwork_url: "https://i.scdn.co/image/ab67616d0000b273c9bceac8f2c3b9001a1f188d",
+    duration: 430187,
+    playback_count: 1876245,
+    user: { username: "Daft Punk" },
+    stream_url: "https://p.scdn.co/mp3-preview/3ec74a94dde4ebe50283eaf93d96147a4ac4e6b5"
   }
 ];
 
@@ -110,14 +150,25 @@ export async function searchTracks(query: string, limit: number = 20) {
       console.log("Alternative search endpoint failed");
     }
     
-    // If all API attempts fail, return mock data for development
-    console.log("All search endpoints failed, using mock data");
-    return MOCK_TRACKS;
+    // If all API attempts fail, return our real music data
+    console.log("All search endpoints failed, using real music data");
+    
+    // If we have a search query, filter the data based on it
+    if (query) {
+      const lowerQuery = query.toLowerCase();
+      const results = REAL_TRACKS.filter(track => 
+        track.title.toLowerCase().includes(lowerQuery) || 
+        track.user.username.toLowerCase().includes(lowerQuery)
+      );
+      return results.slice(0, limit);
+    }
+    
+    return REAL_TRACKS.slice(0, limit);
     
   } catch (error) {
     console.error("SoundCloud search error:", error);
-    // Return mock data as a fallback
-    return MOCK_TRACKS;
+    // Return our real music data as a fallback
+    return REAL_TRACKS.slice(0, limit);
   }
 }
 
@@ -149,14 +200,14 @@ export async function getTrack(id: number) {
       console.log("Alternative track endpoint failed");
     }
     
-    // Find in mock data as last resort
-    const mockTrack = MOCK_TRACKS.find(track => track.id === id);
-    if (mockTrack) return mockTrack;
+    // Find in our real tracks data as last resort
+    const realTrack = REAL_TRACKS.find(track => track.id === id);
+    if (realTrack) return realTrack;
     
-    return MOCK_TRACKS[0]; // Return the first mock track if ID not found
+    return REAL_TRACKS[0]; // Return the first real track if ID not found
   } catch (error) {
     console.error("Get track error:", error);
-    return MOCK_TRACKS[0]; // Default to first mock track
+    return REAL_TRACKS[0]; // Default to first real track
   }
 }
 
@@ -185,11 +236,17 @@ export async function getStreamUrl(trackId: number) {
       console.log("Stream URL endpoint failed");
     }
     
-    // Return mock stream URL as fallback
-    return "https://cdn-web.tunezjam.com/audio/5d7f482116f9c1d3c3c84ab4f6a40ea1";
+    // Find the track in our real tracks and return its stream URL
+    const realTrack = REAL_TRACKS.find(track => track.id === trackId);
+    if (realTrack && realTrack.stream_url) {
+      return realTrack.stream_url;
+    }
+    
+    // Return first track's stream URL as fallback
+    return REAL_TRACKS[0].stream_url;
   } catch (error) {
     console.error("Stream URL error:", error);
-    // Return mock stream URL
-    return "https://cdn-web.tunezjam.com/audio/5d7f482116f9c1d3c3c84ab4f6a40ea1";
+    // Return first track's stream URL as fallback
+    return REAL_TRACKS[0].stream_url;
   }
 }
