@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useSoundCloud } from "../hooks/useSoundCloud";
 import SearchBar from "../components/SearchBar";
-import { SoundCloudTrack } from "@shared/schema";
+import { SoundCloudTrack, Track } from "@shared/schema";
 import { formatTime } from "../lib/utils";
 import { Howl } from "howler";
 import { useToast } from "@/hooks/use-toast";
+
+// Add type definition for Howl with progressInterval
+declare module "howler" {
+  interface Howl {
+    _progressInterval?: ReturnType<typeof window.setInterval>;
+  }
+}
 
 // Simple player implementation directly in the Home component
 const Home: React.FC = () => {
@@ -90,11 +97,11 @@ const Home: React.FC = () => {
         onplay: () => {
           setIsPlaying(true);
           // Update progress on interval
-          const progressInterval = setInterval(() => {
+          const progressInterval = window.setInterval(() => {
             if (newSound.playing()) {
               setProgress(newSound.seek() as number);
             } else {
-              clearInterval(progressInterval);
+              window.clearInterval(progressInterval);
             }
           }, 500);
           newSound._progressInterval = progressInterval;
@@ -111,7 +118,7 @@ const Home: React.FC = () => {
         onstop: () => {
           setIsPlaying(false);
           if (newSound._progressInterval) {
-            clearInterval(newSound._progressInterval);
+            window.clearInterval(newSound._progressInterval);
           }
         }
       });

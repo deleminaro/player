@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { soundCloudClient } from "../lib/soundcloud";
-import { SoundCloudTrack } from "@shared/schema";
+import { SoundCloudTrack, Track } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 export function useSoundCloud() {
@@ -11,11 +11,11 @@ export function useSoundCloud() {
 
   // Get recently played from server
   const { 
-    data: recentlyPlayed = [],
+    data: recentlyPlayed = [] as Track[],
     isLoading: isLoadingHistory,
     error: historyError,
     refetch: refetchHistory
-  } = useQuery({
+  } = useQuery<Track[]>({
     queryKey: ['/api/history'],
   });
 
