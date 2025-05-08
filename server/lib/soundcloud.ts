@@ -4,8 +4,8 @@ import axios from "axios";
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 
 // Using a different RapidAPI endpoint for SoundCloud
-const RAPIDAPI_HOST = "soundcloud-downloader3.p.rapidapi.com";
-const RAPIDAPI_BASE_URL = "https://soundcloud-downloader3.p.rapidapi.com";
+const RAPIDAPI_HOST = "soundcloud-scraper.p.rapidapi.com";
+const RAPIDAPI_BASE_URL = "https://soundcloud-scraper.p.rapidapi.com";
 
 // Configure axios with RapidAPI headers
 const rapidApiClient = axios.create({

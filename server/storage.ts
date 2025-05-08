@@ -1,4 +1,6 @@
 import { tracks, users, type User, type InsertUser, type Track, type InsertTrack } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -8,70 +10,58 @@ export interface IStorage {
   getRecentlyPlayed(limit?: number): Promise<Track[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private trackHistory: Track[];
-  currentUserId: number;
-  currentTrackId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.trackHistory = [];
-    this.currentUserId = 1;
-    this.currentTrackId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async addTrackToHistory(insertTrack: InsertTrack): Promise<Track> {
-    const id = this.currentTrackId++;
-    const now = new Date();
+    // Check if track already exists in history
+    const [existingTrack] = await db.select()
+      .from(tracks)
+      .where(eq(tracks.soundcloud_id, insertTrack.soundcloud_id));
     
-    const track: Track = { 
-      ...insertTrack, 
-      id, 
-      played_at: now 
-    };
-    
-    // Check if this track exists in history already (by soundcloud_id)
-    const existingIndex = this.trackHistory.findIndex(
-      (t) => t.soundcloud_id === track.soundcloud_id
-    );
-    
-    if (existingIndex !== -1) {
-      // Remove the existing entry
-      this.trackHistory.splice(existingIndex, 1);
+    // If it exists, delete it (we'll re-add it with updated timestamp)
+    if (existingTrack) {
+      await db.delete(tracks).where(eq(tracks.id, existingTrack.id));
     }
     
-    // Add to the beginning of the array
-    this.trackHistory.unshift(track);
+    // Insert the track
+    const [track] = await db.insert(tracks).values(insertTrack).returning();
     
-    // Limit history to 20 items
-    if (this.trackHistory.length > 20) {
-      this.trackHistory = this.trackHistory.slice(0, 20);
+    // Keep only the most recent 20 tracks
+    const allTracks = await db.select()
+      .from(tracks)
+      .orderBy(desc(tracks.played_at));
+    
+    if (allTracks.length > 20) {
+      // Delete older tracks beyond the 20 limit
+      const tracksToRemove = allTracks.slice(20);
+      for (const oldTrack of tracksToRemove) {
+        await db.delete(tracks).where(eq(tracks.id, oldTrack.id));
+      }
     }
     
     return track;
   }
 
   async getRecentlyPlayed(limit: number = 20): Promise<Track[]> {
-    return this.trackHistory.slice(0, limit);
+    return await db.select()
+      .from(tracks)
+      .orderBy(desc(tracks.played_at))
+      .limit(limit);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
