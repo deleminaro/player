@@ -6,11 +6,9 @@ import { formatTime } from "../lib/utils";
 import { Howl } from "howler";
 import { useToast } from "@/hooks/use-toast";
 
-// Add type definition for Howl with progressInterval
-declare module "howler" {
-  interface Howl {
-    _progressInterval?: ReturnType<typeof window.setInterval>;
-  }
+// Add custom interface for our Howl instance with _progressInterval
+interface ExtendedHowl extends Howl {
+  _progressInterval?: number;
 }
 
 // Simple player implementation directly in the Home component
@@ -25,7 +23,7 @@ const Home: React.FC = () => {
   // Player state
   const [currentTrack, setCurrentTrack] = useState<SoundCloudTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [sound, setSound] = useState<Howl | null>(null);
+  const [sound, setSound] = useState<ExtendedHowl | null>(null);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const { toast } = useToast();

@@ -1,20 +1,49 @@
 import axios from "axios";
 
-const SOUNDCLOUD_CLIENT_ID = "f6k2kBKdKxsBaJCEeHQHScqQLINy5UUN";
-const SOUNDCLOUD_API_URL = "https://api.soundcloud.com";
+// Use RapidAPI for SoundCloud access
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_HOST = "soundcloud-scraper2.p.rapidapi.com";
+const RAPIDAPI_BASE_URL = "https://soundcloud-scraper2.p.rapidapi.com";
+
+// Configure axios with RapidAPI headers
+const rapidApiClient = axios.create({
+  headers: {
+    'X-RapidAPI-Key': RAPIDAPI_KEY,
+    'X-RapidAPI-Host': RAPIDAPI_HOST
+  }
+});
+
+// Transform RapidAPI response to match our SoundCloud schema
+function transformTrackData(track: any) {
+  return {
+    id: track.id || track.trackId,
+    title: track.title,
+    permalink_url: track.url || track.permalink_url,
+    artwork_url: track.thumbnail || track.artwork_url,
+    duration: track.duration || 0,
+    playback_count: track.playCount || track.playback_count || 0,
+    user: {
+      username: track.artist || track.user?.username || "Unknown Artist"
+    },
+    stream_url: track.streamUrl || track.stream_url
+  };
+}
 
 export async function searchTracks(query: string, limit: number = 20) {
   try {
-    const response = await axios.get(`${SOUNDCLOUD_API_URL}/tracks`, {
+    console.log("Searching tracks with RapidAPI, query:", query);
+    const response = await rapidApiClient.get(`${RAPIDAPI_BASE_URL}/v1/search/tracks`, {
       params: {
-        q: query,
-        limit,
-        client_id: SOUNDCLOUD_CLIENT_ID,
-        linked_partitioning: 1,
+        query: query,
+        limit: limit.toString()
       },
     });
     
-    return response.data.collection || [];
+    if (response.data && response.data.tracks) {
+      return response.data.tracks.map(transformTrackData);
+    }
+    
+    return [];
   } catch (error) {
     console.error("SoundCloud search error:", error);
     throw new Error("Failed to search tracks");
@@ -23,13 +52,18 @@ export async function searchTracks(query: string, limit: number = 20) {
 
 export async function getTrack(id: number) {
   try {
-    const response = await axios.get(`${SOUNDCLOUD_API_URL}/tracks/${id}`, {
+    console.log("Getting track with RapidAPI, id:", id);
+    const response = await rapidApiClient.get(`${RAPIDAPI_BASE_URL}/v1/track/info`, {
       params: {
-        client_id: SOUNDCLOUD_CLIENT_ID,
-      },
+        track: id.toString()
+      }
     });
     
-    return response.data;
+    if (response.data) {
+      return transformTrackData(response.data);
+    }
+    
+    throw new Error("Track not found");
   } catch (error) {
     console.error("Get track error:", error);
     throw new Error("Failed to get track");
@@ -38,23 +72,15 @@ export async function getTrack(id: number) {
 
 export async function getStreamUrl(trackId: number) {
   try {
-    // First get the track info
-    const trackResponse = await axios.get(`${SOUNDCLOUD_API_URL}/tracks/${trackId}`, {
-      params: {
-        client_id: SOUNDCLOUD_CLIENT_ID,
-      },
-    });
+    console.log("Getting stream URL with RapidAPI, trackId:", trackId);
+    // Get track info first, which includes the stream URL
+    const trackInfo = await getTrack(trackId);
     
-    // Then get the stream URL
-    const streamResponse = await axios.get(`${trackResponse.data.stream_url}`, {
-      params: {
-        client_id: SOUNDCLOUD_CLIENT_ID,
-      },
-      maxRedirects: 0,
-      validateStatus: (status) => status === 302,
-    });
+    if (trackInfo && trackInfo.stream_url) {
+      return trackInfo.stream_url;
+    }
     
-    return streamResponse.headers.location;
+    throw new Error("Stream URL not found");
   } catch (error) {
     console.error("Stream URL error:", error);
     throw new Error("Failed to get stream URL");

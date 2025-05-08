@@ -1,11 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import axios from "axios";
 import { insertTrackSchema } from "@shared/schema";
-
-const SOUNDCLOUD_CLIENT_ID = "f6k2kBKdKxsBaJCEeHQHScqQLINy5UUN";
-const SOUNDCLOUD_API_URL = "https://api.soundcloud.com";
+import * as soundcloudApi from "./lib/soundcloud";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // SoundCloud search endpoint
@@ -17,16 +14,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Search query is required" });
       }
       
-      const response = await axios.get(`${SOUNDCLOUD_API_URL}/tracks`, {
-        params: {
-          q,
-          limit,
-          client_id: SOUNDCLOUD_CLIENT_ID,
-          linked_partitioning: 1,
-        },
-      });
-      
-      res.json(response.data.collection || []);
+      const tracks = await soundcloudApi.searchTracks(q.toString(), Number(limit));
+      res.json(tracks);
     } catch (error) {
       console.error("SoundCloud search error:", error);
       res.status(500).json({ message: "Failed to search tracks" });
@@ -38,13 +27,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      const response = await axios.get(`${SOUNDCLOUD_API_URL}/tracks/${id}`, {
-        params: {
-          client_id: SOUNDCLOUD_CLIENT_ID,
-        },
-      });
-      
-      res.json(response.data);
+      const track = await soundcloudApi.getTrack(Number(id));
+      res.json(track);
     } catch (error) {
       console.error("Get track error:", error);
       res.status(500).json({ message: "Failed to get track" });
@@ -56,24 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      // First get the track info
-      const trackResponse = await axios.get(`${SOUNDCLOUD_API_URL}/tracks/${id}`, {
-        params: {
-          client_id: SOUNDCLOUD_CLIENT_ID,
-        },
-      });
-      
-      // Then get the stream URL
-      const streamResponse = await axios.get(`${trackResponse.data.stream_url}`, {
-        params: {
-          client_id: SOUNDCLOUD_CLIENT_ID,
-        },
-        maxRedirects: 0,
-        validateStatus: (status) => status === 302,
-      });
-      
-      const streamUrl = streamResponse.headers.location;
-      
+      const streamUrl = await soundcloudApi.getStreamUrl(Number(id));
       res.json({ url: streamUrl });
     } catch (error) {
       console.error("Stream URL error:", error);
