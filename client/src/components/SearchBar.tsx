@@ -42,11 +42,12 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           onKeyUp={handleKeyUp}
         />
         <button
-          className="bg-pixelgray px-4 py-3 text-xl hover:text-primary transition-colors"
+          className="bg-purple-600 hover:bg-purple-700 px-6 py-3 font-pixelated text-white transition-colors"
           onClick={handleSearch}
           disabled={isSearching}
         >
-          <i className="ri-search-line"></i>
+          <i className="ri-search-line mr-2"></i>
+          Search
         </button>
       </div>
 

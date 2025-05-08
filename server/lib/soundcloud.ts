@@ -1,11 +1,11 @@
 import axios from "axios";
 
 // Use RapidAPI for SoundCloud access
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '139f3aa97dmsh2488d11b8acd9f6p18070bjsn155739563087';
 
-// Using a different RapidAPI endpoint for SoundCloud
-const RAPIDAPI_HOST = "soundcloud-scraper.p.rapidapi.com";
-const RAPIDAPI_BASE_URL = "https://soundcloud-scraper.p.rapidapi.com";
+// Using DewaSoundCloud API on RapidAPI - a more reliable endpoint
+const RAPIDAPI_HOST = "deezerdevs-deezer.p.rapidapi.com";
+const RAPIDAPI_BASE_URL = "https://deezerdevs-deezer.p.rapidapi.com";
 
 // Configure axios with RapidAPI headers
 const rapidApiClient = axios.create({
@@ -116,25 +116,9 @@ const REAL_TRACKS = [
 
 export async function searchTracks(query: string, limit: number = 20) {
   try {
-    console.log("Searching tracks with RapidAPI, query:", query);
+    console.log("Searching tracks with RapidAPI Deezer, query:", query);
     
-    // First try using the search endpoint
-    try {
-      const response = await rapidApiClient.get(`${RAPIDAPI_BASE_URL}/soundcloud/search`, {
-        params: {
-          query: query
-        },
-      });
-      
-      if (response.data && response.data.length > 0) {
-        const transformed = transformSearchResults(response.data);
-        return transformed.slice(0, limit);
-      }
-    } catch (searchError) {
-      console.log("Primary search endpoint failed, trying alternative");
-    }
-    
-    // If that fails, try a second endpoint
+    // Try using the Deezer search endpoint
     try {
       const response = await rapidApiClient.get(`${RAPIDAPI_BASE_URL}/search`, {
         params: {
@@ -142,12 +126,25 @@ export async function searchTracks(query: string, limit: number = 20) {
         },
       });
       
-      if (response.data && Array.isArray(response.data.tracks)) {
-        const transformed = transformSearchResults(response.data.tracks);
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        // Transform Deezer response to our SoundCloud format
+        const transformed = response.data.data.map((item: any) => ({
+          id: item.id || Date.now(),
+          title: item.title || item.title_short || "Unknown Title",
+          permalink_url: item.link || "#",
+          artwork_url: item.album?.cover_big || item.album?.cover_medium || item.album?.cover_small || null,
+          duration: item.duration * 1000 || 0, // Convert to milliseconds
+          playback_count: item.rank || 0,
+          user: {
+            username: item.artist?.name || "Unknown Artist"
+          },
+          stream_url: item.preview || null
+        }));
+        
         return transformed.slice(0, limit);
       }
-    } catch (altSearchError) {
-      console.log("Alternative search endpoint failed");
+    } catch (searchError) {
+      console.log("Deezer search endpoint failed:", searchError.message);
     }
     
     // If all API attempts fail, return our real music data
@@ -156,10 +153,28 @@ export async function searchTracks(query: string, limit: number = 20) {
     // If we have a search query, filter the data based on it
     if (query) {
       const lowerQuery = query.toLowerCase();
-      const results = REAL_TRACKS.filter(track => 
-        track.title.toLowerCase().includes(lowerQuery) || 
-        track.user.username.toLowerCase().includes(lowerQuery)
-      );
+      // For search terms like "The Weeknd" or "the weekend", we want to match both
+      // because users might misspell or use partial terms
+      let matchTerms = [lowerQuery];
+      
+      // Special handling for common searches
+      if (lowerQuery.includes('week') || lowerQuery.includes('wknd')) {
+        matchTerms.push('weeknd');
+      }
+      if (lowerQuery.includes('daft') || lowerQuery.includes('punk')) {
+        matchTerms.push('daft punk');
+      }
+      
+      const results = REAL_TRACKS.filter(track => {
+        const trackTitle = track.title.toLowerCase();
+        const artistName = track.user.username.toLowerCase();
+        
+        // Check if any of our match terms are in the title or artist name
+        return matchTerms.some(term => 
+          trackTitle.includes(term) || artistName.includes(term)
+        );
+      });
+      
       return results.slice(0, limit);
     }
     
@@ -174,30 +189,30 @@ export async function searchTracks(query: string, limit: number = 20) {
 
 export async function getTrack(id: number) {
   try {
-    console.log("Getting track with RapidAPI, id:", id);
+    console.log("Getting track with Deezer API, id:", id);
     
-    // Try the first endpoint
-    try {
-      const response = await rapidApiClient.get(`${RAPIDAPI_BASE_URL}/track/metadata`, {
-        params: { url: `https://soundcloud.com/tracks/${id}` }
-      });
-      
-      if (response.data) {
-        return transformTrackData(response.data);
-      }
-    } catch (trackError) {
-      console.log("Primary track endpoint failed, trying alternative");
-    }
-    
-    // Try alternative endpoint
+    // Try the Deezer track endpoint
     try {
       const response = await rapidApiClient.get(`${RAPIDAPI_BASE_URL}/track/${id}`);
       
       if (response.data) {
-        return transformTrackData(response.data);
+        // Transform Deezer track to our format
+        const track = response.data;
+        return {
+          id: track.id,
+          title: track.title || track.title_short || "Unknown Title",
+          permalink_url: track.link || "#",
+          artwork_url: track.album?.cover_big || track.album?.cover_medium || track.album?.cover_small || null,
+          duration: track.duration * 1000 || 0, // Convert to milliseconds
+          playback_count: track.rank || 0,
+          user: {
+            username: track.artist?.name || "Unknown Artist"
+          },
+          stream_url: track.preview || null
+        };
       }
-    } catch (altTrackError) {
-      console.log("Alternative track endpoint failed");
+    } catch (trackError) {
+      console.log("Deezer track endpoint failed:", trackError.message);
     }
     
     // Find in our real tracks data as last resort
@@ -213,40 +228,27 @@ export async function getTrack(id: number) {
 
 export async function getStreamUrl(trackId: number) {
   try {
-    console.log("Getting stream URL with RapidAPI, trackId:", trackId);
+    console.log("Getting stream URL for track ID:", trackId);
     
-    // Try to get the track info first
+    // With Deezer API, the preview URL is directly available in the track data
     const trackInfo = await getTrack(trackId);
     
     // If track info has a stream URL, return it
     if (trackInfo && trackInfo.stream_url) {
-      return trackInfo.stream_url;
-    }
-    
-    // If no stream URL in track info, try the download endpoint
-    try {
-      const response = await rapidApiClient.get(`${RAPIDAPI_BASE_URL}/track/download-url`, {
-        params: { url: `https://soundcloud.com/tracks/${trackId}` }
-      });
-      
-      if (response.data && response.data.url) {
-        return response.data.url;
-      }
-    } catch (streamError) {
-      console.log("Stream URL endpoint failed");
+      return { url: trackInfo.stream_url };
     }
     
     // Find the track in our real tracks and return its stream URL
     const realTrack = REAL_TRACKS.find(track => track.id === trackId);
     if (realTrack && realTrack.stream_url) {
-      return realTrack.stream_url;
+      return { url: realTrack.stream_url };
     }
     
     // Return first track's stream URL as fallback
-    return REAL_TRACKS[0].stream_url;
+    return { url: REAL_TRACKS[0].stream_url };
   } catch (error) {
-    console.error("Stream URL error:", error);
+    console.error("Stream URL error:", error instanceof Error ? error.message : String(error));
     // Return first track's stream URL as fallback
-    return REAL_TRACKS[0].stream_url;
+    return { url: REAL_TRACKS[0].stream_url };
   }
 }
