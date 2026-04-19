@@ -3,7 +3,7 @@ import Foundation
 enum Constants {
     // MARK: - Replace these with your actual keys before running
     static var soundcloudClientID = "f6k2kBKdKxsBaJCEeHQHScqQLINy5UUN"
-    static var geniusToken        = "YOUR_GENIUS_BEARER_TOKEN"
+    static var geniusToken        = "rWlzywghaCWdSYpBF1OJQlMsiXghcIGb1uX0UmT8nhBMYBFUNL8LVhXs4Fhwg-_N"
 
     enum SoundCloud {
         static let baseURL    = "https://api-v2.soundcloud.com"
