@@ -23,12 +23,14 @@ final class AudioPlayerService {
         configureAudioSession()
     }
 
-    private func configureAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("[AudioPlayer] Session setup error: \(error)")
+    nonisolated private func configureAudioSession() {
+        Task.detached(priority: .userInitiated) {
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("[AudioPlayer] Session setup error: \(error)")
+            }
         }
     }
 
