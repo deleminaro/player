@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
-    @Environment(\.dismiss)  var dismiss
+    @Environment(\.dismiss) var dismiss
 
     @State private var showLyrics = false
     @State private var showQueue  = false
@@ -10,25 +10,69 @@ struct NowPlayingView: View {
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
 
     var body: some View {
-        ZStack {
-            background
+        GeometryReader { geo in
+            ZStack {
+                background
 
-            VStack(spacing: 0) {
-                dragHandle.padding(.top, 14)
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 26) {
-                        artworkView
-                        trackInfo
-                        progressSection
-                        controlButtons
-                        speedPicker
-                        actionRow
+                VStack(spacing: 0) {
+                    // Drag handle + dismiss
+                    HStack {
+                        Spacer()
+                        Capsule()
+                            .fill(Color.white.opacity(0.35))
+                            .frame(width: 38, height: 4)
+                        Spacer()
                     }
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 40)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+
+                    // Artwork
+                    artworkView(size: min(geo.size.width - 64, 300))
+                        .padding(.top, 12)
+
+                    // Title + artist + dismiss button
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(playerVM.currentTrack?.title ?? "Not Playing")
+                                .font(.title2).fontWeight(.bold)
+                                .foregroundStyle(.white)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(playerVM.currentTrack?.username ?? "")
+                                .font(.callout)
+                                .foregroundStyle(.white.opacity(0.65))
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 12)
+                        Button { dismiss() } label: {
+                            Image(systemName: "chevron.down.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                    }
+                    .padding(.top, 20)
+
+                    // Progress
+                    progressSection
+                        .padding(.top, 18)
+
+                    // Controls
+                    controlButtons
+                        .padding(.top, 22)
+
+                    // Speed
+                    speedPicker
+                        .padding(.top, 22)
+
+                    // Action row
+                    actionRow
+                        .padding(.top, 22)
+
+                    Spacer(minLength: 16)
                 }
+                .padding(.horizontal, 28)
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showLyrics) {
@@ -43,60 +87,48 @@ struct NowPlayingView: View {
 
     private var background: some View {
         ZStack {
-            AsyncImage(url: URL(string: playerVM.currentTrack?.highResArtworkURL ?? "")) { img in
-                img.resizable().aspectRatio(contentMode: .fill)
-                    .blur(radius: 70).scaleEffect(1.4)
-            } placeholder: {
-                LinearGradient(colors: [.indigo, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+            if let urlStr = playerVM.currentTrack?.highResArtworkURL,
+               let url = URL(string: urlStr) {
+                AsyncImage(url: url) { img in
+                    img.resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .scaleEffect(1.5)
+                        .blur(radius: 60)
+                } placeholder: {
+                    Color.black
+                }
+            } else {
+                LinearGradient(
+                    colors: [Color(white: 0.12), Color(white: 0.06)],
+                    startPoint: .top, endPoint: .bottom
+                )
             }
-            Color.black.opacity(0.58)
+            Color.black.opacity(0.62)
         }
         .ignoresSafeArea()
     }
 
-    private var dragHandle: some View {
-        Capsule()
-            .fill(Color.white.opacity(0.35))
-            .frame(width: 38, height: 4)
-    }
-
-    private var artworkView: some View {
+    private func artworkView(size: CGFloat) -> some View {
         AsyncImage(url: URL(string: playerVM.currentTrack?.highResArtworkURL ?? "")) { img in
             img.resizable().aspectRatio(contentMode: .fill)
         } placeholder: {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.white.opacity(0.12))
-                .overlay(Image(systemName: "music.note").font(.system(size: 64)).foregroundStyle(.white.opacity(0.4)))
+                .overlay(
+                    Image(systemName: "music.note")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.white.opacity(0.35))
+                )
         }
-        .frame(width: 290, height: 290)
+        .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.55), radius: 24, x: 0, y: 12)
+        .shadow(color: .black.opacity(0.6), radius: 28, x: 0, y: 14)
         .scaleEffect(playerVM.isPlaying ? 1.0 : 0.90)
         .animation(.spring(response: 0.45, dampingFraction: 0.65), value: playerVM.isPlaying)
-        .padding(.top, 16)
-    }
-
-    private var trackInfo: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(playerVM.currentTrack?.title ?? "Not Playing")
-                    .font(.title2).fontWeight(.bold).foregroundStyle(.white).lineLimit(2)
-                Text(playerVM.currentTrack?.username ?? "")
-                    .font(.callout).foregroundStyle(.white.opacity(0.65))
-            }
-            Spacer()
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.down.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white.opacity(0.6))
-            }
-        }
     }
 
     private var progressSection: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             Slider(
                 value: Binding(
                     get: { playerVM.currentTime },
@@ -105,6 +137,7 @@ struct NowPlayingView: View {
                 in: 0...(playerVM.duration > 0 ? playerVM.duration : 1)
             )
             .tint(.white)
+            .frame(maxWidth: .infinity)
 
             HStack {
                 Text(formatTime(playerVM.currentTime))
@@ -112,64 +145,70 @@ struct NowPlayingView: View {
                 Text("-\(formatTime(max(0, playerVM.duration - playerVM.currentTime)))")
             }
             .font(.caption)
-            .foregroundStyle(.white.opacity(0.6))
+            .foregroundStyle(.white.opacity(0.55))
         }
     }
 
     private var controlButtons: some View {
-        HStack(spacing: 50) {
+        HStack(spacing: 0) {
+            Spacer()
             Button { playerVM.skipPrevious() } label: {
-                Image(systemName: "backward.fill").font(.title).foregroundStyle(.white)
+                Image(systemName: "backward.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white)
             }
-
-            // Play / Pause button
+            Spacer()
             Button { playerVM.togglePlayPause() } label: {
                 ZStack {
-                    Circle().fill(.white).frame(width: 74, height: 74)
+                    Circle().fill(.white).frame(width: 72, height: 72)
                     if playerVM.playerState == .loading {
-                        ProgressView().tint(.black)
+                        ProgressView().tint(.black).scaleEffect(1.2)
                     } else {
                         Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: 26, weight: .bold))
                             .foregroundStyle(.black)
                             .offset(x: playerVM.isPlaying ? 0 : 2)
                     }
                 }
             }
-
+            Spacer()
             Button { playerVM.skipNext() } label: {
-                Image(systemName: "forward.fill").font(.title).foregroundStyle(.white)
+                Image(systemName: "forward.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white)
             }
+            Spacer()
         }
     }
 
     private var speedPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Playback Speed", systemImage: "gauge.with.dots.needle.67percent")
-                .font(.caption).foregroundStyle(.white.opacity(0.6))
+            Text("Speed")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.55))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(speeds, id: \.self) { spd in
-                        Button { playerVM.setSpeed(spd) } label: {
-                            Text(speedLabel(spd))
-                                .font(.callout).fontWeight(.semibold)
-                                .padding(.horizontal, 18).padding(.vertical, 9)
-                                .background(playerVM.playbackSpeed == spd ? Color.white : Color.white.opacity(0.15))
-                                .foregroundStyle(playerVM.playbackSpeed == spd ? Color.black : Color.white)
-                                .clipShape(Capsule())
-                        }
+            HStack(spacing: 8) {
+                ForEach(speeds, id: \.self) { spd in
+                    Button { playerVM.setSpeed(spd) } label: {
+                        Text(speedLabel(spd))
+                            .font(.caption).fontWeight(.semibold)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(playerVM.playbackSpeed == spd ? Color.white : Color.white.opacity(0.15))
+                            .foregroundStyle(playerVM.playbackSpeed == spd ? Color.black : Color.white)
+                            .clipShape(Capsule())
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private var actionRow: some View {
-        HStack(spacing: 54) {
+        HStack(spacing: 48) {
             iconButton(icon: "quote.bubble", label: "Lyrics") { showLyrics = true }
             iconButton(icon: "list.bullet",  label: "Queue")  { showQueue  = true }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func iconButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
