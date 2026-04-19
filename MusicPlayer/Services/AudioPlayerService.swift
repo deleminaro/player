@@ -66,7 +66,9 @@ final class AudioPlayerService {
         // Periodic time observer (every 0.5 s)
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            self?.onTimeUpdate?(time.seconds)
+            Task { @MainActor [weak self] in
+                self?.onTimeUpdate?(time.seconds)
+            }
         }
     }
 
