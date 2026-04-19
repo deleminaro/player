@@ -2,7 +2,7 @@ import Foundation
 
 enum Constants {
     // MARK: - Replace these with your actual keys before running
-    static var soundcloudClientID = "YOUR_SOUNDCLOUD_CLIENT_ID"
+    static var soundcloudClientID = "f6k2kBKdKxsBaJCEeHQHScqQLINy5UUN"
     static var geniusToken        = "YOUR_GENIUS_BEARER_TOKEN"
 
     enum SoundCloud {
