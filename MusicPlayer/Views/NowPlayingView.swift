@@ -2,7 +2,6 @@ import SwiftUI
 
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
-    @Environment(\.dismiss) var dismiss
 
     @State private var showLyrics = false
     @State private var showQueue  = false
@@ -15,16 +14,7 @@ struct NowPlayingView: View {
                 background
 
                 VStack(spacing: 0) {
-                    // Drag handle + dismiss
-                    HStack {
-                        Spacer()
-                        Capsule()
-                            .fill(Color.white.opacity(0.35))
-                            .frame(width: 38, height: 4)
-                        Spacer()
-                    }
-                    .padding(.top, 16)
-                    .padding(.bottom, 8)
+                    Spacer().frame(height: 16)
 
                     // Artwork
                     artworkView(size: min(geo.size.width - 64, 300))
@@ -44,7 +34,7 @@ struct NowPlayingView: View {
                                 .lineLimit(1)
                         }
                         Spacer(minLength: 12)
-                        Button { dismiss() } label: {
+                        Button { playerVM.showingNowPlaying = false } label: {
                             Image(systemName: "chevron.down.circle.fill")
                                 .font(.title2)
                                 .foregroundStyle(.white.opacity(0.6))

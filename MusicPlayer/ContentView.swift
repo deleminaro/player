@@ -24,9 +24,12 @@ struct ContentView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: playerVM.currentTrack != nil)
-        .fullScreenCover(isPresented: $playerVM.showingNowPlaying) {
+        .sheet(isPresented: $playerVM.showingNowPlaying) {
             NowPlayingView()
                 .environmentObject(playerVM)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(24)
         }
     }
 }
