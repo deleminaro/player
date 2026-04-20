@@ -1,114 +1,150 @@
 import SwiftUI
-import WebKit
 
 struct LyricsView: View {
     let track: Track
     @Environment(\.dismiss) var dismiss
 
-    @State private var lyricsURL:  URL?
+    @State private var lyrics:     String?
     @State private var isLoading = true
-    @State private var errorMsg:   String?
+    @State private var notFound  = false
+
+    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         NavigationStack {
-            Group {
-                if let url = lyricsURL {
-                    GeniusWebView(url: url, isLoading: $isLoading)
-                        .ignoresSafeArea(edges: .bottom)
-                        .overlay(alignment: .center) {
-                            if isLoading {
-                                ProgressView("Loading lyrics…")
-                                    .padding(20)
-                                    .background(.regularMaterial)
-                                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                            }
-                        }
-                } else if errorMsg != nil {
-                    VStack(spacing: 16) {
-                        Image(systemName: "quote.bubble")
-                            .font(.system(size: 44))
-                            .foregroundStyle(.white.opacity(0.2))
-                        Text("LYRICS NOT FOUND")
-                            .font(.system(size: 13, weight: .black)).kerning(2)
-                            .foregroundStyle(.white.opacity(0.5))
-                        Text("Genius couldn't match this track.\nTry opening in Safari to search manually.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.3))
-                            .multilineTextAlignment(.center)
-                        if let searchURL = URL(string: "https://genius.com/search?q=\(track.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
-                            Link(destination: searchURL) {
-                                Text("Search on Genius")
-                                    .font(.system(size: 12, weight: .black)).kerning(1)
-                                    .foregroundStyle(Color(red: 0.063, green: 0, blue: 0.663))
-                                    .padding(.horizontal, 20).padding(.vertical, 10)
-                                    .background(Color(red: 0.753, green: 0.757, blue: 1.0), in: Capsule())
-                            }
-                            .padding(.top, 4)
-                        }
+            ZStack {
+                bg.ignoresSafeArea()
+
+                if isLoading {
+                    VStack(spacing: 14) {
+                        ProgressView()
+                            .tint(primary)
+                        Text("SEARCHING LYRICS…")
+                            .font(.system(size: 10, weight: .black)).kerning(2)
+                            .foregroundStyle(.white.opacity(0.4))
                     }
-                    .padding(40)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ProgressView("Searching for lyrics…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if notFound {
+                    notFoundView
+                } else if let text = lyrics {
+                    ScrollView(showsIndicators: false) {
+                        lyricsContent(text)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 20)
+                            .padding(.bottom, 60)
+                    }
                 }
             }
-            .navigationTitle("Lyrics")
+            .navigationTitle("LYRICS")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(primary)
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    if let url = lyricsURL {
+                    if let url = geniusSearchURL {
                         Link(destination: url) {
                             Image(systemName: "safari")
+                                .foregroundStyle(primary)
                         }
                     }
                 }
             }
+            .toolbarBackground(bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .preferredColorScheme(.dark)
         }
-        .task { await fetchLyrics() }
+        .task { await loadLyrics() }
     }
 
-    private func fetchLyrics() async {
+    // MARK: - Lyrics renderer
+
+    @ViewBuilder
+    private func lyricsContent(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(track.title.uppercased())
+                .font(.system(size: 11, weight: .black)).kerning(2)
+                .foregroundStyle(primary.opacity(0.7))
+                .padding(.bottom, 4)
+            Text(track.username.uppercased())
+                .font(.system(size: 10, weight: .bold)).kerning(1.5)
+                .foregroundStyle(.white.opacity(0.35))
+                .padding(.bottom, 28)
+
+            ForEach(Array(text.components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, block in
+                let trimmed = block.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") {
+                    Text(trimmed.uppercased())
+                        .font(.system(size: 11, weight: .black)).kerning(1.5)
+                        .foregroundStyle(primary)
+                        .padding(.top, 24)
+                        .padding(.bottom, 8)
+                } else {
+                    Text(trimmed)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.92))
+                        .lineSpacing(6)
+                        .padding(.bottom, 20)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Not found
+
+    private var notFoundView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "quote.bubble")
+                .font(.system(size: 44))
+                .foregroundStyle(.white.opacity(0.2))
+            Text("LYRICS NOT FOUND")
+                .font(.system(size: 13, weight: .black)).kerning(2)
+                .foregroundStyle(.white.opacity(0.5))
+            Text("Genius couldn't match this track.\nTry opening in Safari to search manually.")
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.3))
+                .multilineTextAlignment(.center)
+            if let url = geniusSearchURL {
+                Link(destination: url) {
+                    Text("Search on Genius")
+                        .font(.system(size: 12, weight: .black)).kerning(1)
+                        .foregroundStyle(Color(red: 0.063, green: 0, blue: 0.663))
+                        .padding(.horizontal, 20).padding(.vertical, 10)
+                        .background(Color(red: 0.753, green: 0.757, blue: 1.0), in: Capsule())
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Helpers
+
+    private var geniusSearchURL: URL? {
+        let q = track.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return URL(string: "https://genius.com/search?q=\(q)")
+    }
+
+    private func loadLyrics() async {
         do {
-            if let url = try await GeniusService.shared.searchLyricsURL(
+            guard let pageURL = try await GeniusService.shared.searchLyricsURL(
                 title: track.title, artist: track.username
-            ) {
-                lyricsURL = url
+            ) else {
+                notFound = true; isLoading = false; return
+            }
+            let text = await GeniusService.shared.fetchLyricsText(from: pageURL)
+            if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                lyrics = text
             } else {
-                errorMsg = "No lyrics found for \"\(track.title)\"."
+                notFound = true
             }
         } catch {
-            errorMsg = "Could not load lyrics. Check your Genius token."
+            notFound = true
         }
-    }
-}
-
-// MARK: - WKWebView wrapper
-
-struct GeniusWebView: UIViewRepresentable {
-    let url: URL
-    @Binding var isLoading: Bool
-
-    func makeCoordinator() -> Coordinator { Coordinator(isLoading: $isLoading) }
-
-    func makeUIView(context: Context) -> WKWebView {
-        let wv = WKWebView()
-        wv.navigationDelegate = context.coordinator
-        wv.load(URLRequest(url: url))
-        return wv
-    }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
-
-    final class Coordinator: NSObject, WKNavigationDelegate {
-        @Binding var isLoading: Bool
-        init(isLoading: Binding<Bool>) { _isLoading = isLoading }
-
-        func webView(_ webView: WKWebView, didFinish _: WKNavigation!) { isLoading = false }
-        func webView(_ webView: WKWebView, didFail _: WKNavigation!, withError _: Error) { isLoading = false }
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError _: Error) { isLoading = false }
+        isLoading = false
     }
 }
