@@ -23,7 +23,7 @@ final class AudioPlayerService {
     private var sampleOffset:  AVAudioFramePosition = 0
     private var isActive:      Bool                 = false
     private var lastKnownTime: Double               = 0
-    private var downloadTask:  URLSessionDataTask?
+    private var downloadTask:  URLSessionDownloadTask?
     private var tempFileURL:   URL?
     private var timer:         Timer?
 
