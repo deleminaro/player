@@ -23,11 +23,28 @@ struct LyricsView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 14))
                             }
                         }
-                } else if let err = errorMsg {
-                    VStack(spacing: 14) {
-                        Image(systemName: "quote.bubble.fill").font(.system(size: 48)).foregroundStyle(.secondary)
-                        Text("Lyrics Not Found").font(.title3).fontWeight(.semibold)
-                        Text(err).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                } else if errorMsg != nil {
+                    VStack(spacing: 16) {
+                        Image(systemName: "quote.bubble")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.white.opacity(0.2))
+                        Text("LYRICS NOT FOUND")
+                            .font(.system(size: 13, weight: .black)).kerning(2)
+                            .foregroundStyle(.white.opacity(0.5))
+                        Text("Genius couldn't match this track.\nTry opening in Safari to search manually.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.3))
+                            .multilineTextAlignment(.center)
+                        if let searchURL = URL(string: "https://genius.com/search?q=\(track.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
+                            Link(destination: searchURL) {
+                                Text("Search on Genius")
+                                    .font(.system(size: 12, weight: .black)).kerning(1)
+                                    .foregroundStyle(Color(red: 0.063, green: 0, blue: 0.663))
+                                    .padding(.horizontal, 20).padding(.vertical, 10)
+                                    .background(Color(red: 0.753, green: 0.757, blue: 1.0), in: Capsule())
+                            }
+                            .padding(.top, 4)
+                        }
                     }
                     .padding(40)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -7,8 +7,9 @@ actor GeniusService {
 
     /// Returns the Genius web-page URL for the best-matching song, or nil if nothing found.
     func searchLyricsURL(title: String, artist: String) async throws -> URL? {
+        let q = "\(cleanTitle(title)) \(artist.trimmingCharacters(in: .whitespaces))"
         var comps = URLComponents(string: "\(base)/search")!
-        comps.queryItems = [URLQueryItem(name: "q", value: "\(title) \(artist)")]
+        comps.queryItems = [URLQueryItem(name: "q", value: q)]
         guard let url = comps.url else { return nil }
 
         var req = URLRequest(url: url)
@@ -24,7 +25,21 @@ actor GeniusService {
         return URL(string: firstHit.result.url)
     }
 
-    // MARK: - Private models
+    // MARK: - Title cleaning
+
+    private func cleanTitle(_ raw: String) -> String {
+        var s = raw
+        let patterns = [
+            #"\s*[\(\[][^)\]]*(?:prod\.?(?:\s+by)?|feat\.?|ft\.?|w\/)[^\)\]]*[\)\]]"#,
+            #"\s*[\(\[](?:prod\.?(?:\s+by)?|feat\.?|ft\.?|w\/)[^\)\]]*[\)\]]"#,
+            #"\s*\((?:original mix|remix|radio edit|extended mix)\)"#
+        ]
+        for p in patterns {
+            s = s.replacingOccurrences(of: p, with: "",
+                                       options: [.regularExpression, .caseInsensitive])
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     private struct GeniusSearchResponse: Decodable {
         let response: Response
