@@ -26,6 +26,7 @@ final class AudioPlayerService {
     private var downloadTask:  URLSessionDownloadTask?
     private var tempFileURL:   URL?
     private var timer:         Timer?
+    private var generation:    Int = 0
 
     init() {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
@@ -96,15 +97,18 @@ final class AudioPlayerService {
     }
 
     private func scheduleSegment(file: AVAudioFile, from offset: AVAudioFramePosition) {
+        generation += 1
+        let gen = generation
         playerNode.stop()
         let remaining = AVAudioFrameCount(max(0, file.length - offset))
         guard remaining > 0 else { return }
         playerNode.scheduleSegment(file, startingFrame: offset, frameCount: remaining, at: nil) {
             [weak self] in
             Task { @MainActor [weak self] in
-                self?.isActive = false
-                self?.onPlayStateChange?(false)
-                self?.onTrackEnd?()
+                guard let self, self.generation == gen else { return }
+                self.isActive = false
+                self.onPlayStateChange?(false)
+                self.onTrackEnd?()
             }
         }
     }
@@ -145,6 +149,7 @@ final class AudioPlayerService {
     func stop() {
         timer?.invalidate(); timer = nil
         downloadTask?.cancel(); downloadTask = nil
+        generation += 1
         playerNode.stop()
         isActive = false
         if let u = tempFileURL { try? FileManager.default.removeItem(at: u); tempFileURL = nil }

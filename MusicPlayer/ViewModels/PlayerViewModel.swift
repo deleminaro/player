@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import MediaPlayer
+import UIKit
 
 @MainActor
 final class PlayerViewModel: ObservableObject {
@@ -45,6 +46,15 @@ final class PlayerViewModel: ObservableObject {
         bindAudioCallbacks()
         loadPersisted()
         setupRemoteCommands()
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.saveRecent(); self?.saveQueue()
+                self?.saveLiked(); self?.saveSearches()
+            }
+        }
     }
 
     // MARK: - Audio callback bridge
@@ -81,13 +91,15 @@ final class PlayerViewModel: ObservableObject {
         Task {
             do {
                 guard let transcoding = track.media?.progressiveTranscoding else {
-                    playerState = .idle; return
+                    if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
+                    return
                 }
                 let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
+                guard currentTrack?.id == track.id else { return }
                 audio.play(url: url)
             } catch {
+                if currentTrack?.id == track.id { playerState = .idle }
                 print("[PlayerVM] play error: \(error.localizedDescription)")
-                playerState = .idle
             }
         }
     }
