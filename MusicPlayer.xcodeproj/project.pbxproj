@@ -79,6 +79,7 @@
 		BB100001BB100001BB100001 /* MusicPlayerWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlayerWidgets.swift; sourceTree = "<group>"; };
 		BB100002BB100002BB100002 /* MusicPlayerWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MusicPlayerWidgets.entitlements; sourceTree = "<group>"; };
 		BB100003BB100003BB100003 /* MusicPlayerWidgets.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = MusicPlayerWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB100004BB100004BB100004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +190,7 @@
 			children = (
 				BB100001BB100001BB100001 /* MusicPlayerWidgets.swift */,
 				BB100002BB100002BB100002 /* MusicPlayerWidgets.entitlements */,
+				BB100004BB100004BB100004 /* Info.plist */,
 			);
 			path = MusicPlayerWidgets;
 			sourceTree = "<group>";
@@ -509,9 +511,8 @@
 				CODE_SIGN_ENTITLEMENTS = MusicPlayerWidgets/MusicPlayerWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = MusicPlayerWidgets;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MusicPlayerWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -535,9 +536,8 @@
 				CODE_SIGN_ENTITLEMENTS = MusicPlayerWidgets/MusicPlayerWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = MusicPlayerWidgets;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MusicPlayerWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
