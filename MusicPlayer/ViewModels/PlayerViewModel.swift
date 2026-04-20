@@ -18,6 +18,14 @@ final class PlayerViewModel: ObservableObject {
     @Published var likedTracks:       [Track]      = []
     @Published var recentSearches:    [String]     = []
     @Published var showingNowPlaying: Bool         = false
+    @Published var isShuffling:       Bool         = false
+    @Published var isRepeating:       Bool         = false
+
+    var nextTrack: Track? {
+        guard let idx = queue.firstIndex(where: { $0.track.id == currentTrack?.id }),
+              idx + 1 < queue.count else { return nil }
+        return queue[idx + 1].track
+    }
 
     // MARK: - Services
 
@@ -103,14 +111,15 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Queue navigation
 
     func skipNext() {
+        if isRepeating, let t = currentTrack { play(t); return }
         guard !queue.isEmpty else { playerState = .idle; clearNowPlaying(); return }
         if let idx = currentIndex() {
-            let next = idx + 1
-            if next < queue.count {
-                play(queue[next].track)
+            if isShuffling {
+                let others = queue.indices.filter { $0 != idx }
+                if let r = others.randomElement() { play(queue[r].track) } else { playerState = .idle; clearNowPlaying() }
             } else {
-                playerState = .idle
-                clearNowPlaying()
+                let next = idx + 1
+                if next < queue.count { play(queue[next].track) } else { playerState = .idle; clearNowPlaying() }
             }
         } else {
             play(queue[0].track)
