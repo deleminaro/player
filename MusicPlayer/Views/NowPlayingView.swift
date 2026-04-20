@@ -5,6 +5,7 @@ struct NowPlayingView: View {
     @State private var showLyrics = false
     @State private var showQueue  = false
     @State private var showEQ     = false
+    @State private var showSpeed  = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private let primary   = Color(red: 0.753, green: 0.757, blue: 1.0)
@@ -71,6 +72,14 @@ struct NowPlayingView: View {
         }
         .sheet(isPresented: $showEQ) {
             EqualizerView().environmentObject(playerVM)
+        }
+        .sheet(isPresented: $showSpeed) {
+            SpeedPickerSheet(currentSpeed: $playerVM.playbackSpeed) { spd in
+                playerVM.setSpeed(spd)
+            }
+            .presentationDetents([.height(320)])
+            .presentationBackground(.ultraThinMaterial)
+            .presentationCornerRadius(28)
         }
     }
 
@@ -279,11 +288,7 @@ struct NowPlayingView: View {
 
             // Right: speed, queue
             HStack(spacing: 12) {
-                Menu {
-                    ForEach(speeds, id: \.self) { spd in
-                        Button(speedLabel(spd)) { playerVM.setSpeed(spd) }
-                    }
-                } label: {
+                Button { showSpeed = true } label: {
                     Text(speedLabel(playerVM.playbackSpeed))
                         .font(.system(size: 13, weight: .black))
                         .foregroundStyle(.white.opacity(0.8))
@@ -330,5 +335,82 @@ struct NowPlayingView: View {
             let v = CGFloat((rng >> 16) & 0xFFFF) / 65535.0
             return 0.2 + v * 0.8
         }
+    }
+}
+
+// MARK: - Speed picker sheet
+
+struct SpeedPickerSheet: View {
+    @Binding var currentSpeed: Float
+    let onSelect: (Float) -> Void
+    @Environment(\.dismiss) var dismiss
+
+    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
+
+    private struct SpeedMode {
+        let label: String
+        let icon: String
+        let speed: Float
+    }
+    private let modes: [SpeedMode] = [
+        SpeedMode(label: "Slowed",   icon: "person.wave.2",  speed: 0.8),
+        SpeedMode(label: "Default",  icon: "play.circle",    speed: 1.0),
+        SpeedMode(label: "Speedup",  icon: "speedometer",    speed: 1.5),
+    ]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Drag handle
+            Capsule()
+                .fill(Color.white.opacity(0.25))
+                .frame(width: 36, height: 4)
+                .padding(.top, 12)
+                .padding(.bottom, 20)
+
+            // Pitch note
+            HStack(spacing: 6) {
+                Image(systemName: "waveform")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(primary)
+                Text("PITCH IS PRESERVED AT ALL SPEEDS")
+                    .font(.system(size: 10, weight: .black)).kerning(1.5)
+                    .foregroundStyle(primary)
+            }
+            .padding(.horizontal, 20).padding(.vertical, 8)
+            .background(primary.opacity(0.12), in: Capsule())
+            .padding(.bottom, 24)
+
+            // Three mode buttons
+            HStack(spacing: 12) {
+                ForEach(modes, id: \.speed) { mode in
+                    let selected = abs(currentSpeed - mode.speed) < 0.01
+                    Button {
+                        onSelect(mode.speed)
+                        currentSpeed = mode.speed
+                        dismiss()
+                    } label: {
+                        VStack(spacing: 10) {
+                            Image(systemName: mode.icon)
+                                .font(.system(size: 28, weight: .regular))
+                                .foregroundStyle(selected ? .black : .white)
+                            Text(mode.label)
+                                .font(.custom("Courier", size: 16)).bold()
+                                .foregroundStyle(selected ? .black : .white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 22)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(selected ? .white : Color.white.opacity(0.1))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 20)
+
+            Spacer()
+        }
+        .preferredColorScheme(.dark)
     }
 }
