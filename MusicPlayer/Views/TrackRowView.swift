@@ -1,65 +1,57 @@
 import SwiftUI
 
-/// Reusable single-row component used in Search, Recently Played, and Queue.
 struct TrackRowView: View {
     let track: Track
-    var isPlaying: Bool = false
+    @State private var isPressed = false
+
+    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             ArtworkThumbnail(url: track.thumbnailArtworkURL)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(track.title)
-                    .font(.body)
-                    .fontWeight(isPlaying ? .semibold : .regular)
-                    .foregroundStyle(isPlaying ? Color.accentColor : .primary)
+                Text(track.title.uppercased())
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(isPressed ? Color.black : Color.white)
                     .lineLimit(1)
-
-                Text(track.username)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(track.username.uppercased())
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isPressed ? Color.black.opacity(0.6) : primary)
+                    .kerning(1.5)
                     .lineLimit(1)
             }
 
-            Spacer(minLength: 0)
-
-            if isPlaying {
-                Image(systemName: "waveform")
-                    .symbolEffect(.variableColor.iterative, isActive: true)
-                    .font(.caption)
-                    .foregroundStyle(Color.accentColor)
-            }
+            Spacer()
 
             Text(track.durationFormatted)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(isPressed ? Color.black.opacity(0.5) : Color.white.opacity(0.3))
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .background(isPressed ? Color.white : Color.clear)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
         .contentShape(Rectangle())
     }
 }
 
-/// Square artwork thumbnail with placeholder
 struct ArtworkThumbnail: View {
     let url: String?
-    var size: CGFloat = 50
 
     var body: some View {
-        AsyncImage(url: URL(string: url ?? "")) { phase in
-            switch phase {
-            case .success(let img):
-                img.resizable().aspectRatio(contentMode: .fill)
-            default:
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(.systemGray5))
-                    .overlay(
-                        Image(systemName: "music.note")
-                            .foregroundStyle(.secondary)
-                    )
-            }
+        AsyncImage(url: URL(string: url ?? "")) { img in
+            img.resizable().aspectRatio(contentMode: .fill)
+        } placeholder: {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.07))
+                .overlay(
+                    Image(systemName: "music.note")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.2))
+                )
         }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .frame(width: 48, height: 48)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

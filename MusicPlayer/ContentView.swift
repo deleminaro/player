@@ -3,23 +3,26 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
 
+    private let bg = Color(red: 0.075, green: 0.075, blue: 0.075)
+
     var body: some View {
         ZStack(alignment: .bottom) {
+            bg.ignoresSafeArea()
+
             TabView {
                 SearchView()
                     .tabItem { Label("Search",  systemImage: "magnifyingglass") }
-
                 RecentlyPlayedView()
                     .tabItem { Label("Recent",  systemImage: "clock") }
-
                 QueueView()
                     .tabItem { Label("Queue",   systemImage: "list.bullet") }
             }
+            .tint(Color(red: 0.753, green: 0.757, blue: 1.0))
 
-            // Mini-player floats above tab bar when something is loaded
             if playerVM.currentTrack != nil {
                 MiniPlayerView()
-                    .padding(.bottom, 49)          // height of default tab bar
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 58)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

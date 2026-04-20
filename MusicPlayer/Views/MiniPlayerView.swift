@@ -3,43 +3,84 @@ import SwiftUI
 struct MiniPlayerView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
 
+    private let primary   = Color(red: 0.753, green: 0.757, blue: 1.0)
+    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
+    private let bg        = Color(red: 0.110, green: 0.110, blue: 0.110)
+
     var body: some View {
-        HStack(spacing: 12) {
-            ArtworkThumbnail(url: playerVM.currentTrack?.thumbnailArtworkURL, size: 42)
+        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(playerVM.currentTrack?.title ?? "")
-                    .font(.callout).fontWeight(.medium).lineLimit(1)
-                Text(playerVM.currentTrack?.username ?? "")
-                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+        ZStack(alignment: .bottom) {
+            HStack(spacing: 12) {
+                // Artwork
+                AsyncImage(url: URL(string: playerVM.currentTrack?.thumbnailArtworkURL ?? "")) { img in
+                    img.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white.opacity(0.08))
+                }
+                .frame(width: 42, height: 42)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                // Track info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text((playerVM.currentTrack?.title ?? "").uppercased())
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text((playerVM.currentTrack?.username ?? "").uppercased())
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(primary)
+                        .kerning(1.5)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                // Play / Pause
+                Button {
+                    playerVM.togglePlayPause()
+                } label: {
+                    ZStack {
+                        Circle().fill(primary).frame(width: 38, height: 38)
+                        Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(onPrimary)
+                            .offset(x: playerVM.isPlaying ? 0 : 1)
+                    }
+                }
+
+                // Skip
+                Button { playerVM.skipNext() } label: {
+                    Image(systemName: "forward.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
 
-            Spacer(minLength: 0)
-
-            // Play / Pause
-            Button { playerVM.togglePlayPause() } label: {
-                Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+            // Progress line at bottom
+            GeometryReader { geo in
+                Rectangle()
+                    .fill(primary)
+                    .frame(width: geo.size.width * progress, height: 2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
-
-            // Skip forward
-            Button { playerVM.skipNext() } label: {
-                Image(systemName: "forward.fill")
-                    .font(.title3)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+            .frame(height: 2)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 4)
-        .padding(.horizontal, 10)
+        .background(
+            ZStack {
+                bg
+                Color.white.opacity(0.04)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 8)
         .onTapGesture { playerVM.showingNowPlaying = true }
     }
 }
