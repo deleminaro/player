@@ -22,8 +22,6 @@ struct NowPlayingView: View {
                             img.resizable().aspectRatio(contentMode: .fill)
                                 .frame(width: geo.size.width, height: geo.size.height)
                                 .clipped()
-                                .blur(radius: 28)
-                                .scaleEffect(1.15)
                         } placeholder: { Color.clear }
                     }
                     // Gradient: lighter on top so artwork shows, darker on bottom for readability

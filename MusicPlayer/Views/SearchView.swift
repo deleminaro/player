@@ -8,16 +8,10 @@ struct SearchView: View {
     @State private var isSearching = false
     @State private var searchError: String?
     @State private var searchTask: Task<Void, Never>?
-    @State private var source      = SearchSource.all
-
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgCard  = Color(red: 0.110, green: 0.110, blue: 0.110)
     private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
     private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
-
-    enum SearchSource: String, CaseIterable {
-        case all = "ALL", soundcloud = "SOUNDCLOUD", youtube = "YOUTUBE"
-    }
 
     var body: some View {
         NavigationStack {
@@ -53,28 +47,6 @@ struct SearchView: View {
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 14)
-
-                // Source filter
-                HStack(spacing: 8) {
-                    Text("SOURCE:")
-                        .font(.system(size: 9, weight: .black))
-                        .foregroundStyle(.white.opacity(0.3))
-                        .kerning(1.5)
-                    ForEach(SearchSource.allCases, id: \.self) { s in
-                        Button { source = s } label: {
-                            Text(s.rawValue)
-                                .font(.system(size: 10, weight: .black)).kerning(0.5)
-                                .foregroundStyle(source == s ? onPrimary : .white.opacity(0.55))
-                                .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(
-                                    source == s ? primary : Color.white.opacity(0.07),
-                                    in: Capsule()
-                                )
-                        }
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 16).padding(.bottom, 14)
 
                 Divider().background(Color.white.opacity(0.06))
 
