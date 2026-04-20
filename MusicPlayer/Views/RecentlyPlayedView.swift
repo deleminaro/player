@@ -10,10 +10,7 @@ struct RecentlyPlayedView: View {
                     emptyState
                 } else {
                     List(playerVM.recentlyPlayed) { track in
-                        TrackRowView(
-                            track: track,
-                            isPlaying: playerVM.currentTrack?.id == track.id && playerVM.isPlaying
-                        )
+                        TrackRowView(track: track)
                         .onTapGesture { tap(track) }
                         .swipeActions(edge: .trailing) {
                             Button {

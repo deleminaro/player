@@ -12,10 +12,7 @@ struct QueueView: View {
                 } else {
                     List {
                         ForEach(playerVM.queue) { item in
-                            TrackRowView(
-                                track: item.track,
-                                isPlaying: playerVM.currentTrack?.id == item.track.id
-                            )
+                            TrackRowView(track: item.track)
                             .onTapGesture { playerVM.play(item.track) }
                         }
                         .onDelete(perform: playerVM.removeFromQueue)

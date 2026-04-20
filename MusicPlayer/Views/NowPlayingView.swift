@@ -4,6 +4,7 @@ struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @State private var showLyrics = false
     @State private var showQueue  = false
+    @State private var showEQ     = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
@@ -162,6 +163,16 @@ struct NowPlayingView: View {
                         }
                         .foregroundStyle(.white.opacity(0.45))
                     }
+
+                    Spacer().frame(width: 28)
+
+                    Button { showEQ = true } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "slider.vertical.3").font(.system(size: 20))
+                            Text("EQ").font(.system(size: 8, weight: .black)).kerning(1)
+                        }
+                        .foregroundStyle(.white.opacity(0.45))
+                    }
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 22)
@@ -176,6 +187,9 @@ struct NowPlayingView: View {
         }
         .sheet(isPresented: $showQueue) {
             QueueView().environmentObject(playerVM)
+        }
+        .sheet(isPresented: $showEQ) {
+            EqualizerView().environmentObject(playerVM)
         }
     }
 

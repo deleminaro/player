@@ -4,122 +4,177 @@ import Foundation
 @MainActor
 final class AudioPlayerService {
 
-    // MARK: - Callbacks
     var onTrackEnd:        (() -> Void)?
     var onTimeUpdate:      ((Double) -> Void)?
     var onDurationReady:   ((Double) -> Void)?
     var onPlayStateChange: ((Bool) -> Void)?
     var onLoadingChange:   ((Bool) -> Void)?
 
-    // MARK: - Private state
-    private var player:        AVPlayer?
-    private var timeObserver:  Any?
-    private var statusObserver: NSKeyValueObservation?
-    private var lastReportedDuration: Double = 0
-    private(set) var currentSpeed: Float = 1.0
+    private let engine     = AVAudioEngine()
+    private let playerNode = AVAudioPlayerNode()
+    let eqNode             = AVAudioUnitEQ(numberOfBands: 5)
+    private let timePitch  = AVAudioUnitTimePitch()
+
+    private(set) var currentSpeed: Float  = 1.0
+    private(set) var eqGains: [Float]     = [0, 0, 0, 0, 0]
+
+    private var audioFile:     AVAudioFile?
+    private var trackDuration: Double               = 0
+    private var sampleOffset:  AVAudioFramePosition = 0
+    private var isActive:      Bool                 = false
+    private var lastKnownTime: Double               = 0
+    private var downloadTask:  URLSessionDataTask?
+    private var tempFileURL:   URL?
+    private var timer:         Timer?
 
     init() {
+        setupEngine()
         Task.detached(priority: .userInitiated) {
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try? AVAudioSession.sharedInstance().setActive(true)
         }
     }
 
+    private func setupEngine() {
+        engine.attach(playerNode)
+        engine.attach(eqNode)
+        engine.attach(timePitch)
+        engine.connect(playerNode, to: eqNode,    format: nil)
+        engine.connect(eqNode,    to: timePitch,  format: nil)
+        engine.connect(timePitch, to: engine.mainMixerNode, format: nil)
+
+        let freqs: [Float] = [60, 230, 910, 3600, 14000]
+        for (i, f) in freqs.enumerated() {
+            eqNode.bands[i].filterType = .parametric
+            eqNode.bands[i].frequency  = f
+            eqNode.bands[i].bandwidth  = 1.0
+            eqNode.bands[i].gain       = 0
+            eqNode.bands[i].bypass     = false
+        }
+        try? engine.start()
+    }
+
     // MARK: - Playback
 
     func play(url: URL) {
         stop()
-        lastReportedDuration = 0
         onLoadingChange?(true)
 
-        let item   = AVPlayerItem(url: url)
-        let player = AVPlayer(playerItem: item)
-        player.automaticallyWaitsToMinimizeStalling = true
-        self.player = player
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".mp3")
+        tempFileURL = tmp
 
-        // Start playback immediately — AVPlayer buffers automatically
-        player.play()
-        player.rate = currentSpeed
-
-        // KVO on status — report duration once known
-        statusObserver = item.observe(\.status, options: [.new]) { [weak self] item, _ in
+        downloadTask = URLSession.shared.downloadTask(with: url) { [weak self] local, _, err in
+            guard let self, let local, err == nil else {
+                Task { @MainActor [weak self] in self?.onLoadingChange?(false) }
+                return
+            }
+            try? FileManager.default.moveItem(at: local, to: tmp)
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                switch item.status {
-                case .readyToPlay:
-                    self.onLoadingChange?(false)
-                    self.onPlayStateChange?(true)
-                    let dur = item.duration.seconds
-                    if dur.isFinite && dur > 0 {
-                        self.lastReportedDuration = dur
-                        self.onDurationReady?(dur)
-                    }
-                case .failed:
-                    self.onLoadingChange?(false)
-                    self.onPlayStateChange?(false)
-                default: break
-                }
+                do    { try self.beginPlayback(from: tmp) }
+                catch { self.onLoadingChange?(false) }
             }
         }
+        downloadTask?.resume()
+    }
 
-        // Track end
-        NotificationCenter.default.addObserver(
-            self, selector: #selector(itemDidFinish),
-            name: .AVPlayerItemDidPlayToEndTime, object: item
-        )
+    private func beginPlayback(from url: URL) throws {
+        let file = try AVAudioFile(forReading: url)
+        audioFile     = file
+        trackDuration = Double(file.length) / file.processingFormat.sampleRate
+        sampleOffset  = 0
+        lastKnownTime = 0
 
-        // Periodic time + duration fallback
-        let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
-        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+        onDurationReady?(trackDuration)
+        scheduleSegment(file: file, from: 0)
+        if !engine.isRunning { try engine.start() }
+        playerNode.play()
+        timePitch.rate = currentSpeed
+        isActive = true
+        onLoadingChange?(false)
+        onPlayStateChange?(true)
+        startTimer()
+    }
+
+    private func scheduleSegment(file: AVAudioFile, from offset: AVAudioFramePosition) {
+        playerNode.stop()
+        let remaining = AVAudioFrameCount(max(0, file.length - offset))
+        guard remaining > 0 else { return }
+        playerNode.scheduleSegment(file, startingFrame: offset, frameCount: remaining, at: nil) {
+            [weak self] in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.onTimeUpdate?(time.seconds)
-                // Pick up duration if it became available after readyToPlay
-                let dur = self.player?.currentItem?.duration.seconds ?? 0
-                if dur.isFinite && dur > 0 && dur != self.lastReportedDuration {
-                    self.lastReportedDuration = dur
-                    self.onDurationReady?(dur)
-                }
+                self?.isActive = false
+                self?.onPlayStateChange?(false)
+                self?.onTrackEnd?()
             }
         }
     }
 
+    private func startTimer() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.tick() }
+        }
+    }
+
+    private func tick() {
+        guard let file = audioFile, file.processingFormat.sampleRate > 0 else { return }
+        let sr = file.processingFormat.sampleRate
+        if let nodeTime = playerNode.lastRenderTime,
+           let pt = playerNode.playerTime(forNodeTime: nodeTime), pt.sampleTime >= 0 {
+            let t = Double(sampleOffset) / sr + Double(pt.sampleTime) / sr
+            lastKnownTime = min(t, trackDuration)
+        }
+        onTimeUpdate?(lastKnownTime)
+    }
+
     func pause() {
-        player?.pause()
+        tick()
+        playerNode.pause()
+        isActive = false
         onPlayStateChange?(false)
     }
 
     func resume() {
-        player?.play()
-        player?.rate = currentSpeed
+        if !engine.isRunning { try? engine.start() }
+        playerNode.play()
+        timePitch.rate = currentSpeed
+        isActive = true
         onPlayStateChange?(true)
     }
 
     func stop() {
-        statusObserver?.invalidate()
-        statusObserver = nil
-        NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: nil)
-        if let obs = timeObserver { player?.removeTimeObserver(obs); timeObserver = nil }
-        player?.pause()
-        player = nil
-        onPlayStateChange?(false)
-        onTimeUpdate?(0)
-        onDurationReady?(0)
+        timer?.invalidate(); timer = nil
+        downloadTask?.cancel(); downloadTask = nil
+        playerNode.stop()
+        isActive = false
+        if let u = tempFileURL { try? FileManager.default.removeItem(at: u); tempFileURL = nil }
+        audioFile = nil; trackDuration = 0; sampleOffset = 0; lastKnownTime = 0
+        onPlayStateChange?(false); onTimeUpdate?(0); onDurationReady?(0)
     }
 
     func seek(to seconds: Double) {
-        let t = CMTime(seconds: seconds, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
-        player?.seek(to: t, toleranceBefore: .zero, toleranceAfter: .zero)
+        guard let file = audioFile, file.processingFormat.sampleRate > 0 else { return }
+        let sr = file.processingFormat.sampleRate
+        sampleOffset  = max(0, min(AVAudioFramePosition(seconds * sr), file.length - 1))
+        lastKnownTime = Double(sampleOffset) / sr
+        let wasPlaying = isActive
+        scheduleSegment(file: file, from: sampleOffset)
+        if !engine.isRunning { try? engine.start() }
+        playerNode.play()
+        timePitch.rate = currentSpeed
+        if !wasPlaying { playerNode.pause() }
     }
 
     func setSpeed(_ rate: Float) {
-        currentSpeed = rate
-        guard let player, player.rate != 0 else { return }
-        player.rate = rate
+        currentSpeed   = rate
+        timePitch.rate = rate
     }
 
-    @objc private func itemDidFinish() {
-        onPlayStateChange?(false)
-        onTrackEnd?()
+    func setEQGain(_ gain: Float, band: Int) {
+        guard band < eqNode.bands.count else { return }
+        eqNode.bands[band].gain = gain
+        if band < eqGains.count { eqGains[band] = gain }
     }
 }

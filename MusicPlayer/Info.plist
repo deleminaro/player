@@ -25,6 +25,9 @@
         <string>audio</string>
     </array>
 
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
     <!-- Allow HTTP connections to SoundCloud CDN and Genius -->
     <key>NSAppTransportSecurity</key>
     <dict>

@@ -29,10 +29,7 @@ struct SearchView: View {
                                message: "Search for songs, artists, or playlists.")
                 } else {
                     List(results) { track in
-                        TrackRowView(
-                            track: track,
-                            isPlaying: playerVM.currentTrack?.id == track.id && playerVM.isPlaying
-                        )
+                        TrackRowView(track: track)
                         .onTapGesture { tap(track) }
                         .swipeActions(edge: .trailing) {
                             Button {
