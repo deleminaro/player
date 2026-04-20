@@ -77,7 +77,7 @@ struct HomeView: View {
                         if let url = URL(string: featured?.highResArtworkURL ?? "") {
                             AsyncImage(url: url) { img in
                                 img.resizable().aspectRatio(contentMode: .fill)
-                                    .blur(radius: 24).opacity(0.25).scaleEffect(1.3)
+                                    .blur(radius: 18).opacity(0.65).scaleEffect(1.3)
                             } placeholder: { Color.clear }
                         }
                     }
@@ -85,7 +85,7 @@ struct HomeView: View {
                 )
                 .overlay(
                     LinearGradient(
-                        colors: [.clear, .black.opacity(0.7)],
+                        colors: [.black.opacity(0.1), .black.opacity(0.55)],
                         startPoint: .top, endPoint: .bottom
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 20))

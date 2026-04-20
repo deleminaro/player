@@ -73,7 +73,7 @@ struct LibraryView: View {
                         if let url = URL(string: playerVM.likedTracks.first?.highResArtworkURL ?? "") {
                             AsyncImage(url: url) { img in
                                 img.resizable().aspectRatio(contentMode: .fill)
-                                    .blur(radius: 20).opacity(0.3).scaleEffect(1.3)
+                                    .blur(radius: 16).opacity(0.65).scaleEffect(1.3)
                             } placeholder: { Color.clear }
                         }
                     }
@@ -81,7 +81,7 @@ struct LibraryView: View {
                 )
                 .overlay(
                     LinearGradient(
-                        colors: [.clear, .black.opacity(0.75)],
+                        colors: [.black.opacity(0.1), .black.opacity(0.6)],
                         startPoint: .top, endPoint: .bottom
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 20))

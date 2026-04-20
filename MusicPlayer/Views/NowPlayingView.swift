@@ -22,17 +22,17 @@ struct NowPlayingView: View {
                             img.resizable().aspectRatio(contentMode: .fill)
                                 .frame(width: geo.size.width, height: geo.size.height)
                                 .clipped()
-                                .blur(radius: 40)
+                                .blur(radius: 28)
                                 .scaleEffect(1.15)
                         } placeholder: { Color.clear }
                     }
-                    // Gradient: lighter on top, darker on bottom for readability
+                    // Gradient: lighter on top so artwork shows, darker on bottom for readability
                     LinearGradient(
                         colors: [
-                            .black.opacity(0.45),
-                            .black.opacity(0.55),
-                            .black.opacity(0.80),
-                            .black.opacity(0.92)
+                            .black.opacity(0.15),
+                            .black.opacity(0.35),
+                            .black.opacity(0.65),
+                            .black.opacity(0.88)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
