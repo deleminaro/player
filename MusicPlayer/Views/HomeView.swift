@@ -68,31 +68,27 @@ struct HomeView: View {
 
     private var heroCard: some View {
         ZStack(alignment: .bottomLeading) {
-            // Background
-            RoundedRectangle(cornerRadius: 20)
-                .fill(bgCard)
-                .frame(height: 240)
-                .overlay(
-                    Group {
-                        if let url = URL(string: featured?.highResArtworkURL ?? "") {
-                            AsyncImage(url: url) { img in
-                                img.resizable().aspectRatio(contentMode: .fill)
-                                    .blur(radius: 18).opacity(0.65).scaleEffect(1.3)
-                            } placeholder: { Color.clear }
-                        }
+            // Full artwork fill
+            Group {
+                if let url = URL(string: featured?.highResArtworkURL ?? "") {
+                    AsyncImage(url: url) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        bgCard
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                )
-                .overlay(
-                    LinearGradient(
-                        colors: [.black.opacity(0.1), .black.opacity(0.55)],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                )
+                } else {
+                    bgCard
+                }
+            }
+
+            // Gradient for text legibility
+            LinearGradient(
+                colors: [.black.opacity(0.05), .black.opacity(0.72)],
+                startPoint: .top, endPoint: .bottom
+            )
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("FEATURED RELEASE / \(Calendar.current.component(.year, from: Date()))")
+                Text("FEATURED RELEASE / " + String(Calendar.current.component(.year, from: Date())))
                     .font(.system(size: 9, weight: .black))
                     .foregroundStyle(primary.opacity(0.8))
                     .kerning(2)
@@ -134,6 +130,8 @@ struct HomeView: View {
             }
             .padding(20)
         }
+        .frame(height: 240)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
     // MARK: - Recently played grid

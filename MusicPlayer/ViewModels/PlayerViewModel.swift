@@ -54,6 +54,9 @@ final class PlayerViewModel: ObservableObject {
             guard let self else { return }
             self.isPlaying   = playing
             self.playerState = playing ? .playing : (self.currentTrack == nil ? .idle : .paused)
+            if playing, let track = self.currentTrack {
+                self.updateNowPlayingInfo(track: track)
+            }
             self.updateNowPlayingPlaybackState()
         }
         audio.onTimeUpdate    = { [weak self] t in self?.currentTime = t }

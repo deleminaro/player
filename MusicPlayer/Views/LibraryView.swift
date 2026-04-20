@@ -65,34 +65,37 @@ struct LibraryView: View {
 
     private var likedTracksCard: some View {
         ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(bgCard)
-                .frame(height: 200)
-                .overlay(
-                    Group {
-                        if let url = URL(string: playerVM.likedTracks.first?.highResArtworkURL ?? "") {
-                            AsyncImage(url: url) { img in
-                                img.resizable().aspectRatio(contentMode: .fill)
-                                    .blur(radius: 16).opacity(0.65).scaleEffect(1.3)
-                            } placeholder: { Color.clear }
+            // Artwork background: mosaic for 4+ tracks, single fill otherwise
+            Group {
+                if playerVM.likedTracks.count >= 4 {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 0), GridItem(.flexible(), spacing: 0)], spacing: 0) {
+                        ForEach(playerVM.likedTracks.prefix(4)) { t in
+                            AsyncImage(url: URL(string: t.highResArtworkURL ?? "")) { img in
+                                img.resizable().aspectRatio(1, contentMode: .fill)
+                            } placeholder: { bgCard }
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                )
-                .overlay(
-                    LinearGradient(
-                        colors: [.black.opacity(0.1), .black.opacity(0.6)],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                )
+                } else if let url = URL(string: playerVM.likedTracks.first?.highResArtworkURL ?? "") {
+                    AsyncImage(url: url) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: { bgCard }
+                } else {
+                    bgCard
+                }
+            }
+
+            // Gradient overlay
+            LinearGradient(
+                colors: [.black.opacity(0.05), .black.opacity(0.72)],
+                startPoint: .top, endPoint: .bottom
+            )
 
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("LIKED\nTRACKS")
                         .font(.system(size: 28, weight: .black))
                         .foregroundStyle(.white)
-                    Text("\(playerVM.likedTracks.count) CURATED MASTERPIECES")
+                    Text(String(playerVM.likedTracks.count) + " CURATED MASTERPIECES")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(primary.opacity(0.8))
                         .kerning(1.5)
@@ -117,6 +120,8 @@ struct LibraryView: View {
             }
             .padding(20)
         }
+        .frame(height: 200)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
         .onTapGesture { if !playerVM.likedTracks.isEmpty { showLiked = true } }
     }
 

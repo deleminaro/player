@@ -28,11 +28,9 @@ final class AudioPlayerService {
     private var timer:         Timer?
 
     init() {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+        try? AVAudioSession.sharedInstance().setActive(true)
         setupEngine()
-        Task.detached(priority: .userInitiated) {
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try? AVAudioSession.sharedInstance().setActive(true)
-        }
     }
 
     private func setupEngine() {
