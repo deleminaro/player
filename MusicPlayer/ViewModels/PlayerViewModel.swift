@@ -160,6 +160,12 @@ final class PlayerViewModel: ObservableObject {
         saveQueue()
     }
 
+    func playFromList(_ tracks: [Track], startingWith track: Track) {
+        queue = tracks.map { QueueItem(track: $0) }
+        saveQueue()
+        play(track)
+    }
+
     func removeFromQueue(at offsets: IndexSet) {
         queue.remove(atOffsets: offsets)
         saveQueue()

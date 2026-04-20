@@ -104,8 +104,7 @@ struct LibraryView: View {
                 Button {
                     guard !playerVM.likedTracks.isEmpty else { return }
                     let shuffled = playerVM.likedTracks.shuffled()
-                    for t in shuffled { playerVM.addToQueue(t) }
-                    playerVM.play(shuffled[0])
+                    playerVM.playFromList(shuffled, startingWith: shuffled[0])
                     playerVM.showingNowPlaying = true
                 } label: {
                     ZStack {
@@ -196,8 +195,7 @@ struct LikedTracksView: View {
                 TrackRowView(track: track)
                     .environmentObject(playerVM)
                     .onTapGesture {
-                        playerVM.addToQueue(track)
-                        playerVM.play(track)
+                        playerVM.playFromList(playerVM.likedTracks, startingWith: track)
                         playerVM.showingNowPlaying = true
                     }
                     .swipeActions(edge: .trailing) {
