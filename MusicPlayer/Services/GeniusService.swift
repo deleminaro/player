@@ -53,56 +53,74 @@ actor GeniusService {
     }
 
     private func parseLyricsHTML(_ html: String) -> String? {
+        // Strip <script> blocks first — __PRELOADED_STATE__ JSON contains
+        // "data-lyrics-container" as a string literal and would cause false matches.
+        let stripped = stripScripts(html)
+
         var blocks: [String] = []
-        var search = html[...]
+        var search = stripped[...]
         let marker = #"data-lyrics-container="true""#
+
         while let r = search.range(of: marker) {
             search = search[r.upperBound...]
             guard let tagEnd = search.range(of: ">") else { break }
             search = search[tagEnd.upperBound...]
+
             var block = ""
-            var depth = 1
+            var divDepth = 0   // nested <div> depth; when > 0 we skip (Genius injects ads here)
             var i = search.startIndex
-            while i < search.endIndex && depth > 0 {
+            var done = false
+
+            while i < search.endIndex && !done {
                 if search[i] == "<" {
                     let rest = search[i...]
-                    if rest.hasPrefix("</") {
-                        depth -= 1
-                        if depth == 0 { break }
-                        if let e = rest.range(of: ">") { i = rest[e.upperBound...].startIndex; continue }
-                    } else {
-                        depth += 1
-                        if let tagRange = rest.range(of: ">") {
-                            let tag = String(rest[rest.startIndex ..< tagRange.upperBound]).lowercased()
-                            if tag.contains("<br") { block += "\n" }
-                            i = rest[tagRange.upperBound...].startIndex
-                            continue
-                        }
+                    guard let end = rest.range(of: ">") else { break }
+                    let tag = String(rest[rest.startIndex ..< end.upperBound]).lowercased()
+
+                    if tag.hasPrefix("</div") {
+                        if divDepth > 0 { divDepth -= 1 } else { done = true }
+                    } else if tag.hasPrefix("<div") && !tag.hasSuffix("/>") {
+                        divDepth += 1          // skip inner div subtree
+                    } else if tag.hasPrefix("<br") {
+                        if divDepth == 0 { block += "\n" }
                     }
-                    break
+                    // all other tags (<a>, <span>, <i> …): skip tag markup, keep text
+
+                    i = rest[end.upperBound...].startIndex
                 } else {
-                    block.append(search[i])
+                    if divDepth == 0 { block.append(search[i]) }
+                    i = search.index(after: i)
                 }
-                i = search.index(after: i)
             }
-            let cleaned = stripTags(block)
-            if !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                blocks.append(cleaned)
-            }
+
+            let cleaned = decodeEntities(block)
+                .components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .joined(separator: "\n")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if !cleaned.isEmpty { blocks.append(cleaned) }
         }
+
         guard !blocks.isEmpty else { return nil }
         return blocks.joined(separator: "\n\n")
     }
 
-    private func stripTags(_ s: String) -> String {
-        var out = ""
-        var inTag = false
-        for ch in s {
-            if ch == "<" { inTag = true }
-            else if ch == ">" { inTag = false }
-            else if !inTag { out.append(ch) }
+    private func stripScripts(_ html: String) -> String {
+        var result = ""
+        var src = html[...]
+        while !src.isEmpty {
+            if let s = src.range(of: "<script", options: .caseInsensitive) {
+                result += src[src.startIndex ..< s.lowerBound]
+                src = src[s.lowerBound...]
+                if let e = src.range(of: "</script>", options: .caseInsensitive) {
+                    src = src[e.upperBound...]
+                } else { break }
+            } else {
+                result += src; break
+            }
         }
-        return decodeEntities(out)
+        return result
     }
 
     private func decodeEntities(_ s: String) -> String {
