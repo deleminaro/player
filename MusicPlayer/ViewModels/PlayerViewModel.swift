@@ -16,6 +16,8 @@ final class PlayerViewModel: ObservableObject {
     @Published var playbackSpeed:     Float        = 1.0
     @Published var queue:             [QueueItem]  = []
     @Published var recentlyPlayed:    [Track]      = []
+    @Published var likedTracks:       [Track]      = []
+    @Published var recentSearches:    [String]     = []
     @Published var showingNowPlaying: Bool         = false
 
     // MARK: - Services
@@ -29,9 +31,11 @@ final class PlayerViewModel: ObservableObject {
 
     // MARK: - Persistence keys
 
-    private let kRecent = "mp_recently_played"
-    private let kQueue  = "mp_queue"
-    private let wSuite  = "group.com.ivansolomakha.musicplayer"
+    private let kRecent   = "mp_recently_played"
+    private let kQueue    = "mp_queue"
+    private let kLiked    = "mp_liked_tracks"
+    private let kSearches = "mp_recent_searches"
+    private let wSuite    = "group.com.ivansolomakha.musicplayer"
 
     // MARK: - Init
 
@@ -95,6 +99,37 @@ final class PlayerViewModel: ObservableObject {
 
     func setEQGain(_ gain: Float, band: Int) {
         audio.setEQGain(gain, band: band)
+    }
+
+    // MARK: - Liked tracks
+
+    func isLiked(_ track: Track) -> Bool {
+        likedTracks.contains { $0.id == track.id }
+    }
+
+    func toggleLike(_ track: Track) {
+        if isLiked(track) {
+            likedTracks.removeAll { $0.id == track.id }
+        } else {
+            likedTracks.insert(track, at: 0)
+        }
+        saveLiked()
+    }
+
+    // MARK: - Recent searches
+
+    func addRecentSearch(_ query: String) {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return }
+        recentSearches.removeAll { $0.lowercased() == q.lowercased() }
+        recentSearches.insert(q, at: 0)
+        if recentSearches.count > 10 { recentSearches = Array(recentSearches.prefix(10)) }
+        saveSearches()
+    }
+
+    func clearRecentSearches() {
+        recentSearches = []
+        saveSearches()
     }
 
     // MARK: - Queue navigation
@@ -210,14 +245,20 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Persistence
 
     private func loadPersisted() {
-        if let data   = UserDefaults.standard.data(forKey: kRecent),
+        let d = UserDefaults.standard
+        if let data = d.data(forKey: kRecent),
            let tracks = try? JSONDecoder().decode([Track].self, from: data) {
             recentlyPlayed = tracks
         }
-        if let data   = UserDefaults.standard.data(forKey: kQueue),
+        if let data = d.data(forKey: kQueue),
            let tracks = try? JSONDecoder().decode([Track].self, from: data) {
             queue = tracks.map { QueueItem(track: $0) }
         }
+        if let data = d.data(forKey: kLiked),
+           let tracks = try? JSONDecoder().decode([Track].self, from: data) {
+            likedTracks = tracks
+        }
+        recentSearches = d.stringArray(forKey: kSearches) ?? []
     }
 
     private func saveRecent() {
@@ -231,5 +272,15 @@ final class PlayerViewModel: ObservableObject {
         if let data = try? JSONEncoder().encode(tracks) {
             UserDefaults.standard.set(data, forKey: kQueue)
         }
+    }
+
+    private func saveLiked() {
+        if let data = try? JSONEncoder().encode(likedTracks) {
+            UserDefaults.standard.set(data, forKey: kLiked)
+        }
+    }
+
+    private func saveSearches() {
+        UserDefaults.standard.set(recentSearches, forKey: kSearches)
     }
 }

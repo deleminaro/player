@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TrackRowView: View {
     let track: Track
+    @EnvironmentObject var playerVM: PlayerViewModel
     @State private var isPressed = false
 
     private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
@@ -27,6 +28,15 @@ struct TrackRowView: View {
             Text(track.durationFormatted)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(isPressed ? Color.black.opacity(0.5) : Color.white.opacity(0.3))
+
+            Button {
+                playerVM.toggleLike(track)
+            } label: {
+                Image(systemName: playerVM.isLiked(track) ? "heart.fill" : "heart")
+                    .font(.system(size: 14))
+                    .foregroundStyle(playerVM.isLiked(track) ? .pink : .white.opacity(0.25))
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)

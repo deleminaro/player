@@ -3,21 +3,28 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
 
-    private let bg = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         ZStack(alignment: .bottom) {
             bg.ignoresSafeArea()
 
             TabView {
+                HomeView()
+                    .tabItem {
+                        Label("Home", systemImage: "house.fill")
+                    }
                 SearchView()
-                    .tabItem { Label("Search",  systemImage: "magnifyingglass") }
-                RecentlyPlayedView()
-                    .tabItem { Label("Recent",  systemImage: "clock") }
-                QueueView()
-                    .tabItem { Label("Queue",   systemImage: "list.bullet") }
+                    .tabItem {
+                        Label("Search", systemImage: "magnifyingglass")
+                    }
+                LibraryView()
+                    .tabItem {
+                        Label("Library", systemImage: "building.columns.fill")
+                    }
             }
-            .tint(Color(red: 0.753, green: 0.757, blue: 1.0))
+            .tint(primary)
 
             if playerVM.currentTrack != nil {
                 MiniPlayerView()

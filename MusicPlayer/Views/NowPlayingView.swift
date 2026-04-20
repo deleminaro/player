@@ -146,6 +146,19 @@ struct NowPlayingView: View {
 
                     Spacer()
 
+                    Button {
+                        if let t = playerVM.currentTrack { playerVM.toggleLike(t) }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: playerVM.currentTrack.map { playerVM.isLiked($0) } == true ? "heart.fill" : "heart")
+                                .font(.system(size: 20))
+                            Text("LIKE").font(.system(size: 8, weight: .black)).kerning(1)
+                        }
+                        .foregroundStyle(playerVM.currentTrack.map { playerVM.isLiked($0) } == true ? .pink : .white.opacity(0.45))
+                    }
+
+                    Spacer().frame(width: 28)
+
                     Button { showLyrics = true } label: {
                         VStack(spacing: 4) {
                             Image(systemName: "quote.bubble").font(.system(size: 20))

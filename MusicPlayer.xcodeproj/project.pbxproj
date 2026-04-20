@@ -25,6 +25,8 @@
 		AA181010AA181010AA181010 /* Assets.xcassets in Resources */        = {isa = PBXBuildFile; fileRef = AA100010AA100010AA100010 /* Assets.xcassets */; };
 		AA181011AA181011AA181011 /* EqualizerView.swift in Sources */      = {isa = PBXBuildFile; fileRef = AA100013AA100013AA100013 /* EqualizerView.swift */; };
 		AA181012AA181012AA181012 /* MusicActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100014AA100014AA100014 /* MusicActivityAttributes.swift */; };
+		AA181014AA181014AA181014 /* HomeView.swift in Sources */           = {isa = PBXBuildFile; fileRef = AA100016AA100016AA100016 /* HomeView.swift */; };
+		AA181015AA181015AA181015 /* LibraryView.swift in Sources */        = {isa = PBXBuildFile; fileRef = AA100017AA100017AA100017 /* LibraryView.swift */; };
 		AA181013AA181013AA181013 /* MusicPlayerWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BB100003BB100003BB100003 /* MusicPlayerWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BB181001BB181001BB181001 /* MusicPlayerWidgets.swift in Sources */      = {isa = PBXBuildFile; fileRef = BB100001BB100001BB100001 /* MusicPlayerWidgets.swift */; };
 		BB181002BB181002BB181002 /* MusicActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100014AA100014AA100014 /* MusicActivityAttributes.swift */; };
@@ -75,6 +77,8 @@
 		AA100012AA100012AA100012 /* MusicPlayer.app */          = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA100013AA100013AA100013 /* EqualizerView.swift */      = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EqualizerView.swift;      sourceTree = "<group>"; };
 		AA100014AA100014AA100014 /* MusicActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicActivityAttributes.swift; sourceTree = "<group>"; };
+		AA100016AA100016AA100016 /* HomeView.swift */           = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift;           sourceTree = "<group>"; };
+		AA100017AA100017AA100017 /* LibraryView.swift */        = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift;        sourceTree = "<group>"; };
 		AA100015AA100015AA100015 /* MusicPlayer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MusicPlayer.entitlements; sourceTree = "<group>"; };
 		BB100001BB100001BB100001 /* MusicPlayerWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlayerWidgets.swift; sourceTree = "<group>"; };
 		BB100002BB100002BB100002 /* MusicPlayerWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MusicPlayerWidgets.entitlements; sourceTree = "<group>"; };
@@ -164,6 +168,8 @@
 				AA10000EAA10000EAA10000E /* RecentlyPlayedView.swift */,
 				AA10000FAA10000FAA10000F /* LyricsView.swift */,
 				AA100013AA100013AA100013 /* EqualizerView.swift */,
+				AA100016AA100016AA100016 /* HomeView.swift */,
+				AA100017AA100017AA100017 /* LibraryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -311,6 +317,8 @@
 				AA18100FAA18100FAA18100F /* LyricsView.swift in Sources */,
 				AA181011AA181011AA181011 /* EqualizerView.swift in Sources */,
 				AA181012AA181012AA181012 /* MusicActivityAttributes.swift in Sources */,
+				AA181014AA181014AA181014 /* HomeView.swift in Sources */,
+				AA181015AA181015AA181015 /* LibraryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
