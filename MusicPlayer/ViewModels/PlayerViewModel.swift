@@ -244,7 +244,7 @@ final class PlayerViewModel: ObservableObject {
     }
 
     private func updateNowPlayingInfo(track: Track) {
-        var info: [String: Any] = [
+        let info: [String: Any] = [
             MPMediaItemPropertyTitle:               track.title,
             MPMediaItemPropertyArtist:              track.username,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
