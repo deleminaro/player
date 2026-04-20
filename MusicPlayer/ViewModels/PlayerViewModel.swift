@@ -1,7 +1,6 @@
 import Foundation
 import Combine
-import WidgetKit
-import ActivityKit
+import MediaPlayer
 
 @MainActor
 final class PlayerViewModel: ObservableObject {
@@ -25,23 +24,19 @@ final class PlayerViewModel: ObservableObject {
     let audio = AudioPlayerService()
     private let sc = SoundCloudService.shared
 
-    // MARK: - Live Activity
-
-    private var liveActivity: Activity<MusicActivityAttributes>?
-
     // MARK: - Persistence keys
 
     private let kRecent   = "mp_recently_played"
     private let kQueue    = "mp_queue"
     private let kLiked    = "mp_liked_tracks"
     private let kSearches = "mp_recent_searches"
-    private let wSuite    = "group.com.ivansolomakha.musicplayer"
 
     // MARK: - Init
 
     init() {
         bindAudioCallbacks()
         loadPersisted()
+        setupRemoteCommands()
     }
 
     // MARK: - Audio callback bridge
@@ -51,10 +46,13 @@ final class PlayerViewModel: ObservableObject {
             guard let self else { return }
             self.isPlaying   = playing
             self.playerState = playing ? .playing : (self.currentTrack == nil ? .idle : .paused)
-            self.updateLiveActivity()
+            self.updateNowPlayingPlaybackState()
         }
-        audio.onTimeUpdate    = { [weak self] t  in self?.currentTime = t }
-        audio.onDurationReady = { [weak self] d  in self?.duration    = d }
+        audio.onTimeUpdate    = { [weak self] t in self?.currentTime = t }
+        audio.onDurationReady = { [weak self] d in
+            self?.duration = d
+            self?.updateNowPlayingDuration(d)
+        }
         audio.onLoadingChange = { [weak self] on in
             if on { self?.playerState = .loading }
         }
@@ -67,8 +65,7 @@ final class PlayerViewModel: ObservableObject {
         currentTrack = track
         playerState  = .loading
         addToRecent(track)
-        updateWidgetData(track: track)
-        startLiveActivity(track: track)
+        updateNowPlayingInfo(track: track)
 
         Task {
             do {
@@ -90,15 +87,63 @@ final class PlayerViewModel: ObservableObject {
 
     func seek(to seconds: Double) {
         audio.seek(to: seconds)
+        updateNowPlayingElapsed(seconds)
     }
 
     func setSpeed(_ rate: Float) {
         playbackSpeed = rate
         audio.setSpeed(rate)
+        updateNowPlayingPlaybackState()
     }
 
     func setEQGain(_ gain: Float, band: Int) {
         audio.setEQGain(gain, band: band)
+    }
+
+    // MARK: - Queue navigation
+
+    func skipNext() {
+        guard !queue.isEmpty else { playerState = .idle; clearNowPlaying(); return }
+        if let idx = currentIndex() {
+            let next = idx + 1
+            if next < queue.count {
+                play(queue[next].track)
+            } else {
+                playerState = .idle
+                clearNowPlaying()
+            }
+        } else {
+            play(queue[0].track)
+        }
+    }
+
+    func skipPrevious() {
+        if currentTime > 3 { seek(to: 0); return }
+        guard let idx = currentIndex(), idx > 0 else { seek(to: 0); return }
+        play(queue[idx - 1].track)
+    }
+
+    private func currentIndex() -> Int? {
+        guard let id = currentTrack?.id else { return nil }
+        return queue.firstIndex { $0.track.id == id }
+    }
+
+    // MARK: - Queue management
+
+    func addToQueue(_ track: Track) {
+        guard !queue.contains(where: { $0.track.id == track.id }) else { return }
+        queue.append(QueueItem(track: track))
+        saveQueue()
+    }
+
+    func removeFromQueue(at offsets: IndexSet) {
+        queue.remove(atOffsets: offsets)
+        saveQueue()
+    }
+
+    func moveInQueue(from source: IndexSet, to destination: Int) {
+        queue.move(fromOffsets: source, toOffset: destination)
+        saveQueue()
     }
 
     // MARK: - Liked tracks
@@ -132,52 +177,6 @@ final class PlayerViewModel: ObservableObject {
         saveSearches()
     }
 
-    // MARK: - Queue navigation
-
-    func skipNext() {
-        guard !queue.isEmpty else { playerState = .idle; endLiveActivity(); return }
-        if let idx = currentIndex() {
-            let next = idx + 1
-            if next < queue.count {
-                play(queue[next].track)
-            } else {
-                playerState = .idle
-                endLiveActivity()
-            }
-        } else {
-            play(queue[0].track)
-        }
-    }
-
-    func skipPrevious() {
-        if currentTime > 3 { audio.seek(to: 0); return }
-        guard let idx = currentIndex(), idx > 0 else { audio.seek(to: 0); return }
-        play(queue[idx - 1].track)
-    }
-
-    private func currentIndex() -> Int? {
-        guard let id = currentTrack?.id else { return nil }
-        return queue.firstIndex { $0.track.id == id }
-    }
-
-    // MARK: - Queue management
-
-    func addToQueue(_ track: Track) {
-        guard !queue.contains(where: { $0.track.id == track.id }) else { return }
-        queue.append(QueueItem(track: track))
-        saveQueue()
-    }
-
-    func removeFromQueue(at offsets: IndexSet) {
-        queue.remove(atOffsets: offsets)
-        saveQueue()
-    }
-
-    func moveInQueue(from source: IndexSet, to destination: Int) {
-        queue.move(fromOffsets: source, toOffset: destination)
-        saveQueue()
-    }
-
     // MARK: - Recently played
 
     private func addToRecent(_ track: Track) {
@@ -187,59 +186,87 @@ final class PlayerViewModel: ObservableObject {
         saveRecent()
     }
 
-    // MARK: - Widget data
+    // MARK: - MPNowPlayingInfoCenter
 
-    private func updateWidgetData(track: Track) {
-        guard let defaults = UserDefaults(suiteName: wSuite) else { return }
-        defaults.set(track.title,    forKey: "widget_title")
-        defaults.set(track.username, forKey: "widget_artist")
-        defaults.set(track.highResArtworkURL ?? track.artworkURL, forKey: "widget_artwork")
-        WidgetCenter.shared.reloadAllTimelines()
-    }
+    private func setupRemoteCommands() {
+        let center = MPRemoteCommandCenter.shared()
 
-    // MARK: - Live Activity
-
-    private func startLiveActivity(track: Track) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        endLiveActivity()
-        let state = MusicActivityAttributes.ContentState(
-            title:      track.title,
-            artist:     track.username,
-            artworkURL: track.highResArtworkURL ?? track.artworkURL ?? "",
-            isPlaying:  true,
-            progress:   0
-        )
-        liveActivity = try? Activity<MusicActivityAttributes>.request(
-            attributes: MusicActivityAttributes(),
-            content: ActivityContent(state: state, staleDate: nil),
-            pushType: nil
-        )
-    }
-
-    private func updateLiveActivity() {
-        guard let activity = liveActivity else { return }
-        let progress = duration > 0 ? min(1, max(0, currentTime / duration)) : 0
-        let state = MusicActivityAttributes.ContentState(
-            title:      currentTrack?.title    ?? "",
-            artist:     currentTrack?.username ?? "",
-            artworkURL: currentTrack?.highResArtworkURL ?? currentTrack?.artworkURL ?? "",
-            isPlaying:  isPlaying,
-            progress:   progress
-        )
-        Task {
-            await activity.update(ActivityContent(state: state, staleDate: nil))
+        center.playCommand.isEnabled = true
+        center.playCommand.addTarget { [weak self] _ in
+            self?.audio.resume(); return .success
+        }
+        center.pauseCommand.isEnabled = true
+        center.pauseCommand.addTarget { [weak self] _ in
+            self?.audio.pause(); return .success
+        }
+        center.togglePlayPauseCommand.isEnabled = true
+        center.togglePlayPauseCommand.addTarget { [weak self] _ in
+            self?.togglePlayPause(); return .success
+        }
+        center.nextTrackCommand.isEnabled = true
+        center.nextTrackCommand.addTarget { [weak self] _ in
+            self?.skipNext(); return .success
+        }
+        center.previousTrackCommand.isEnabled = true
+        center.previousTrackCommand.addTarget { [weak self] _ in
+            self?.skipPrevious(); return .success
+        }
+        center.changePlaybackPositionCommand.isEnabled = true
+        center.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let e = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
+            self?.seek(to: e.positionTime)
+            return .success
         }
     }
 
-    private func endLiveActivity() {
-        guard let activity = liveActivity else { return }
-        liveActivity = nil
-        Task {
-            let state = MusicActivityAttributes.ContentState(
-                title: "", artist: "", artworkURL: "", isPlaying: false, progress: 0
-            )
-            await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .immediate)
+    private func updateNowPlayingInfo(track: Track) {
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle:               track.title,
+            MPMediaItemPropertyArtist:              track.username,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
+            MPMediaItemPropertyPlaybackDuration:    duration > 0 ? duration : Double(track.duration) / 1000,
+            MPNowPlayingInfoPropertyPlaybackRate:   1.0,
+            MPNowPlayingInfoPropertyDefaultPlaybackRate: 1.0
+        ]
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+
+        // Fetch artwork in background
+        if let urlStr = track.highResArtworkURL ?? track.artworkURL,
+           let url = URL(string: urlStr) {
+            Task.detached {
+                guard let (data, _) = try? await URLSession.shared.data(from: url),
+                      let image = UIImage(data: data) else { return }
+                let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+                await MainActor.run {
+                    var updated = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? info
+                    updated[MPMediaItemPropertyArtwork] = artwork
+                    MPNowPlayingInfoCenter.default().nowPlayingInfo = updated
+                }
+            }
         }
+    }
+
+    private func updateNowPlayingPlaybackState() {
+        guard var info = MPNowPlayingInfoCenter.default().nowPlayingInfo else { return }
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        info[MPNowPlayingInfoPropertyPlaybackRate]        = isPlaying ? Double(playbackSpeed) : 0.0
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    private func updateNowPlayingDuration(_ d: Double) {
+        guard var info = MPNowPlayingInfoCenter.default().nowPlayingInfo else { return }
+        info[MPMediaItemPropertyPlaybackDuration] = d
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    private func updateNowPlayingElapsed(_ t: Double) {
+        guard var info = MPNowPlayingInfoCenter.default().nowPlayingInfo else { return }
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = t
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    private func clearNowPlaying() {
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
     // MARK: - Persistence
