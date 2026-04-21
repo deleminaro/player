@@ -115,9 +115,11 @@ final class AudioPlayerService {
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.tick() }
         }
+        // Use .common so timer fires during scroll/interaction, not just when idle
+        RunLoop.main.add(timer!, forMode: .common)
     }
 
     private func tick() {

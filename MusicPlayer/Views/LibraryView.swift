@@ -169,16 +169,15 @@ struct LikedTracksView: View {
     var body: some View {
         NavigationStack {
             List(playerVM.likedTracks) { track in
-                TrackRowView(track: track)
-                    .environmentObject(playerVM)
+                TrackRowView(track: track,
+                             isLiked: playerVM.isLiked(track),
+                             onToggleLike: { playerVM.toggleLike(track) })
                     .onTapGesture {
                         playerVM.playFromList(playerVM.likedTracks, startingWith: track)
                         playerVM.showingNowPlaying = true
                     }
                     .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            playerVM.toggleLike(track)
-                        } label: {
+                        Button(role: .destructive) { playerVM.toggleLike(track) } label: {
                             Label("Unlike", systemImage: "heart.slash")
                         }
                     }

@@ -194,17 +194,16 @@ struct SearchView: View {
     private var resultsList: some View {
         List {
             ForEach(results) { track in
-                TrackRowView(track: track)
-                    .environmentObject(playerVM)
+                TrackRowView(track: track,
+                             isLiked: playerVM.isLiked(track),
+                             onToggleLike: { playerVM.toggleLike(track) })
                     .onTapGesture { tap(track) }
                     .swipeActions(edge: .trailing) {
                         Button { playerVM.addToQueue(track) } label: {
                             Label("Queue", systemImage: "plus")
                         }
                         .tint(primary)
-                        Button {
-                            playerVM.toggleLike(track)
-                        } label: {
+                        Button { playerVM.toggleLike(track) } label: {
                             Label(playerVM.isLiked(track) ? "Unlike" : "Like",
                                   systemImage: playerVM.isLiked(track) ? "heart.slash" : "heart")
                         }

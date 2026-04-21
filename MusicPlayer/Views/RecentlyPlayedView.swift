@@ -10,12 +10,12 @@ struct RecentlyPlayedView: View {
                     emptyState
                 } else {
                     List(playerVM.recentlyPlayed) { track in
-                        TrackRowView(track: track)
+                        TrackRowView(track: track,
+                                    isLiked: playerVM.isLiked(track),
+                                    onToggleLike: { playerVM.toggleLike(track) })
                         .onTapGesture { tap(track) }
                         .swipeActions(edge: .trailing) {
-                            Button {
-                                playerVM.addToQueue(track)
-                            } label: {
+                            Button { playerVM.addToQueue(track) } label: {
                                 Label("Queue", systemImage: "plus")
                             }
                             .tint(.blue)

@@ -12,7 +12,9 @@ struct QueueView: View {
                 } else {
                     List {
                         ForEach(playerVM.queue) { item in
-                            TrackRowView(track: item.track)
+                            TrackRowView(track: item.track,
+                                        isLiked: playerVM.isLiked(item.track),
+                                        onToggleLike: { playerVM.toggleLike(item.track) })
                             .onTapGesture { playerVM.play(item.track) }
                         }
                         .onDelete(perform: playerVM.removeFromQueue)
