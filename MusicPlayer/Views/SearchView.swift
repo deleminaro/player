@@ -24,9 +24,11 @@ struct SearchView: View {
     @State private var query        = ""
     @State private var results:     [Track] = []
     @State private var isSearching  = false
+    @State private var isLoadingMore = false
     @State private var searchError: String?
     @State private var searchTask:  Task<Void, Never>?
     @State private var filter       = SearchFilter.all
+    @State private var currentQuery = ""
     @FocusState private var focused: Bool
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
@@ -190,25 +192,35 @@ struct SearchView: View {
     // MARK: - Results list
 
     private var resultsList: some View {
-        List(results) { track in
-            TrackRowView(track: track)
-                .environmentObject(playerVM)
-                .onTapGesture { tap(track) }
-                .swipeActions(edge: .trailing) {
-                    Button { playerVM.addToQueue(track) } label: {
-                        Label("Queue", systemImage: "plus")
+        List {
+            ForEach(results) { track in
+                TrackRowView(track: track)
+                    .environmentObject(playerVM)
+                    .onTapGesture { tap(track) }
+                    .swipeActions(edge: .trailing) {
+                        Button { playerVM.addToQueue(track) } label: {
+                            Label("Queue", systemImage: "plus")
+                        }
+                        .tint(primary)
+                        Button {
+                            playerVM.toggleLike(track)
+                        } label: {
+                            Label(playerVM.isLiked(track) ? "Unlike" : "Like",
+                                  systemImage: playerVM.isLiked(track) ? "heart.slash" : "heart")
+                        }
+                        .tint(.pink)
                     }
-                    .tint(primary)
-                    Button {
-                        playerVM.toggleLike(track)
-                    } label: {
-                        Label(playerVM.isLiked(track) ? "Unlike" : "Like",
-                              systemImage: playerVM.isLiked(track) ? "heart.slash" : "heart")
+                    .listRowBackground(bg)
+                    .listRowSeparatorTint(Color.white.opacity(0.06))
+                    .onAppear {
+                        if track.id == results.last?.id { loadMore() }
                     }
-                    .tint(.pink)
-                }
-                .listRowBackground(bg)
-                .listRowSeparatorTint(Color.white.opacity(0.06))
+            }
+            if isLoadingMore {
+                HStack { Spacer(); ProgressView().tint(primary); Spacer() }
+                    .listRowBackground(bg)
+                    .listRowSeparatorTint(.clear)
+            }
         }
         .listStyle(.plain)
     }
@@ -274,12 +286,25 @@ struct SearchView: View {
         isSearching = true
         defer { isSearching = false }
         do {
-            let tracks = try await SoundCloudService.shared.search(query: q)
+            let tracks = try await SoundCloudService.shared.search(query: q, offset: 0)
             guard !Task.isCancelled else { return }
-            // Client-side filter (all results are tracks; filter acts as visual selection)
+            currentQuery = q
             results = tracks
         } catch {
             searchError = error.localizedDescription
+        }
+    }
+
+    private func loadMore() {
+        guard !isLoadingMore, !isSearching, !currentQuery.isEmpty else { return }
+        isLoadingMore = true
+        Task {
+            do {
+                let more = try await SoundCloudService.shared.search(query: currentQuery, offset: results.count)
+                let newTracks = more.filter { t in !results.contains(where: { $0.id == t.id }) }
+                results.append(contentsOf: newTracks)
+            } catch {}
+            isLoadingMore = false
         }
     }
 }

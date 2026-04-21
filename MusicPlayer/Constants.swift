@@ -7,7 +7,7 @@ enum Constants {
 
     enum SoundCloud {
         static let baseURL    = "https://api-v2.soundcloud.com"
-        static let searchLimit = 20
+        static let searchLimit = 50
     }
 
     enum Genius {

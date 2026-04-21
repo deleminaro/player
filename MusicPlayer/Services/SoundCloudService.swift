@@ -7,7 +7,7 @@ actor SoundCloudService {
 
     // MARK: - Search
 
-    func search(query: String) async throws -> [Track] {
+    func search(query: String, offset: Int = 0) async throws -> [Track] {
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
 
         var comps = URLComponents(string: "\(base)/search/tracks")!
@@ -15,7 +15,7 @@ actor SoundCloudService {
             URLQueryItem(name: "q",         value: query),
             URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
             URLQueryItem(name: "limit",     value: "\(Constants.SoundCloud.searchLimit)"),
-            URLQueryItem(name: "offset",    value: "0"),
+            URLQueryItem(name: "offset",    value: "\(offset)"),
         ]
         guard let url = comps.url else { throw SCError.invalidURL }
 
