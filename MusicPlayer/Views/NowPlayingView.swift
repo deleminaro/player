@@ -176,18 +176,22 @@ struct NowPlayingView: View {
 
         return VStack(spacing: 6) {
             GeometryReader { geo in
-                HStack(alignment: .center, spacing: geo.size.width / CGFloat(bars.count) * 0.25) {
-                    ForEach(bars.indices, id: \.self) { i in
+                Canvas { ctx, size in
+                    let count = CGFloat(bars.count)
+                    let step  = size.width / count
+                    let barW  = max(2, step * 0.72)
+                    for (i, h) in bars.enumerated() {
                         let filled = Double(i) / Double(bars.count) < progress
-                        Capsule()
-                            .fill(filled ? primary : Color.white.opacity(0.22))
-                            .frame(
-                                width: max(2, geo.size.width / CGFloat(bars.count) * 0.72),
-                                height: bars[i] * geo.size.height
-                            )
+                        let barH = h * size.height
+                        let rect = CGRect(
+                            x: CGFloat(i) * step + (step - barW) / 2,
+                            y: (size.height - barH) / 2,
+                            width: barW, height: barH
+                        )
+                        ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
+                                 with: .color(filled ? primary : Color.white.opacity(0.22)))
                     }
                 }
-                .frame(maxHeight: .infinity, alignment: .center)
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0).onChanged { v in
                     let pct = max(0, min(1, v.location.x / geo.size.width))

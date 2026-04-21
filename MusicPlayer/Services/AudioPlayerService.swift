@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import UIKit
 
 @MainActor
 final class AudioPlayerService {
@@ -30,6 +31,23 @@ final class AudioPlayerService {
 
     init() {
         setupEngine()
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.timer?.invalidate(); self?.timer = nil
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.isActive else { return }
+                self.startTimer()
+            }
+        }
     }
 
     private func activateAudioSession() {
@@ -125,7 +143,7 @@ final class AudioPlayerService {
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.tick() }
         }
         // Use .common so timer fires during scroll/interaction, not just when idle
