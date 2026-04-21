@@ -8,9 +8,38 @@ actor SoundCloudService {
     // MARK: - Search
 
     func search(query: String, offset: Int = 0) async throws -> [Track] {
-        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
+        try await searchEndpoint("/search/tracks", query: query, offset: offset,
+                                 as: SearchResponse<Track>.self).collection
+    }
 
-        var comps = URLComponents(string: "\(base)/search/tracks")!
+    func searchPlaylists(query: String, offset: Int = 0) async throws -> [SCPlaylist] {
+        try await searchEndpoint("/search/playlists", query: query, offset: offset,
+                                 as: SearchResponse<SCPlaylist>.self).collection
+    }
+
+    func searchAlbums(query: String, offset: Int = 0) async throws -> [SCPlaylist] {
+        try await searchEndpoint("/search/albums", query: query, offset: offset,
+                                 as: SearchResponse<SCPlaylist>.self).collection
+    }
+
+    func searchArtists(query: String, offset: Int = 0) async throws -> [SCArtist] {
+        try await searchEndpoint("/search/users", query: query, offset: offset,
+                                 as: SearchResponse<SCArtist>.self).collection
+    }
+
+    func fetchPlaylistTracks(id: Int) async throws -> [Track] {
+        var comps = URLComponents(string: "\(base)/playlists/\(id)")!
+        comps.queryItems = [URLQueryItem(name: "client_id", value: Constants.soundcloudClientID)]
+        guard let url = comps.url else { throw SCError.invalidURL }
+        let (data, resp) = try await URLSession.shared.data(from: url)
+        try validate(resp)
+        struct Detail: Decodable { let tracks: [Track]? }
+        return (try? JSONDecoder().decode(Detail.self, from: data).tracks) ?? []
+    }
+
+    private func searchEndpoint<T: Decodable>(_ path: String, query: String, offset: Int,
+                                              as type: T.Type) async throws -> T {
+        var comps = URLComponents(string: "\(base)\(path)")!
         comps.queryItems = [
             URLQueryItem(name: "q",         value: query),
             URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
@@ -18,12 +47,9 @@ actor SoundCloudService {
             URLQueryItem(name: "offset",    value: "\(offset)"),
         ]
         guard let url = comps.url else { throw SCError.invalidURL }
-
         let (data, resp) = try await URLSession.shared.data(from: url)
         try validate(resp)
-
-        let decoded = try JSONDecoder().decode(SearchResponse.self, from: data)
-        return decoded.collection
+        return try JSONDecoder().decode(type, from: data)
     }
 
     // MARK: - Stream URL resolution
@@ -54,8 +80,8 @@ actor SoundCloudService {
 
     // MARK: - Private models
 
-    private struct SearchResponse: Decodable {
-        let collection: [Track]
+    private struct SearchResponse<T: Decodable>: Decodable {
+        let collection: [T]
     }
 
     private struct StreamURLResponse: Decodable {

@@ -108,3 +108,56 @@ struct QueueItem: Identifiable {
     let id   = UUID()
     let track: Track
 }
+
+// MARK: - SoundCloud Playlist
+
+struct SCPlaylist: Identifiable {
+    let id: Int
+    let title: String
+    let username: String
+    let artworkURL: String?
+    let trackCount: Int
+
+    var thumbnailArtworkURL: String? {
+        artworkURL?
+            .replacingOccurrences(of: "-large.",   with: "-t300x300.")
+            .replacingOccurrences(of: "-t500x500.", with: "-t300x300.")
+    }
+}
+
+extension SCPlaylist: Decodable {
+    private enum CK: String, CodingKey { case id, title, user
+        case artworkURL = "artwork_url"; case trackCount = "track_count" }
+    private enum UK: String, CodingKey { case username }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CK.self)
+        id         = try c.decode(Int.self, forKey: .id)
+        title      = try c.decode(String.self, forKey: .title)
+        artworkURL = try c.decodeIfPresent(String.self, forKey: .artworkURL)
+        trackCount = (try? c.decode(Int.self, forKey: .trackCount)) ?? 0
+        let u = try c.nestedContainer(keyedBy: UK.self, forKey: .user)
+        username   = try u.decode(String.self, forKey: .username)
+    }
+}
+
+// MARK: - SoundCloud Artist
+
+struct SCArtist: Identifiable, Decodable {
+    let id: Int
+    let username: String
+    let avatarURL: String?
+    let followersCount: Int?
+
+    var formattedFollowers: String {
+        guard let n = followersCount else { return "" }
+        if n >= 1_000_000 { return String(format: "%.1fM followers", Double(n) / 1_000_000) }
+        if n >= 1_000     { return String(format: "%.0fK followers", Double(n) / 1_000) }
+        return "\(n) followers"
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, username
+        case avatarURL      = "avatar_url"
+        case followersCount = "followers_count"
+    }
+}
