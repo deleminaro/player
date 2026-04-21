@@ -3,10 +3,11 @@ import SwiftUI
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
-    @State private var showLyrics = false
-    @State private var showQueue  = false
-    @State private var showEQ     = false
-    @State private var showSpeed  = false
+    @State private var showLyrics        = false
+    @State private var showQueue         = false
+    @State private var showEQ            = false
+    @State private var showSpeed         = false
+    @State private var showAddToPlaylist = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private let bg        = Color(red: 0.075, green: 0.075, blue: 0.075)
@@ -82,6 +83,16 @@ struct NowPlayingView: View {
             .presentationBackground(.ultraThinMaterial)
             .presentationCornerRadius(28)
         }
+        .sheet(isPresented: $showAddToPlaylist) {
+            if let track = playerVM.currentTrack {
+                AddToPlaylistSheet(track: track)
+                    .environmentObject(playerVM)
+                    .environmentObject(themeManager)
+                    .presentationDetents([.medium, .large])
+                    .presentationBackground(Color(red: 0.075, green: 0.075, blue: 0.075))
+                    .presentationCornerRadius(28)
+            }
+        }
     }
 
     // MARK: - Top bar
@@ -130,6 +141,7 @@ struct NowPlayingView: View {
                 Button { showEQ = true } label: { Label("Equalizer", systemImage: "slider.vertical.3") }
                 Button { showQueue = true } label: { Label("Queue", systemImage: "list.bullet") }
                 Button { showLyrics = true } label: { Label("Lyrics", systemImage: "quote.bubble") }
+                Button { showAddToPlaylist = true } label: { Label("Add to Playlist", systemImage: "music.note.list") }
             } label: {
                 ZStack {
                     Circle().fill(Color.white.opacity(0.12)).frame(width: 36, height: 36)
@@ -339,6 +351,197 @@ struct NowPlayingView: View {
             rng = rng &* 1664525 &+ 1013904223
             let v = CGFloat((rng >> 16) & 0xFFFF) / 65535.0
             return 0.2 + v * 0.8
+        }
+    }
+}
+
+// MARK: - Add to playlist sheet
+
+struct AddToPlaylistSheet: View {
+    let track: Track
+    @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) var dismiss
+
+    @State private var showCreate    = false
+    @State private var newName       = ""
+    @State private var toastMessage: String?
+    @State private var toastTask:    Task<Void, Never>?
+
+    private let bg     = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private let bgCard = Color(red: 0.110, green: 0.110, blue: 0.110)
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Track preview
+                    HStack(spacing: 14) {
+                        AsyncImage(url: URL(string: track.thumbnailArtworkURL ?? "")) { img in
+                            img.resizable().aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            RoundedRectangle(cornerRadius: 10).fill(bgCard)
+                        }
+                        .frame(width: 52, height: 52)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(track.title)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(.white).lineLimit(1)
+                            Text(track.username.uppercased())
+                                .font(.system(size: 10, weight: .semibold)).kerning(1)
+                                .foregroundStyle(themeManager.current.primary).lineLimit(1)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20).padding(.vertical, 16)
+                    .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 20)
+
+                    // Create new playlist row
+                    Button {
+                        showCreate = true
+                    } label: {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12).fill(themeManager.current.primary.opacity(0.15))
+                                    .frame(width: 52, height: 52)
+                                Image(systemName: "plus")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundStyle(themeManager.current.primary)
+                            }
+                            Text("New Playlist")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(.white)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20).padding(.vertical, 12)
+                    }
+
+                    Divider()
+                        .background(Color.white.opacity(0.07))
+                        .padding(.horizontal, 20).padding(.vertical, 4)
+
+                    // Existing playlists
+                    if playerVM.playlists.isEmpty {
+                        VStack(spacing: 10) {
+                            Image(systemName: "music.note.list")
+                                .font(.system(size: 32))
+                                .foregroundStyle(.white.opacity(0.15))
+                            Text("NO PLAYLISTS YET")
+                                .font(.system(size: 11, weight: .black)).kerning(2)
+                                .foregroundStyle(.white.opacity(0.3))
+                        }
+                        .padding(.top, 40)
+                    } else {
+                        LazyVStack(spacing: 0) {
+                            ForEach(playerVM.playlists) { pl in
+                                let alreadyAdded = pl.tracks.contains { $0.id == track.id }
+                                Button {
+                                    guard !alreadyAdded else { return }
+                                    playerVM.addTrackToPlaylist(track, playlistID: pl.id)
+                                    showToast("Added to \(pl.name)")
+                                } label: {
+                                    HStack(spacing: 14) {
+                                        playlistArtwork(pl)
+                                            .frame(width: 52, height: 52)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text(pl.name)
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(.white).lineLimit(1)
+                                            Text("\(pl.tracks.count) tracks")
+                                                .font(.system(size: 11))
+                                                .foregroundStyle(.white.opacity(0.4))
+                                        }
+                                        Spacer()
+                                        if alreadyAdded {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 18))
+                                                .foregroundStyle(themeManager.current.primary)
+                                        }
+                                    }
+                                    .padding(.horizontal, 20).padding(.vertical, 12)
+                                    .opacity(alreadyAdded ? 0.5 : 1)
+                                }
+                                .buttonStyle(.plain)
+
+                                Divider()
+                                    .background(Color.white.opacity(0.05))
+                                    .padding(.leading, 86)
+                            }
+                        }
+                    }
+                }
+                .padding(.bottom, 40)
+            }
+            .background(bg.ignoresSafeArea())
+            .navigationTitle("Add to Playlist")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(themeManager.current.primary)
+                }
+            }
+            .toolbarBackground(bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .preferredColorScheme(.dark)
+        }
+        .overlay(alignment: .bottom) {
+            if let msg = toastMessage {
+                Text(msg)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 12)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.3), value: toastMessage)
+        .alert("New Playlist", isPresented: $showCreate) {
+            TextField("Playlist name", text: $newName)
+            Button("Create") {
+                let name = newName.trimmingCharacters(in: .whitespaces)
+                guard !name.isEmpty else { return }
+                let pl = playerVM.createPlaylist(name: name)
+                playerVM.addTrackToPlaylist(track, playlistID: pl.id)
+                newName = ""
+                showToast("Added to \(name)")
+            }
+            Button("Cancel", role: .cancel) { newName = "" }
+        }
+    }
+
+    @ViewBuilder
+    private func playlistArtwork(_ pl: LocalPlaylist) -> some View {
+        let urls = pl.mosaicURLs
+        if urls.count >= 4 {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 0), GridItem(.flexible(), spacing: 0)], spacing: 0) {
+                ForEach(urls.prefix(4), id: \.self) { u in
+                    AsyncImage(url: URL(string: u)) { img in img.resizable().aspectRatio(1, contentMode: .fill) }
+                        placeholder: { bgCard }
+                }
+            }
+        } else if let first = urls.first {
+            AsyncImage(url: URL(string: first)) { img in img.resizable().aspectRatio(contentMode: .fill) }
+                placeholder: { bgCard }
+        } else {
+            ZStack { bgCard; Image(systemName: "music.note.list").foregroundStyle(.white.opacity(0.3)) }
+        }
+    }
+
+    private func showToast(_ message: String) {
+        toastTask?.cancel()
+        toastMessage = message
+        toastTask = Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            toastMessage = nil
         }
     }
 }
