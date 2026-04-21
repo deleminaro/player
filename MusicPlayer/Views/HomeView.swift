@@ -2,12 +2,11 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var showArchive = false
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgCard  = Color(red: 0.110, green: 0.110, blue: 0.110)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
 
     private var featured: Track? { playerVM.recentlyPlayed.first }
     private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
@@ -37,9 +36,9 @@ struct HomeView: View {
                     HStack(spacing: 6) {
                         Text("P")
                             .font(.system(size: 18, weight: .black))
-                            .foregroundStyle(primary)
+                            .foregroundStyle(themeManager.current.primary)
                             .padding(6)
-                            .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
+                            .background(themeManager.current.primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
                         Text("POSTOR.")
                             .font(.system(size: 16, weight: .black))
                             .foregroundStyle(.white)
@@ -90,7 +89,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("FEATURED RELEASE / " + String(Calendar.current.component(.year, from: Date())))
                     .font(.system(size: 9, weight: .black))
-                    .foregroundStyle(primary.opacity(0.8))
+                    .foregroundStyle(themeManager.current.primary.opacity(0.8))
                     .kerning(2)
 
                 Text(featured != nil
@@ -111,9 +110,9 @@ struct HomeView: View {
                     } label: {
                         Text("PLAY RECENT")
                             .font(.system(size: 11, weight: .black)).kerning(1)
-                            .foregroundStyle(onPrimary)
+                            .foregroundStyle(themeManager.current.onPrimary)
                             .padding(.horizontal, 16).padding(.vertical, 9)
-                            .background(primary, in: Capsule())
+                            .background(themeManager.current.primary, in: Capsule())
                     }
                     .opacity(featured == nil ? 0.4 : 1)
                     .disabled(featured == nil)
@@ -152,7 +151,7 @@ struct HomeView: View {
                 Button { showArchive = true } label: {
                     Text("VIEW ALL [\(playerVM.recentlyPlayed.count)]")
                         .font(.system(size: 10, weight: .black))
-                        .foregroundStyle(primary)
+                        .foregroundStyle(themeManager.current.primary)
                         .kerning(0.5)
                 }
             }
@@ -178,7 +177,7 @@ struct HomeView: View {
         VStack(spacing: 16) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 40))
-                .foregroundStyle(primary.opacity(0.4))
+                .foregroundStyle(themeManager.current.primary.opacity(0.4))
             Text("NOTHING YET")
                 .font(.system(size: 14, weight: .black)).kerning(2)
                 .foregroundStyle(.white.opacity(0.5))
@@ -195,7 +194,7 @@ struct HomeView: View {
 
 struct RecentTrackCard: View {
     let track: Track
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -220,7 +219,7 @@ struct RecentTrackCard: View {
                     .lineLimit(1)
                 Text(track.username.uppercased())
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(primary)
+                    .foregroundStyle(themeManager.current.primary)
                     .kerning(1)
                     .lineLimit(1)
             }

@@ -2,9 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
 
-    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
+    private let bg = Color(red: 0.075, green: 0.075, blue: 0.075)
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -17,8 +17,10 @@ struct ContentView: View {
                     .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 LibraryView()
                     .tabItem { Label("Library", systemImage: "building.columns.fill") }
+                SettingsView()
+                    .tabItem { Label("Settings", systemImage: "paintpalette.fill") }
             }
-            .tint(primary)
+            .tint(themeManager.current.primary)
 
             if playerVM.currentTrack != nil {
                 MiniPlayerView()
@@ -31,6 +33,7 @@ struct ContentView: View {
         .sheet(isPresented: $playerVM.showingNowPlaying) {
             NowPlayingView()
                 .environmentObject(playerVM)
+                .environmentObject(themeManager)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(24)
