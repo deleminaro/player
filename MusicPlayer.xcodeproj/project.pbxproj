@@ -28,6 +28,7 @@
 		AA181015AA181015AA181015 /* LibraryView.swift in Sources */        = {isa = PBXBuildFile; fileRef = AA100017AA100017AA100017 /* LibraryView.swift */; };
 		AA181016AA181016AA181016 /* AppTheme.swift in Sources */           = {isa = PBXBuildFile; fileRef = AA100018AA100018AA100018 /* AppTheme.swift */; };
 		AA181017AA181017AA181017 /* SettingsView.swift in Sources */       = {isa = PBXBuildFile; fileRef = AA100019AA100019AA100019 /* SettingsView.swift */; };
+		AA18101AAA18101AAA18101A /* DownloadManager.swift in Sources */    = {isa = PBXBuildFile; fileRef = AA10001AAA10001AAA10001A /* DownloadManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +55,7 @@
 		AA100017AA100017AA100017 /* LibraryView.swift */        = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift;        sourceTree = "<group>"; };
 		AA100018AA100018AA100018 /* AppTheme.swift */           = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift;           sourceTree = "<group>"; };
 		AA100019AA100019AA100019 /* SettingsView.swift */       = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift;       sourceTree = "<group>"; };
+		AA10001AAA10001AAA10001A /* DownloadManager.swift */    = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift;    sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +108,7 @@
 				AA100005AA100005AA100005 /* AudioPlayerService.swift */,
 				AA100006AA100006AA100006 /* SoundCloudService.swift */,
 				AA100007AA100007AA100007 /* GeniusService.swift */,
+				AA10001AAA10001AAA10001A /* DownloadManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -233,6 +236,7 @@
 				AA181015AA181015AA181015 /* LibraryView.swift in Sources */,
 				AA181016AA181016AA181016 /* AppTheme.swift in Sources */,
 				AA181017AA181017AA181017 /* SettingsView.swift in Sources */,
+				AA18101AAA18101AAA18101A /* DownloadManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
