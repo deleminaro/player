@@ -642,7 +642,7 @@ struct SCPlaylistDetailView: View {
 
     private func addToLibrary() {
         guard !tracks.isEmpty else { return }
-        var pl = playerVM.createPlaylist(name: playlist.title)
+        let pl = playerVM.createPlaylist(name: playlist.title)
         for track in tracks {
             playerVM.addTrackToPlaylist(track, playlistID: pl.id)
         }
