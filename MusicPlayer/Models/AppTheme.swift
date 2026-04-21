@@ -30,19 +30,47 @@ extension AppTheme {
     static let all: [AppTheme] = [dark, amoled, midnight, emerald, sunset, ocean, lavender, rose, amber, slate, light, sky, mint, violet, blossom, sand, aqua]
 }
 
+// MARK: - Slider type
+
+enum SliderType: String, CaseIterable {
+    case waveform1 = "waveform1"
+    case waveform2 = "waveform2"
+    case classic   = "classic"
+
+    var label: String {
+        switch self {
+        case .waveform1: return "Waveform I"
+        case .waveform2: return "Waveform II"
+        case .classic:   return "Classic"
+        }
+    }
+}
+
 final class ThemeManager: ObservableObject {
-    @Published private(set) var current: AppTheme = .dark
-    private let key = "mp_theme"
+    @Published private(set) var current:    AppTheme   = .dark
+    @Published private(set) var sliderType: SliderType = .waveform1
+
+    private let themeKey  = "mp_theme"
+    private let sliderKey = "mp_slider_type"
 
     init() {
-        if let id = UserDefaults.standard.string(forKey: key),
+        if let id = UserDefaults.standard.string(forKey: themeKey),
            let saved = AppTheme.all.first(where: { $0.id == id }) {
             current = saved
+        }
+        if let raw = UserDefaults.standard.string(forKey: sliderKey),
+           let st = SliderType(rawValue: raw) {
+            sliderType = st
         }
     }
 
     func select(_ theme: AppTheme) {
         current = theme
-        UserDefaults.standard.set(theme.id, forKey: key)
+        UserDefaults.standard.set(theme.id, forKey: themeKey)
+    }
+
+    func selectSlider(_ type: SliderType) {
+        sliderType = type
+        UserDefaults.standard.set(type.rawValue, forKey: sliderKey)
     }
 }

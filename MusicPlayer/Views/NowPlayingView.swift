@@ -8,6 +8,7 @@ struct NowPlayingView: View {
     @State private var showEQ            = false
     @State private var showSpeed         = false
     @State private var showAddToPlaylist = false
+    @State private var isScrubbingClassic = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private let bg        = Color(red: 0.075, green: 0.075, blue: 0.075)
@@ -181,9 +182,19 @@ struct NowPlayingView: View {
         }
     }
 
-    // MARK: - Waveform-style progress
+    // MARK: - Progress slider (switches on sliderType)
 
+    @ViewBuilder
     private var waveformProgress: some View {
+        switch themeManager.sliderType {
+        case .waveform1: waveform1Progress
+        case .waveform2: waveform2Progress
+        case .classic:   classicProgress
+        }
+    }
+
+    // Waveform I — random-height bars, top-growing (unique per song)
+    private var waveform1Progress: some View {
         let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
         let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
 
@@ -212,16 +223,87 @@ struct NowPlayingView: View {
                 })
             }
             .frame(height: 48)
-
-            HStack {
-                Text(formatTime(playerVM.currentTime))
-                Spacer()
-                Text(formatTime(max(0, playerVM.duration - playerVM.currentTime)))
-            }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.45))
-            .monospacedDigit()
+            timeLabels
         }
+    }
+
+    // Waveform II — symmetric bars growing from center (unique per song)
+    private var waveform2Progress: some View {
+        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
+        let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+
+        return VStack(spacing: 6) {
+            GeometryReader { geo in
+                Canvas { ctx, size in
+                    let count = CGFloat(bars.count)
+                    let step  = size.width / count
+                    let barW  = max(2, step * 0.65)
+                    let cy    = size.height / 2
+                    for (i, h) in bars.enumerated() {
+                        let filled = Double(i) / Double(bars.count) < progress
+                        let halfH  = h * cy * 0.92
+                        let rect = CGRect(
+                            x: CGFloat(i) * step + (step - barW) / 2,
+                            y: cy - halfH,
+                            width: barW, height: halfH * 2
+                        )
+                        ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
+                                 with: .color(filled ? themeManager.current.primary : Color.white.opacity(0.22)))
+                    }
+                }
+                .contentShape(Rectangle())
+                .gesture(DragGesture(minimumDistance: 0).onChanged { v in
+                    let pct = max(0, min(1, v.location.x / geo.size.width))
+                    playerVM.seek(to: pct * playerVM.duration)
+                })
+            }
+            .frame(height: 48)
+            timeLabels
+        }
+    }
+
+    // Classic — iOS 26 / Apple Music thick capsule, expands on scrub
+    private var classicProgress: some View {
+        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
+
+        return VStack(spacing: 10) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(height: isScrubbingClassic ? 14 : 5)
+                    Capsule()
+                        .fill(Color.white)
+                        .frame(width: max(0, geo.size.width * CGFloat(progress)),
+                               height: isScrubbingClassic ? 14 : 5)
+                }
+                .frame(maxHeight: .infinity, alignment: .center)
+                .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isScrubbingClassic)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { v in
+                            isScrubbingClassic = true
+                            let pct = max(0, min(1, v.location.x / geo.size.width))
+                            playerVM.seek(to: pct * playerVM.duration)
+                        }
+                        .onEnded { _ in isScrubbingClassic = false }
+                )
+            }
+            .frame(height: 20)
+            timeLabels
+        }
+    }
+
+    private var timeLabels: some View {
+        HStack {
+            Text(formatTime(playerVM.currentTime))
+            Spacer()
+            Text(formatTime(max(0, playerVM.duration - playerVM.currentTime)))
+        }
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(.white.opacity(0.45))
+        .monospacedDigit()
     }
 
     // MARK: - Controls
