@@ -22,6 +22,7 @@ final class PlayerViewModel: ObservableObject {
     @Published var showingNowPlaying: Bool            = false
     @Published var isShuffling:       Bool            = false
     @Published var isRepeating:       Bool            = false
+    @Published var isPitchPreserved:  Bool            = true
 
     var nextTrack: Track? {
         guard let idx = queue.firstIndex(where: { $0.track.id == currentTrack?.id }),
@@ -119,6 +120,11 @@ final class PlayerViewModel: ObservableObject {
         playbackSpeed = rate
         audio.setSpeed(rate)
         updateNowPlayingPlaybackState()
+    }
+
+    func togglePitchPreservation() {
+        isPitchPreserved.toggle()
+        audio.setPitchPreserved(isPitchPreserved)
     }
 
     func setEQGain(_ gain: Float, band: Int) {

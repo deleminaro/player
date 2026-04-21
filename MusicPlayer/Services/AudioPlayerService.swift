@@ -17,6 +17,7 @@ final class AudioPlayerService {
     private let timePitch  = AVAudioUnitTimePitch()
 
     private(set) var currentSpeed: Float  = 1.0
+    private(set) var isPitchPreserved: Bool = true
     private(set) var eqGains: [Float]     = [0, 0, 0, 0, 0]
 
     private var audioFile:     AVAudioFile?
@@ -117,7 +118,7 @@ final class AudioPlayerService {
         scheduleSegment(file: file, from: 0)
         if !engine.isRunning { try engine.start() }
         playerNode.play()
-        timePitch.rate = currentSpeed
+        applyTimePitch()
         isActive = true
         onLoadingChange?(false)
         onPlayStateChange?(true)
@@ -171,7 +172,7 @@ final class AudioPlayerService {
     func resume() {
         if !engine.isRunning { try? engine.start() }
         playerNode.play()
-        timePitch.rate = currentSpeed
+        applyTimePitch()
         isActive = true
         onPlayStateChange?(true)
     }
@@ -196,13 +197,23 @@ final class AudioPlayerService {
         scheduleSegment(file: file, from: sampleOffset)
         if !engine.isRunning { try? engine.start() }
         playerNode.play()
-        timePitch.rate = currentSpeed
+        applyTimePitch()
         if !wasPlaying { playerNode.pause() }
     }
 
     func setSpeed(_ rate: Float) {
-        currentSpeed   = rate
-        timePitch.rate = rate
+        currentSpeed = rate
+        applyTimePitch()
+    }
+
+    func setPitchPreserved(_ on: Bool) {
+        isPitchPreserved = on
+        applyTimePitch()
+    }
+
+    private func applyTimePitch() {
+        timePitch.rate  = currentSpeed
+        timePitch.pitch = isPitchPreserved ? 0 : 1200 * log2(currentSpeed)
     }
 
     func setEQGain(_ gain: Float, band: Int) {

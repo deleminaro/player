@@ -372,17 +372,32 @@ struct SpeedPickerSheet: View {
                 .padding(.top, 12)
                 .padding(.bottom, 20)
 
-            HStack(spacing: 6) {
-                Image(systemName: "waveform")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(primary)
-                Text("PITCH IS PRESERVED AT ALL SPEEDS")
-                    .font(.system(size: 10, weight: .black)).kerning(1.5)
-                    .foregroundStyle(primary)
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(playerVM.isPitchPreserved ? primary : .white.opacity(0.4))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("PITCH LOCK")
+                            .font(.system(size: 11, weight: .black)).kerning(1.5)
+                            .foregroundStyle(.white)
+                        Text(playerVM.isPitchPreserved ? "Pitch preserved" : "Natural pitch shift")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                }
+                Spacer()
+                Toggle("", isOn: Binding(
+                    get: { playerVM.isPitchPreserved },
+                    set: { _ in playerVM.togglePitchPreservation() }
+                ))
+                .toggleStyle(SwitchToggleStyle(tint: primary))
+                .labelsHidden()
             }
-            .padding(.horizontal, 20).padding(.vertical, 8)
-            .background(primary.opacity(0.12), in: Capsule())
-            .padding(.bottom, 24)
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
 
             HStack(spacing: 12) {
                 ForEach(modes, id: \.speed) { mode in
