@@ -8,56 +8,22 @@ struct SearchView: View {
     @State private var isSearching = false
     @State private var searchError: String?
     @State private var searchTask: Task<Void, Never>?
+    @FocusState private var focused: Bool
+
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgCard  = Color(red: 0.110, green: 0.110, blue: 0.110)
     private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Search bar
-                HStack(spacing: 12) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.white.opacity(0.35))
-                        TextField("", text: $query,
-                                  prompt: Text("Search for tracks, artists...")
-                                    .foregroundStyle(.white.opacity(0.3))
-                                    .font(.system(size: 13)))
-                            .foregroundStyle(.white)
-                            .font(.system(size: 13))
-                            .autocorrectionDisabled()
-                            .onSubmit { commitSearch() }
-                            .onChange(of: query) { _, new in scheduleSearch(new) }
-                    }
-                    .padding(.horizontal, 14).padding(.vertical, 13)
-                    .background(Color.white.opacity(0.07), in: Capsule())
+            ZStack {
+                bg.ignoresSafeArea()
 
-                    Button { commitSearch() } label: {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(primary.opacity(0.18))
-                                .frame(width: 42, height: 42)
-                            Image(systemName: "magnifyingglass")
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundStyle(primary)
-                        }
-                    }
-                }
-                .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 14)
-
-                Divider().background(Color.white.opacity(0.06))
-
-                // Content
                 Group {
                     if isSearching {
-                        Spacer()
                         ProgressView()
                             .tint(primary)
-                            .scaleEffect(1.1)
-                        Spacer()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if let err = searchError {
                         errorState(err)
                     } else if !results.isEmpty {
@@ -69,34 +35,61 @@ struct SearchView: View {
                     }
                 }
             }
-            .background(bg.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack(spacing: 6) {
-                        Text("P")
-                            .font(.system(size: 18, weight: .black))
-                            .foregroundStyle(primary)
-                            .padding(6)
-                            .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
-                        Text("POSTOR.")
-                            .font(.system(size: 16, weight: .black))
-                            .foregroundStyle(.white)
+            .navigationTitle("Search")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(bg, for: .navigationBar)
+            .preferredColorScheme(.dark)
+            // Bottom search bar — sits above the tab bar
+            .safeAreaInset(edge: .bottom) {
+                searchBar
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(bg)
+                    // extra room when mini player is visible
+                    .padding(.bottom, playerVM.currentTrack != nil ? 64 : 0)
+            }
+        }
+        .onTapGesture { focused = false }
+    }
+
+    // MARK: - Bottom search bar
+
+    private var searchBar: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "music.note.list")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(primary)
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.45))
+
+                TextField("", text: $query,
+                          prompt: Text("Artists, Songs, Lyrics, and More")
+                            .foregroundStyle(.white.opacity(0.35))
+                            .font(.system(size: 14)))
+                    .foregroundStyle(.white)
+                    .font(.system(size: 14))
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .focused($focused)
+                    .onSubmit { commitSearch() }
+                    .onChange(of: query) { _, new in scheduleSearch(new) }
+
+                if !query.isEmpty {
+                    Button { query = ""; results = []; searchError = nil } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.white.opacity(0.4))
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 4) {
-                        Circle().fill(.green).frame(width: 7, height: 7)
-                        Text("LIVE")
-                            .font(.system(size: 10, weight: .black))
-                            .foregroundStyle(.white)
-                            .kerning(1)
-                    }
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(Color.white.opacity(0.08), in: Capsule())
-                    .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
             }
+            .padding(.horizontal, 14).padding(.vertical, 11)
+            .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+
+            Image(systemName: "mic.fill")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.white.opacity(0.45))
         }
     }
 
@@ -117,7 +110,7 @@ struct SearchView: View {
                         }
                         Spacer()
                         Button { playerVM.clearRecentSearches() } label: {
-                            Text("CLEAR HISTORY")
+                            Text("CLEAR")
                                 .font(.system(size: 9, weight: .black)).kerning(1)
                                 .foregroundStyle(primary)
                         }
@@ -128,8 +121,7 @@ struct SearchView: View {
                         HStack(spacing: 8) {
                             ForEach(playerVM.recentSearches, id: \.self) { s in
                                 Button {
-                                    query = s
-                                    commitSearch()
+                                    query = s; commitSearch()
                                 } label: {
                                     HStack(spacing: 6) {
                                         Image(systemName: "arrow.up.left")
@@ -141,7 +133,6 @@ struct SearchView: View {
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 8)
                                     .background(Color.white.opacity(0.07), in: Capsule())
-                                    .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
                                 }
                             }
                         }
@@ -150,12 +141,12 @@ struct SearchView: View {
                 } else {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 36))
-                            .foregroundStyle(primary.opacity(0.3))
+                            .font(.system(size: 44))
+                            .foregroundStyle(primary.opacity(0.25))
                         Text("SEARCH MUSIC")
                             .font(.system(size: 13, weight: .black)).kerning(2)
                             .foregroundStyle(.white.opacity(0.4))
-                        Text("Search for songs, artists, or playlists.")
+                        Text("Songs, artists, playlists and more.")
                             .font(.system(size: 12))
                             .foregroundStyle(.white.opacity(0.25))
                     }
@@ -176,13 +167,10 @@ struct SearchView: View {
                 .environmentObject(playerVM)
                 .onTapGesture { tap(track) }
                 .swipeActions(edge: .trailing) {
-                    Button {
-                        playerVM.addToQueue(track)
-                    } label: {
+                    Button { playerVM.addToQueue(track) } label: {
                         Label("Queue", systemImage: "plus")
                     }
-                    .tint(Color(red: 0.753, green: 0.757, blue: 1.0))
-
+                    .tint(primary)
                     Button {
                         playerVM.toggleLike(track)
                     } label: {

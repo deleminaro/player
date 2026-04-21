@@ -28,33 +28,10 @@ struct LibraryView: View {
                 .padding(.bottom, 120)
             }
             .background(bg.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack(spacing: 6) {
-                        Text("P")
-                            .font(.system(size: 18, weight: .black))
-                            .foregroundStyle(primary)
-                            .padding(6)
-                            .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
-                        Text("POSTOR.")
-                            .font(.system(size: 16, weight: .black))
-                            .foregroundStyle(.white)
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 4) {
-                        Circle().fill(.green).frame(width: 7, height: 7)
-                        Text("LIVE")
-                            .font(.system(size: 10, weight: .black))
-                            .foregroundStyle(.white)
-                            .kerning(1)
-                    }
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(Color.white.opacity(0.08), in: Capsule())
-                    .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
-                }
-            }
+            .navigationTitle("Library")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(bg, for: .navigationBar)
+            .preferredColorScheme(.dark)
         }
         .sheet(isPresented: $showLiked) {
             LikedTracksView().environmentObject(playerVM)
