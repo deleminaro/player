@@ -1,24 +1,101 @@
 import SwiftUI
 
+private enum SearchFilter: String, CaseIterable {
+    case all       = "All"
+    case tracks    = "Tracks"
+    case playlists = "Playlists"
+    case albums    = "Albums"
+    case artists   = "Artists"
+
+    var icon: String {
+        switch self {
+        case .all:       return "square.grid.2x2"
+        case .tracks:    return "music.note"
+        case .playlists: return "music.note.list"
+        case .albums:    return "opticaldisc"
+        case .artists:   return "person.2"
+        }
+    }
+}
+
 struct SearchView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
 
-    @State private var query       = ""
-    @State private var results:    [Track] = []
-    @State private var isSearching = false
+    @State private var query        = ""
+    @State private var results:     [Track] = []
+    @State private var isSearching  = false
     @State private var searchError: String?
-    @State private var searchTask: Task<Void, Never>?
+    @State private var searchTask:  Task<Void, Never>?
+    @State private var filter       = SearchFilter.all
     @FocusState private var focused: Bool
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard  = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private let bgField = Color(red: 0.14,  green: 0.14,  blue: 0.14)
     private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                bg.ignoresSafeArea()
+            VStack(spacing: 0) {
+                // ── Search bar ───────────────────────────────────────────
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.4))
 
+                    TextField("", text: $query,
+                              prompt: Text("Artists, Songs, Lyrics, and More")
+                                .foregroundStyle(.white.opacity(0.35))
+                                .font(.system(size: 15)))
+                        .foregroundStyle(.white)
+                        .font(.system(size: 15))
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .focused($focused)
+                        .onSubmit { commitSearch() }
+                        .onChange(of: query) { _, new in scheduleSearch(new) }
+
+                    if !query.isEmpty {
+                        Button {
+                            query = ""; results = []; searchError = nil
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.white.opacity(0.4))
+                                .font(.system(size: 16))
+                        }
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 13)
+                .background(bgField, in: Capsule())
+                .padding(.horizontal, 16)
+                .padding(.top, 12).padding(.bottom, 14)
+
+                // ── Filter chips ─────────────────────────────────────────
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(SearchFilter.allCases, id: \.self) { f in
+                            Button { withAnimation(.easeInOut(duration: 0.18)) { filter = f } } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: f.icon)
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text(f.rawValue)
+                                        .font(.system(size: 13, weight: .bold))
+                                }
+                                .foregroundStyle(filter == f ? .black : .white)
+                                .padding(.horizontal, 16).padding(.vertical, 10)
+                                .background(
+                                    Capsule().fill(filter == f ? .white : bgField)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+                .padding(.bottom, 12)
+
+                Divider().background(Color.white.opacity(0.06))
+
+                // ── Content ───────────────────────────────────────────────
                 Group {
                     if isSearching {
                         ProgressView()
@@ -35,62 +112,13 @@ struct SearchView: View {
                     }
                 }
             }
+            .background(bg.ignoresSafeArea())
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(bg, for: .navigationBar)
             .preferredColorScheme(.dark)
-            // Bottom search bar — sits above the tab bar
-            .safeAreaInset(edge: .bottom) {
-                searchBar
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(bg)
-                    // extra room when mini player is visible
-                    .padding(.bottom, playerVM.currentTrack != nil ? 64 : 0)
-            }
         }
         .onTapGesture { focused = false }
-    }
-
-    // MARK: - Bottom search bar
-
-    private var searchBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "music.note.list")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(primary)
-
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
-
-                TextField("", text: $query,
-                          prompt: Text("Artists, Songs, Lyrics, and More")
-                            .foregroundStyle(.white.opacity(0.35))
-                            .font(.system(size: 14)))
-                    .foregroundStyle(.white)
-                    .font(.system(size: 14))
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .focused($focused)
-                    .onSubmit { commitSearch() }
-                    .onChange(of: query) { _, new in scheduleSearch(new) }
-
-                if !query.isEmpty {
-                    Button { query = ""; results = []; searchError = nil } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                }
-            }
-            .padding(.horizontal, 14).padding(.vertical, 11)
-            .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-
-            Image(systemName: "mic.fill")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(.white.opacity(0.45))
-        }
     }
 
     // MARK: - Recent searches
@@ -132,7 +160,7 @@ struct SearchView: View {
                                             .foregroundStyle(.white.opacity(0.7))
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 8)
-                                    .background(Color.white.opacity(0.07), in: Capsule())
+                                    .background(bgField, in: Capsule())
                                 }
                             }
                         }
@@ -248,6 +276,7 @@ struct SearchView: View {
         do {
             let tracks = try await SoundCloudService.shared.search(query: q)
             guard !Task.isCancelled else { return }
+            // Client-side filter (all results are tracks; filter acts as visual selection)
             results = tracks
         } catch {
             searchError = error.localizedDescription
