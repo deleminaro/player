@@ -30,9 +30,13 @@ final class AudioPlayerService {
 
     init() {
         setupEngine()
-        // Defer audio session activation off the main thread so it
-        // doesn't block the first SwiftUI frame render.
-        Task.detached(priority: .userInitiated) {
+    }
+
+    private func activateAudioSession() {
+        // Called lazily on first playback, not during app init.
+        // Using a plain GCD call avoids Swift Concurrency actor
+        // conflicts that can trigger SIGKILL during dyld startup.
+        DispatchQueue.global(qos: .userInitiated).async {
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
             try? AVAudioSession.sharedInstance().setActive(true)
         }
@@ -84,6 +88,7 @@ final class AudioPlayerService {
     }
 
     private func beginPlayback(from url: URL) throws {
+        activateAudioSession()
         let file = try AVAudioFile(forReading: url)
         audioFile     = file
         trackDuration = Double(file.length) / file.processingFormat.sampleRate

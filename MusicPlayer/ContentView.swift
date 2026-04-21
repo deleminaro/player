@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
-    @State private var appeared = false
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
@@ -13,17 +12,11 @@ struct ContentView: View {
 
             TabView {
                 HomeView()
-                    .tabItem {
-                        Label("Home", systemImage: "house.fill")
-                    }
+                    .tabItem { Label("Home", systemImage: "house.fill") }
                 SearchView()
-                    .tabItem {
-                        Label("Search", systemImage: "magnifyingglass")
-                    }
+                    .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 LibraryView()
-                    .tabItem {
-                        Label("Library", systemImage: "building.columns.fill")
-                    }
+                    .tabItem { Label("Library", systemImage: "building.columns.fill") }
             }
             .tint(primary)
 
@@ -34,8 +27,6 @@ struct ContentView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .opacity(appeared ? 1 : 0)
-        .onAppear { withAnimation(.easeIn(duration: 0.25)) { appeared = true } }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: playerVM.currentTrack != nil)
         .sheet(isPresented: $playerVM.showingNowPlaying) {
             NowPlayingView()

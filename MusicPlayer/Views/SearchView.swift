@@ -33,6 +33,7 @@ struct SearchView: View {
     @State private var isSearching        = false
     @State private var isLoadingMore      = false
     @State private var addToPlaylistTrack: Track?
+    @State private var selectedPlaylist:  SCPlaylist?
     @State private var searchError:  String?
     @State private var searchTask:   Task<Void, Never>?
     @State private var filter        = SearchFilter.all
@@ -65,6 +66,9 @@ struct SearchView: View {
         }
         .sheet(item: $addToPlaylistTrack) { track in
             AddToPlaylistSheet(track: track).environmentObject(playerVM)
+        }
+        .sheet(item: $selectedPlaylist) { pl in
+            SCPlaylistDetailView(playlist: pl).environmentObject(playerVM)
         }
         .onTapGesture { focused = false }
         .onChange(of: filter) { _, _ in
@@ -309,12 +313,7 @@ struct SearchView: View {
     }
 
     private func tapPlaylist(_ pl: SCPlaylist) {
-        Task {
-            guard let tracks = try? await SoundCloudService.shared.fetchPlaylistTracks(id: pl.id),
-                  !tracks.isEmpty else { return }
-            playerVM.playFromList(tracks, startingWith: tracks[0])
-            playerVM.showingNowPlaying = true
-        }
+        selectedPlaylist = pl
     }
 
     private func tapArtist(_ artist: SCArtist) {
@@ -473,6 +472,137 @@ private struct ArtistRowView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - SoundCloud Playlist / Album detail sheet
+
+struct SCPlaylistDetailView: View {
+    @EnvironmentObject var playerVM: PlayerViewModel
+    @Environment(\.dismiss) var dismiss
+    let playlist: SCPlaylist
+
+    @State private var tracks:    [Track] = []
+    @State private var isLoading: Bool    = true
+    @State private var failed:    Bool    = false
+
+    private let bg       = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private let bgCard   = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private let primary  = Color(red: 0.753, green: 0.757, blue: 1.0)
+    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    AsyncImage(url: URL(string: playlist.artworkURL?
+                        .replacingOccurrences(of: "-large.", with: "-t500x500.")
+                        .replacingOccurrences(of: "-t300x300.", with: "-t500x500.") ?? "")) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: { bgCard }
+                    .frame(width: 200, height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.top, 24).padding(.bottom, 16)
+
+                    Text(playlist.title.uppercased())
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                    Text(playlist.username.uppercased())
+                        .font(.system(size: 10, weight: .bold)).kerning(1.5)
+                        .foregroundStyle(primary.opacity(0.7))
+                        .padding(.top, 4)
+                    Text("\(playlist.trackCount) TRACKS")
+                        .font(.system(size: 9, weight: .bold)).kerning(1)
+                        .foregroundStyle(.white.opacity(0.35))
+                        .padding(.top, 2)
+
+                    if isLoading {
+                        ProgressView().tint(primary).padding(.top, 40)
+                    } else if failed {
+                        VStack(spacing: 10) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 32)).foregroundStyle(.orange.opacity(0.5))
+                            Text("COULDN'T LOAD TRACKS")
+                                .font(.system(size: 12, weight: .black)).kerning(2)
+                                .foregroundStyle(.white.opacity(0.4))
+                        }
+                        .padding(.top, 40)
+                    } else {
+                        HStack(spacing: 16) {
+                            Button {
+                                guard !tracks.isEmpty else { return }
+                                playerVM.playFromList(tracks, startingWith: tracks[0])
+                                playerVM.showingNowPlaying = true
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "play.fill")
+                                    Text("PLAY").font(.system(size: 13, weight: .black)).kerning(1)
+                                }
+                                .foregroundStyle(onPrimary)
+                                .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                .background(primary, in: RoundedRectangle(cornerRadius: 14))
+                            }
+                            Button {
+                                guard !tracks.isEmpty else { return }
+                                let s = tracks.shuffled()
+                                playerVM.playFromList(s, startingWith: s[0])
+                                playerVM.showingNowPlaying = true
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "shuffle")
+                                    Text("SHUFFLE").font(.system(size: 13, weight: .black)).kerning(1)
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+                            }
+                        }
+                        .padding(.horizontal, 20).padding(.top, 20)
+
+                        LazyVStack(spacing: 0) {
+                            ForEach(tracks) { track in
+                                TrackRowView(track: track,
+                                             isLiked: playerVM.isLiked(track),
+                                             onToggleLike: { playerVM.toggleLike(track) })
+                                    .onTapGesture {
+                                        playerVM.playFromList(tracks, startingWith: track)
+                                        playerVM.showingNowPlaying = true
+                                        dismiss()
+                                    }
+                                Divider().background(Color.white.opacity(0.06)).padding(.leading, 76)
+                            }
+                        }
+                        .padding(.top, 16)
+                    }
+                }
+                .padding(.bottom, 100)
+            }
+            .background(bg.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+            }
+            .preferredColorScheme(.dark)
+        }
+        .presentationBackground(bg)
+        .task {
+            do {
+                tracks = try await SoundCloudService.shared.fetchPlaylistTracks(id: playlist.id)
+                isLoading = false
+            } catch {
+                isLoading = false
+                failed = true
+            }
+        }
     }
 }
 
