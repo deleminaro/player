@@ -79,7 +79,7 @@ struct NowPlayingView: View {
             }
             .environmentObject(playerVM)
             .environmentObject(themeManager)
-            .presentationDetents([.height(380)])
+            .presentationDetents([.height(410)])
             .presentationBackground(.ultraThinMaterial)
             .presentationCornerRadius(28)
         }
@@ -640,25 +640,48 @@ struct SpeedPickerSheet: View {
     }
 
     private var waveformBar: some View {
-        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
+        let speedMin: Float = 0.5
+        let speedMax: Float = 2.0
+        let progress = Double((currentSpeed - speedMin) / (speedMax - speedMin))
         let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
-        return Canvas { ctx, size in
-            let count = CGFloat(bars.count)
-            let step  = size.width / count
-            let barW  = max(1.5, step * 0.55)
-            for (i, h) in bars.enumerated() {
-                let filled = Double(i) / Double(bars.count) < progress
-                let barH = h * size.height
-                let rect = CGRect(
-                    x: CGFloat(i) * step + (step - barW) / 2,
-                    y: (size.height - barH) / 2,
-                    width: barW, height: barH
-                )
-                ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
-                         with: .color(filled ? .white : Color.white.opacity(0.2)))
+
+        return VStack(spacing: 10) {
+            GeometryReader { geo in
+                Canvas { ctx, size in
+                    let count = CGFloat(bars.count)
+                    let step  = size.width / count
+                    let barW  = max(1.5, step * 0.55)
+                    for (i, h) in bars.enumerated() {
+                        let filled = Double(i) / Double(bars.count) < progress
+                        let barH = h * size.height
+                        let rect = CGRect(
+                            x: CGFloat(i) * step + (step - barW) / 2,
+                            y: (size.height - barH) / 2,
+                            width: barW, height: barH
+                        )
+                        ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
+                                 with: .color(filled ? .white : Color.white.opacity(0.2)))
+                    }
+                }
+                .contentShape(Rectangle())
+                .gesture(DragGesture(minimumDistance: 0).onChanged { v in
+                    let pct   = max(0.0, min(1.0, v.location.x / geo.size.width))
+                    var speed = Float(pct) * (speedMax - speedMin) + speedMin
+                    // Snap to preset if within ±0.04
+                    for m in modes where abs(speed - m.speed) < 0.04 { speed = m.speed; break }
+                    speed = (speed * 100).rounded() / 100
+                    currentSpeed = speed
+                    onSelect(speed)
+                })
             }
+            .frame(height: 44)
+
+            Text(currentSpeed == 1.0 ? "1×" : "\(String(format: "%g", currentSpeed))×")
+                .font(.custom("Courier", size: 13)).bold()
+                .foregroundStyle(.white.opacity(0.45))
+                .monospacedDigit()
+                .animation(.none, value: currentSpeed)
         }
-        .frame(height: 36)
     }
 
     private func waveformHeights(for seed: Int) -> [CGFloat] {
