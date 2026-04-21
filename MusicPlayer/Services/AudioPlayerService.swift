@@ -29,9 +29,13 @@ final class AudioPlayerService {
     private var generation:    Int = 0
 
     init() {
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-        try? AVAudioSession.sharedInstance().setActive(true)
         setupEngine()
+        // Defer audio session activation off the main thread so it
+        // doesn't block the first SwiftUI frame render.
+        Task.detached(priority: .userInitiated) {
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+            try? AVAudioSession.sharedInstance().setActive(true)
+        }
     }
 
     private func setupEngine() {
@@ -50,7 +54,8 @@ final class AudioPlayerService {
             eqNode.bands[i].gain       = 0
             eqNode.bands[i].bypass     = false
         }
-        try? engine.start()
+        // Do NOT start the engine here — start lazily on first playback
+        // so init() returns immediately and the first frame can render.
     }
 
     // MARK: - Playback
