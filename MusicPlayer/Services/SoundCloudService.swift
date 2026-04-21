@@ -33,14 +33,12 @@ actor SoundCloudService {
         guard let url = comps.url else { throw SCError.invalidURL }
         let (data, resp) = try await URLSession.shared.data(from: url)
         try validate(resp)
-        struct Detail: Decodable { let tracks: [Track]? }
-        let stubs = (try? JSONDecoder().decode(Detail.self, from: data).tracks) ?? []
-        // SoundCloud returns lightweight stubs for tracks beyond the first few — batch-fetch full data
-        let stubIDs = stubs.filter { $0.media == nil }.map { $0.id }
-        guard !stubIDs.isEmpty else { return stubs }
-        let full = try await fetchTracksByIDs(stubIDs)
-        let map  = Dictionary(uniqueKeysWithValues: full.map { ($0.id, $0) })
-        return stubs.map { map[$0.id] ?? $0 }
+        // Stubs only guarantee `id` — decode just IDs, then batch-fetch full track data
+        struct IDOnly: Decodable { let id: Int }
+        struct PlaylistDetail: Decodable { let tracks: [IDOnly]? }
+        let ids = (try? JSONDecoder().decode(PlaylistDetail.self, from: data))?.tracks?.map { $0.id } ?? []
+        guard !ids.isEmpty else { return [] }
+        return try await fetchTracksByIDs(ids)
     }
 
     func fetchTracksByIDs(_ ids: [Int]) async throws -> [Track] {
@@ -54,10 +52,10 @@ actor SoundCloudService {
                 URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
             ]
             guard let url = comps.url else { continue }
-            if let (data, _) = try? await URLSession.shared.data(from: url),
-               let tracks = try? JSONDecoder().decode([Track].self, from: data) {
-                result.append(contentsOf: tracks)
-            }
+            let (data, resp) = try await URLSession.shared.data(from: url)
+            try validate(resp)
+            let tracks = try JSONDecoder().decode([Track].self, from: data)
+            result.append(contentsOf: tracks)
         }
         return result
     }
