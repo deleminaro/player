@@ -485,6 +485,7 @@ struct SCPlaylistDetailView: View {
     @State private var tracks:    [Track] = []
     @State private var isLoading: Bool    = true
     @State private var failed:    Bool    = false
+    @State private var toast:     String? = nil
 
     private let bg       = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgCard   = Color(red: 0.110, green: 0.110, blue: 0.110)
@@ -584,6 +585,29 @@ struct SCPlaylistDetailView: View {
             .background(bg.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if !tracks.isEmpty {
+                        Menu {
+                            Button {
+                                addToLibrary()
+                            } label: {
+                                Label("Add to Library", systemImage: "square.and.arrow.down")
+                            }
+                            Button {
+                                likeAllTracks()
+                            } label: {
+                                Label("Add Songs to Favourites", systemImage: "heart")
+                            }
+                        } label: {
+                            ZStack {
+                                Circle().fill(Color.white.opacity(0.12)).frame(width: 36, height: 36)
+                                Image(systemName: "ellipsis")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
@@ -592,6 +616,18 @@ struct SCPlaylistDetailView: View {
                 }
             }
             .preferredColorScheme(.dark)
+            .overlay(alignment: .top) {
+                if let msg = toast {
+                    Text(msg)
+                        .font(.system(size: 12, weight: .bold)).kerning(0.5)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20).padding(.vertical, 10)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: toast)
         }
         .presentationBackground(bg)
         .task {
@@ -602,6 +638,33 @@ struct SCPlaylistDetailView: View {
                 isLoading = false
                 failed = true
             }
+        }
+    }
+
+    private func addToLibrary() {
+        guard !tracks.isEmpty else { return }
+        var pl = playerVM.createPlaylist(name: playlist.title)
+        for track in tracks {
+            playerVM.addTrackToPlaylist(track, playlistID: pl.id)
+        }
+        showToast("Added to Library")
+    }
+
+    private func likeAllTracks() {
+        guard !tracks.isEmpty else { return }
+        var added = 0
+        for track in tracks where !playerVM.isLiked(track) {
+            playerVM.toggleLike(track)
+            added += 1
+        }
+        showToast(added > 0 ? "\(added) Songs Added to Favourites" : "Already in Favourites")
+    }
+
+    private func showToast(_ msg: String) {
+        toast = msg
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            toast = nil
         }
     }
 }
