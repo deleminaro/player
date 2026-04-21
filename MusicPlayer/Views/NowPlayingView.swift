@@ -70,7 +70,7 @@ struct NowPlayingView: View {
             QueueView().environmentObject(playerVM)
         }
         .sheet(isPresented: $showEQ) {
-            EqualizerView().environmentObject(playerVM)
+            EqualizerView().environmentObject(playerVM).environmentObject(themeManager)
         }
         .sheet(isPresented: $showSpeed) {
             SpeedPickerSheet(currentSpeed: $playerVM.playbackSpeed) { spd in

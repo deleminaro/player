@@ -60,7 +60,7 @@ struct EqualizerView: View {
                     VStack(spacing: 10) {
                         Text("\(gains[i] >= 0 ? "+" : "")\(Int(gains[i]))")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(gains[i] != 0 ? primary : Color.white.opacity(0.3))
+                            .foregroundStyle(gains[i] != 0 ? themeManager.current.primary : Color.white.opacity(0.3))
                             .frame(width: 36)
 
                         Slider(
@@ -72,7 +72,7 @@ struct EqualizerView: View {
                         )
                         .rotationEffect(.degrees(-90))
                         .frame(width: 130).frame(width: 44, height: 130)
-                        .tint(primary)
+                        .tint(themeManager.current.primary)
 
                         Text(bandNames[i])
                             .font(.system(size: 8, weight: .black)).kerning(0.5)
