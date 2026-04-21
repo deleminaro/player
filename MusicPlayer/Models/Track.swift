@@ -109,6 +109,25 @@ struct QueueItem: Identifiable {
     let track: Track
 }
 
+// MARK: - Local Playlist (user-created, stored on device)
+
+struct LocalPlaylist: Identifiable, Codable {
+    let id: UUID
+    var name: String
+    var tracks: [Track]
+    let createdAt: Date
+
+    init(name: String) {
+        id        = UUID()
+        self.name = name
+        tracks    = []
+        createdAt = Date()
+    }
+
+    var thumbnailArtworkURL: String? { tracks.first?.thumbnailArtworkURL }
+    var mosaicURLs: [String] { tracks.prefix(4).compactMap { $0.thumbnailArtworkURL } }
+}
+
 // MARK: - SoundCloud Playlist
 
 struct SCPlaylist: Identifiable {

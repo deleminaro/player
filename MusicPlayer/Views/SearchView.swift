@@ -28,10 +28,11 @@ private enum SearchResultSet {
 struct SearchView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
 
-    @State private var query         = ""
-    @State private var resultSet     = SearchResultSet.empty
-    @State private var isSearching   = false
-    @State private var isLoadingMore = false
+    @State private var query              = ""
+    @State private var resultSet          = SearchResultSet.empty
+    @State private var isSearching        = false
+    @State private var isLoadingMore      = false
+    @State private var addToPlaylistTrack: Track?
     @State private var searchError:  String?
     @State private var searchTask:   Task<Void, Never>?
     @State private var filter        = SearchFilter.all
@@ -61,6 +62,9 @@ struct SearchView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(bg, for: .navigationBar)
             .preferredColorScheme(.dark)
+        }
+        .sheet(item: $addToPlaylistTrack) { track in
+            AddToPlaylistSheet(track: track).environmentObject(playerVM)
         }
         .onTapGesture { focused = false }
         .onChange(of: filter) { _, _ in
@@ -167,6 +171,9 @@ struct SearchView: View {
                             Label(playerVM.isLiked(track) ? "Unlike" : "Like",
                                   systemImage: playerVM.isLiked(track) ? "heart.slash" : "heart")
                         }.tint(.pink)
+                        Button { addToPlaylistTrack = track } label: {
+                            Label("Playlist", systemImage: "music.note.list")
+                        }.tint(.indigo)
                     }
                     .listRowBackground(bg)
                     .listRowSeparatorTint(Color.white.opacity(0.06))
@@ -466,5 +473,88 @@ private struct ArtistRowView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Add to playlist sheet
+
+struct AddToPlaylistSheet: View {
+    @EnvironmentObject var playerVM: PlayerViewModel
+    @Environment(\.dismiss) var dismiss
+    let track: Track
+
+    @State private var showCreate = false
+    @State private var newName    = ""
+
+    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Button { showCreate = true } label: {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(primary.opacity(0.15)).frame(width: 48, height: 48)
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .bold)).foregroundStyle(primary)
+                        }
+                        Text("NEW PLAYLIST")
+                            .font(.system(size: 12, weight: .black)).kerning(1).foregroundStyle(primary)
+                    }
+                    .padding(.vertical, 6)
+                }
+                .listRowBackground(bg)
+
+                ForEach(playerVM.playlists) { pl in
+                    Button {
+                        playerVM.addTrackToPlaylist(track, playlistID: pl.id)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 14) {
+                            ArtworkThumbnail(url: pl.thumbnailArtworkURL)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(pl.name.uppercased())
+                                    .font(.system(size: 12, weight: .black))
+                                    .foregroundStyle(.white).lineLimit(1)
+                                Text("\(pl.tracks.count) TRACKS")
+                                    .font(.system(size: 9, weight: .bold)).kerning(1)
+                                    .foregroundStyle(.white.opacity(0.35))
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .listRowBackground(bg)
+                }
+            }
+            .listStyle(.plain)
+            .background(bg.ignoresSafeArea())
+            .navigationTitle("ADD TO PLAYLIST")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+            }
+            .preferredColorScheme(.dark)
+        }
+        .presentationDetents([.medium, .large])
+        .presentationBackground(bg)
+        .alert("New Playlist", isPresented: $showCreate) {
+            TextField("Name", text: $newName)
+            Button("Create & Add") {
+                let name = newName.trimmingCharacters(in: .whitespaces)
+                if !name.isEmpty {
+                    let pl = playerVM.createPlaylist(name: name)
+                    playerVM.addTrackToPlaylist(track, playlistID: pl.id)
+                }
+                newName = ""; dismiss()
+            }
+            Button("Cancel", role: .cancel) { newName = "" }
+        }
     }
 }

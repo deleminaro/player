@@ -15,12 +15,13 @@ final class PlayerViewModel: ObservableObject {
     @Published var duration:          Double       = 0
     @Published var playbackSpeed:     Float        = 1.0
     @Published var queue:             [QueueItem]  = []
-    @Published var recentlyPlayed:    [Track]      = []
-    @Published var likedTracks:       [Track]      = []
-    @Published var recentSearches:    [String]     = []
-    @Published var showingNowPlaying: Bool         = false
-    @Published var isShuffling:       Bool         = false
-    @Published var isRepeating:       Bool         = false
+    @Published var recentlyPlayed:    [Track]         = []
+    @Published var likedTracks:       [Track]         = []
+    @Published var playlists:         [LocalPlaylist] = []
+    @Published var recentSearches:    [String]        = []
+    @Published var showingNowPlaying: Bool            = false
+    @Published var isShuffling:       Bool            = false
+    @Published var isRepeating:       Bool            = false
 
     var nextTrack: Track? {
         guard let idx = queue.firstIndex(where: { $0.track.id == currentTrack?.id }),
@@ -35,10 +36,11 @@ final class PlayerViewModel: ObservableObject {
 
     // MARK: - Persistence keys
 
-    private let kRecent   = "mp_recently_played"
-    private let kQueue    = "mp_queue"
-    private let kLiked    = "mp_liked_tracks"
-    private let kSearches = "mp_recent_searches"
+    private let kRecent     = "mp_recently_played"
+    private let kQueue      = "mp_queue"
+    private let kLiked      = "mp_liked_tracks"
+    private let kSearches   = "mp_recent_searches"
+    private let kPlaylists  = "mp_playlists"
 
     // MARK: - Init
 
@@ -52,7 +54,7 @@ final class PlayerViewModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.saveRecent(); self?.saveQueue()
-                self?.saveLiked(); self?.saveSearches()
+                self?.saveLiked(); self?.saveSearches(); self?.savePlaylists()
             }
         }
     }
@@ -174,6 +176,40 @@ final class PlayerViewModel: ObservableObject {
     func moveInQueue(from source: IndexSet, to destination: Int) {
         queue.move(fromOffsets: source, toOffset: destination)
         saveQueue()
+    }
+
+    // MARK: - Playlists
+
+    @discardableResult
+    func createPlaylist(name: String) -> LocalPlaylist {
+        let pl = LocalPlaylist(name: name)
+        playlists.append(pl)
+        savePlaylists()
+        return pl
+    }
+
+    func addTrackToPlaylist(_ track: Track, playlistID: UUID) {
+        guard let idx = playlists.firstIndex(where: { $0.id == playlistID }) else { return }
+        guard !playlists[idx].tracks.contains(where: { $0.id == track.id }) else { return }
+        playlists[idx].tracks.append(track)
+        savePlaylists()
+    }
+
+    func removeTrackFromPlaylist(_ trackID: Int, playlistID: UUID) {
+        guard let idx = playlists.firstIndex(where: { $0.id == playlistID }) else { return }
+        playlists[idx].tracks.removeAll { $0.id == trackID }
+        savePlaylists()
+    }
+
+    func deletePlaylist(_ id: UUID) {
+        playlists.removeAll { $0.id == id }
+        savePlaylists()
+    }
+
+    func renamePlaylist(_ id: UUID, to name: String) {
+        guard let idx = playlists.firstIndex(where: { $0.id == id }) else { return }
+        playlists[idx].name = name
+        savePlaylists()
     }
 
     // MARK: - Liked tracks
@@ -316,6 +352,10 @@ final class PlayerViewModel: ObservableObject {
             likedTracks = tracks
         }
         recentSearches = d.stringArray(forKey: kSearches) ?? []
+        if let data = d.data(forKey: kPlaylists),
+           let pls = try? JSONDecoder().decode([LocalPlaylist].self, from: data) {
+            playlists = pls
+        }
     }
 
     private func saveRecent() {
@@ -328,6 +368,12 @@ final class PlayerViewModel: ObservableObject {
         let tracks = queue.map { $0.track }
         if let data = try? JSONEncoder().encode(tracks) {
             UserDefaults.standard.set(data, forKey: kQueue)
+        }
+    }
+
+    private func savePlaylists() {
+        if let data = try? JSONEncoder().encode(playlists) {
+            UserDefaults.standard.set(data, forKey: kPlaylists)
         }
     }
 
