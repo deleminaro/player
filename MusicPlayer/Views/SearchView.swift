@@ -27,6 +27,7 @@ private enum SearchResultSet {
 
 struct SearchView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var query              = ""
     @State private var resultSet          = SearchResultSet.empty
@@ -42,7 +43,6 @@ struct SearchView: View {
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgField = Color(red: 0.14,  green: 0.14,  blue: 0.14)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         NavigationStack {
@@ -65,10 +65,10 @@ struct SearchView: View {
             .preferredColorScheme(.dark)
         }
         .sheet(item: $addToPlaylistTrack) { track in
-            AddToPlaylistSheet(track: track).environmentObject(playerVM)
+            AddToPlaylistSheet(track: track).environmentObject(playerVM).environmentObject(themeManager)
         }
         .sheet(item: $selectedPlaylist) { pl in
-            SCPlaylistDetailView(playlist: pl).environmentObject(playerVM)
+            SCPlaylistDetailView(playlist: pl).environmentObject(playerVM).environmentObject(themeManager)
         }
         .onTapGesture { focused = false }
         .onChange(of: filter) { _, _ in
@@ -140,7 +140,7 @@ struct SearchView: View {
     @ViewBuilder
     private var contentArea: some View {
         if isSearching {
-            ProgressView().tint(primary)
+            ProgressView().tint(themeManager.current.primary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let err = searchError {
             errorState(err)
@@ -170,7 +170,7 @@ struct SearchView: View {
                     .swipeActions(edge: .trailing) {
                         Button { playerVM.addToQueue(track) } label: {
                             Label("Queue", systemImage: "plus")
-                        }.tint(primary)
+                        }.tint(themeManager.current.primary)
                         Button { playerVM.toggleLike(track) } label: {
                             Label(playerVM.isLiked(track) ? "Unlike" : "Like",
                                   systemImage: playerVM.isLiked(track) ? "heart.slash" : "heart")
@@ -184,7 +184,7 @@ struct SearchView: View {
                     .onAppear { if track.id == tracks.last?.id { loadMore() } }
             }
             if isLoadingMore {
-                HStack { Spacer(); ProgressView().tint(primary); Spacer() }
+                HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }
                     .listRowBackground(bg).listRowSeparatorTint(.clear)
             }
         }
@@ -203,7 +203,7 @@ struct SearchView: View {
                     .onAppear { if pl.id == playlists.last?.id { loadMore() } }
             }
             if isLoadingMore {
-                HStack { Spacer(); ProgressView().tint(primary); Spacer() }
+                HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }
                     .listRowBackground(bg).listRowSeparatorTint(.clear)
             }
         }
@@ -222,7 +222,7 @@ struct SearchView: View {
                     .onAppear { if artist.id == artists.last?.id { loadMore() } }
             }
             if isLoadingMore {
-                HStack { Spacer(); ProgressView().tint(primary); Spacer() }
+                HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }
                     .listRowBackground(bg).listRowSeparatorTint(.clear)
             }
         }
@@ -248,7 +248,7 @@ struct SearchView: View {
                         Button { playerVM.clearRecentSearches() } label: {
                             Text("CLEAR")
                                 .font(.system(size: 9, weight: .black)).kerning(1)
-                                .foregroundStyle(primary)
+                                .foregroundStyle(themeManager.current.primary)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -275,7 +275,7 @@ struct SearchView: View {
                 } else {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 44)).foregroundStyle(primary.opacity(0.25))
+                            .font(.system(size: 44)).foregroundStyle(themeManager.current.primary.opacity(0.25))
                         Text("SEARCH MUSIC")
                             .font(.system(size: 13, weight: .black)).kerning(2)
                             .foregroundStyle(.white.opacity(0.4))
@@ -408,7 +408,7 @@ struct SearchView: View {
 
 private struct PlaylistRowView: View {
     let playlist: SCPlaylist
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         HStack(spacing: 14) {
@@ -421,7 +421,7 @@ private struct PlaylistRowView: View {
                     .lineLimit(1)
                 Text(playlist.username.uppercased())
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(primary)
+                    .foregroundStyle(themeManager.current.primary)
                     .kerning(1.5)
                     .lineLimit(1)
             }
@@ -443,7 +443,7 @@ private struct PlaylistRowView: View {
 
 private struct ArtistRowView: View {
     let artist: SCArtist
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         HStack(spacing: 14) {
@@ -479,6 +479,7 @@ private struct ArtistRowView: View {
 
 struct SCPlaylistDetailView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
     let playlist: SCPlaylist
 
@@ -489,8 +490,6 @@ struct SCPlaylistDetailView: View {
 
     private let bg       = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgCard   = Color(red: 0.110, green: 0.110, blue: 0.110)
-    private let primary  = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
 
     var body: some View {
         NavigationStack {
@@ -512,7 +511,7 @@ struct SCPlaylistDetailView: View {
                         .padding(.horizontal, 24)
                     Text(playlist.username.uppercased())
                         .font(.system(size: 10, weight: .bold)).kerning(1.5)
-                        .foregroundStyle(primary.opacity(0.7))
+                        .foregroundStyle(themeManager.current.primary.opacity(0.7))
                         .padding(.top, 4)
                     Text("\(playlist.trackCount) TRACKS")
                         .font(.system(size: 9, weight: .bold)).kerning(1)
@@ -520,7 +519,7 @@ struct SCPlaylistDetailView: View {
                         .padding(.top, 2)
 
                     if isLoading {
-                        ProgressView().tint(primary).padding(.top, 40)
+                        ProgressView().tint(themeManager.current.primary).padding(.top, 40)
                     } else if failed {
                         VStack(spacing: 10) {
                             Image(systemName: "exclamationmark.triangle")
@@ -542,9 +541,9 @@ struct SCPlaylistDetailView: View {
                                     Image(systemName: "play.fill")
                                     Text("PLAY").font(.system(size: 13, weight: .black)).kerning(1)
                                 }
-                                .foregroundStyle(onPrimary)
+                                .foregroundStyle(themeManager.current.onPrimary)
                                 .frame(maxWidth: .infinity).padding(.vertical, 14)
-                                .background(primary, in: RoundedRectangle(cornerRadius: 14))
+                                .background(themeManager.current.primary, in: RoundedRectangle(cornerRadius: 14))
                             }
                             Button {
                                 guard !tracks.isEmpty else { return }
@@ -673,6 +672,7 @@ struct SCPlaylistDetailView: View {
 
 struct AddToPlaylistSheet: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
     let track: Track
 
@@ -680,7 +680,6 @@ struct AddToPlaylistSheet: View {
     @State private var newName    = ""
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         NavigationStack {
@@ -689,12 +688,12 @@ struct AddToPlaylistSheet: View {
                     HStack(spacing: 14) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(primary.opacity(0.15)).frame(width: 48, height: 48)
+                                .fill(themeManager.current.primary.opacity(0.15)).frame(width: 48, height: 48)
                             Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .bold)).foregroundStyle(primary)
+                                .font(.system(size: 20, weight: .bold)).foregroundStyle(themeManager.current.primary)
                         }
                         Text("NEW PLAYLIST")
-                            .font(.system(size: 12, weight: .black)).kerning(1).foregroundStyle(primary)
+                            .font(.system(size: 12, weight: .black)).kerning(1).foregroundStyle(themeManager.current.primary)
                     }
                     .padding(.vertical, 6)
                 }

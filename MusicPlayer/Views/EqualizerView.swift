@@ -2,11 +2,10 @@ import SwiftUI
 
 struct EqualizerView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
 
     private let bandNames = ["BASS", "LOW\nMID", "MID", "HIGH\nMID", "TREBLE"]
-    private let primary   = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
     private let bg        = Color(red: 0.075, green: 0.075, blue: 0.075)
 
     @State private var gains: [Float] = [0, 0, 0, 0, 0]
@@ -47,8 +46,8 @@ struct EqualizerView: View {
                             Text(name)
                                 .font(.system(size: 10, weight: .black)).kerning(1)
                                 .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(active ? primary : Color.white.opacity(0.08), in: Capsule())
-                                .foregroundStyle(active ? onPrimary : Color.white.opacity(0.7))
+                                .background(active ? themeManager.current.primary : Color.white.opacity(0.08), in: Capsule())
+                                .foregroundStyle(active ? themeManager.current.onPrimary : Color.white.opacity(0.7))
                         }
                     }
                 }

@@ -2,14 +2,13 @@ import SwiftUI
 
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var showLyrics = false
     @State private var showQueue  = false
     @State private var showEQ     = false
     @State private var showSpeed  = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
-    private let primary   = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
     private let bg        = Color(red: 0.075, green: 0.075, blue: 0.075)
 
     var body: some View {
@@ -65,7 +64,7 @@ struct NowPlayingView: View {
         .preferredColorScheme(.dark)
         .presentationBackground(.black)
         .sheet(isPresented: $showLyrics) {
-            if let t = playerVM.currentTrack { LyricsView(track: t) }
+            if let t = playerVM.currentTrack { LyricsView(track: t).environmentObject(themeManager) }
         }
         .sheet(isPresented: $showQueue) {
             QueueView().environmentObject(playerVM)
@@ -78,6 +77,7 @@ struct NowPlayingView: View {
                 playerVM.setSpeed(spd)
             }
             .environmentObject(playerVM)
+            .environmentObject(themeManager)
             .presentationDetents([.height(380)])
             .presentationBackground(.ultraThinMaterial)
             .presentationCornerRadius(28)
@@ -152,7 +152,7 @@ struct NowPlayingView: View {
                     .lineLimit(1)
                 Text((playerVM.currentTrack?.username ?? "").uppercased())
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(primary)
+                    .foregroundStyle(themeManager.current.primary)
                     .kerning(1.5)
                     .lineLimit(1)
             }
@@ -190,7 +190,7 @@ struct NowPlayingView: View {
                             width: barW, height: barH
                         )
                         ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
-                                 with: .color(filled ? primary : Color.white.opacity(0.22)))
+                                 with: .color(filled ? themeManager.current.primary : Color.white.opacity(0.22)))
                     }
                 }
                 .contentShape(Rectangle())
@@ -220,7 +220,7 @@ struct NowPlayingView: View {
             Button { playerVM.isShuffling.toggle() } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(playerVM.isShuffling ? primary : .white.opacity(0.4))
+                    .foregroundStyle(playerVM.isShuffling ? themeManager.current.primary : .white.opacity(0.4))
             }
 
             Spacer()
@@ -264,7 +264,7 @@ struct NowPlayingView: View {
             Button { playerVM.isRepeating.toggle() } label: {
                 Image(systemName: playerVM.isRepeating ? "repeat.1" : "repeat")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(playerVM.isRepeating ? primary : .white.opacity(0.4))
+                    .foregroundStyle(playerVM.isRepeating ? themeManager.current.primary : .white.opacity(0.4))
             }
         }
     }
@@ -310,7 +310,7 @@ struct NowPlayingView: View {
                                 .font(.system(size: 8, weight: .black))
                                 .foregroundStyle(.black)
                                 .padding(3)
-                                .background(primary, in: Circle())
+                                .background(themeManager.current.primary, in: Circle())
                                 .offset(x: 8, y: -6)
                         }
                     }
@@ -347,11 +347,10 @@ struct NowPlayingView: View {
 
 struct SpeedPickerSheet: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Binding var currentSpeed: Float
     let onSelect: (Float) -> Void
     @Environment(\.dismiss) var dismiss
-
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     private struct SpeedMode {
         let label: String
@@ -376,7 +375,7 @@ struct SpeedPickerSheet: View {
                 HStack(spacing: 8) {
                     Image(systemName: "waveform")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(playerVM.isPitchPreserved ? primary : .white.opacity(0.4))
+                        .foregroundStyle(playerVM.isPitchPreserved ? themeManager.current.primary : .white.opacity(0.4))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("PITCH LOCK")
                             .font(.system(size: 11, weight: .black)).kerning(1.5)
@@ -391,7 +390,7 @@ struct SpeedPickerSheet: View {
                     get: { playerVM.isPitchPreserved },
                     set: { _ in playerVM.togglePitchPreservation() }
                 ))
-                .toggleStyle(SwitchToggleStyle(tint: primary))
+                .toggleStyle(SwitchToggleStyle(tint: themeManager.current.primary))
                 .labelsHidden()
             }
             .padding(.horizontal, 20).padding(.vertical, 14)

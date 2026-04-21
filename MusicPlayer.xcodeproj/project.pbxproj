@@ -26,6 +26,8 @@
 		AA181011AA181011AA181011 /* EqualizerView.swift in Sources */      = {isa = PBXBuildFile; fileRef = AA100013AA100013AA100013 /* EqualizerView.swift */; };
 		AA181014AA181014AA181014 /* HomeView.swift in Sources */           = {isa = PBXBuildFile; fileRef = AA100016AA100016AA100016 /* HomeView.swift */; };
 		AA181015AA181015AA181015 /* LibraryView.swift in Sources */        = {isa = PBXBuildFile; fileRef = AA100017AA100017AA100017 /* LibraryView.swift */; };
+		AA181016AA181016AA181016 /* AppTheme.swift in Sources */           = {isa = PBXBuildFile; fileRef = AA100018AA100018AA100018 /* AppTheme.swift */; };
+		AA181017AA181017AA181017 /* SettingsView.swift in Sources */       = {isa = PBXBuildFile; fileRef = AA100019AA100019AA100019 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +52,8 @@
 		AA100013AA100013AA100013 /* EqualizerView.swift */      = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EqualizerView.swift;      sourceTree = "<group>"; };
 		AA100016AA100016AA100016 /* HomeView.swift */           = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift;           sourceTree = "<group>"; };
 		AA100017AA100017AA100017 /* LibraryView.swift */        = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift;        sourceTree = "<group>"; };
+		AA100018AA100018AA100018 /* AppTheme.swift */           = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift;           sourceTree = "<group>"; };
+		AA100019AA100019AA100019 /* SettingsView.swift */       = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift;       sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				AA100004AA100004AA100004 /* Track.swift */,
+				AA100018AA100018AA100018 /* AppTheme.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -126,6 +131,7 @@
 				AA100013AA100013AA100013 /* EqualizerView.swift */,
 				AA100016AA100016AA100016 /* HomeView.swift */,
 				AA100017AA100017AA100017 /* LibraryView.swift */,
+				AA100019AA100019AA100019 /* SettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -225,6 +231,8 @@
 				AA181011AA181011AA181011 /* EqualizerView.swift in Sources */,
 				AA181014AA181014AA181014 /* HomeView.swift in Sources */,
 				AA181015AA181015AA181015 /* LibraryView.swift in Sources */,
+				AA181016AA181016AA181016 /* AppTheme.swift in Sources */,
+				AA181017AA181017AA181017 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

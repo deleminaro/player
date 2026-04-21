@@ -4,8 +4,7 @@ struct TrackRowView: View {
     let track: Track
     let isLiked: Bool
     let onToggleLike: () -> Void
-
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         HStack(spacing: 14) {
@@ -18,7 +17,7 @@ struct TrackRowView: View {
                     .lineLimit(1)
                 Text(track.username.uppercased())
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(primary)
+                    .foregroundStyle(themeManager.current.primary)
                     .kerning(1.5)
                     .lineLimit(1)
             }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LyricsView: View {
     let track: Track
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
 
     @State private var lyrics:     String?
@@ -9,7 +10,6 @@ struct LyricsView: View {
     @State private var notFound  = false
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         NavigationStack {
@@ -19,7 +19,7 @@ struct LyricsView: View {
                 if isLoading {
                     VStack(spacing: 14) {
                         ProgressView()
-                            .tint(primary)
+                            .tint(themeManager.current.primary)
                         Text("SEARCHING LYRICS…")
                             .font(.system(size: 10, weight: .black)).kerning(2)
                             .foregroundStyle(.white.opacity(0.4))
@@ -41,13 +41,13 @@ struct LyricsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(primary)
+                        .foregroundStyle(themeManager.current.primary)
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     if let url = geniusSearchURL {
                         Link(destination: url) {
                             Image(systemName: "safari")
-                                .foregroundStyle(primary)
+                                .foregroundStyle(themeManager.current.primary)
                         }
                     }
                 }
@@ -66,7 +66,7 @@ struct LyricsView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(track.title.uppercased())
                 .font(.system(size: 11, weight: .black)).kerning(2)
-                .foregroundStyle(primary.opacity(0.7))
+                .foregroundStyle(themeManager.current.primary.opacity(0.7))
                 .padding(.bottom, 4)
             Text(track.username.uppercased())
                 .font(.system(size: 10, weight: .bold)).kerning(1.5)
@@ -78,7 +78,7 @@ struct LyricsView: View {
                 if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") {
                     Text(trimmed.uppercased())
                         .font(.system(size: 11, weight: .black)).kerning(1.5)
-                        .foregroundStyle(primary)
+                        .foregroundStyle(themeManager.current.primary)
                         .padding(.top, 24)
                         .padding(.bottom, 8)
                 } else {
@@ -111,9 +111,9 @@ struct LyricsView: View {
                 Link(destination: url) {
                     Text("Search on Genius")
                         .font(.system(size: 12, weight: .black)).kerning(1)
-                        .foregroundStyle(Color(red: 0.063, green: 0, blue: 0.663))
+                        .foregroundStyle(themeManager.current.onPrimary)
                         .padding(.horizontal, 20).padding(.vertical, 10)
-                        .background(Color(red: 0.753, green: 0.757, blue: 1.0), in: Capsule())
+                        .background(themeManager.current.primary, in: Capsule())
                 }
                 .padding(.top, 4)
             }

@@ -2,9 +2,8 @@ import SwiftUI
 
 struct MiniPlayerView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
 
-    private let primary   = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
     private let bg        = Color(red: 0.110, green: 0.110, blue: 0.110)
 
     var body: some View {
@@ -30,7 +29,7 @@ struct MiniPlayerView: View {
                         .lineLimit(1)
                     Text((playerVM.currentTrack?.username ?? "").uppercased())
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(primary)
+                        .foregroundStyle(themeManager.current.primary)
                         .kerning(1.5)
                         .lineLimit(1)
                 }
@@ -42,10 +41,10 @@ struct MiniPlayerView: View {
                     playerVM.togglePlayPause()
                 } label: {
                     ZStack {
-                        Circle().fill(primary).frame(width: 38, height: 38)
+                        Circle().fill(themeManager.current.primary).frame(width: 38, height: 38)
                         Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(onPrimary)
+                            .foregroundStyle(themeManager.current.onPrimary)
                             .offset(x: playerVM.isPlaying ? 0 : 1)
                     }
                 }
@@ -63,7 +62,7 @@ struct MiniPlayerView: View {
             // Progress line at bottom
             GeometryReader { geo in
                 Rectangle()
-                    .fill(primary)
+                    .fill(themeManager.current.primary)
                     .frame(width: geo.size.width * progress, height: 2)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

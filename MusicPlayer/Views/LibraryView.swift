@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var showLiked        = false
     @State private var showCreateSheet  = false
     @State private var newPlaylistName  = ""
@@ -9,8 +10,6 @@ struct LibraryView: View {
 
     private let bg       = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgCard   = Color(red: 0.110, green: 0.110, blue: 0.110)
-    private let primary  = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
 
     var body: some View {
         NavigationStack {
@@ -35,10 +34,10 @@ struct LibraryView: View {
             .preferredColorScheme(.dark)
         }
         .sheet(isPresented: $showLiked) {
-            LikedTracksView().environmentObject(playerVM)
+            LikedTracksView().environmentObject(playerVM).environmentObject(themeManager)
         }
         .sheet(item: $selectedPlaylist) { pl in
-            PlaylistDetailView(playlist: pl).environmentObject(playerVM)
+            PlaylistDetailView(playlist: pl).environmentObject(playerVM).environmentObject(themeManager)
         }
         .alert("New Playlist", isPresented: $showCreateSheet) {
             TextField("Name", text: $newPlaylistName)
@@ -82,7 +81,7 @@ struct LibraryView: View {
                         .font(.system(size: 28, weight: .black)).foregroundStyle(.white)
                     Text(String(playerVM.likedTracks.count) + " CURATED MASTERPIECES")
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(primary.opacity(0.8)).kerning(1.5)
+                        .foregroundStyle(themeManager.current.primary.opacity(0.8)).kerning(1.5)
                 }
                 Spacer()
                 Button {
@@ -92,8 +91,8 @@ struct LibraryView: View {
                     playerVM.showingNowPlaying = true
                 } label: {
                     ZStack {
-                        Circle().fill(primary).frame(width: 44, height: 44)
-                        Image(systemName: "shuffle").font(.system(size: 16, weight: .bold)).foregroundStyle(onPrimary)
+                        Circle().fill(themeManager.current.primary).frame(width: 44, height: 44)
+                        Image(systemName: "shuffle").font(.system(size: 16, weight: .bold)).foregroundStyle(themeManager.current.onPrimary)
                     }
                 }
                 .opacity(playerVM.likedTracks.isEmpty ? 0.4 : 1)
@@ -138,7 +137,7 @@ struct LibraryView: View {
                 Spacer()
                 Button { showCreateSheet = true } label: {
                     Text("CREATE NEW +")
-                        .font(.system(size: 10, weight: .black)).kerning(1).foregroundStyle(primary)
+                        .font(.system(size: 10, weight: .black)).kerning(1).foregroundStyle(themeManager.current.primary)
                 }
             }
 
@@ -173,8 +172,8 @@ struct LibraryView: View {
 
 private struct PlaylistCard: View {
     let playlist: LocalPlaylist
+    @EnvironmentObject var themeManager: ThemeManager
     private let bg    = Color(red: 0.110, green: 0.110, blue: 0.110)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -187,7 +186,7 @@ private struct PlaylistCard: View {
                 .foregroundStyle(.white).lineLimit(1)
             Text("\(playlist.tracks.count) TRACKS")
                 .font(.system(size: 9, weight: .bold)).kerning(1)
-                .foregroundStyle(primary.opacity(0.7))
+                .foregroundStyle(themeManager.current.primary.opacity(0.7))
         }
     }
 
@@ -219,6 +218,7 @@ private struct PlaylistCard: View {
 
 struct PlaylistDetailView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
     let playlist: LocalPlaylist
 
@@ -228,8 +228,6 @@ struct PlaylistDetailView: View {
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
     private let bgCard  = Color(red: 0.110, green: 0.110, blue: 0.110)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
-    private let onPrimary = Color(red: 0.063, green: 0, blue: 0.663)
 
     var body: some View {
         NavigationStack {
@@ -249,7 +247,7 @@ struct PlaylistDetailView: View {
                         .foregroundStyle(.white)
                     Text("\(currentPlaylist.tracks.count) TRACKS")
                         .font(.system(size: 10, weight: .bold)).kerning(1.5)
-                        .foregroundStyle(primary.opacity(0.7))
+                        .foregroundStyle(themeManager.current.primary.opacity(0.7))
                         .padding(.top, 4)
 
                     // Play / Shuffle buttons
@@ -264,9 +262,9 @@ struct PlaylistDetailView: View {
                                 Image(systemName: "play.fill")
                                 Text("PLAY").font(.system(size: 13, weight: .black)).kerning(1)
                             }
-                            .foregroundStyle(onPrimary)
+                            .foregroundStyle(themeManager.current.onPrimary)
                             .frame(maxWidth: .infinity).padding(.vertical, 14)
-                            .background(primary, in: RoundedRectangle(cornerRadius: 14))
+                            .background(themeManager.current.primary, in: RoundedRectangle(cornerRadius: 14))
                         }
 
                         Button {
@@ -290,7 +288,7 @@ struct PlaylistDetailView: View {
                     // Track list
                     if currentPlaylist.tracks.isEmpty {
                         VStack(spacing: 12) {
-                            Image(systemName: "music.note").font(.system(size: 36)).foregroundStyle(primary.opacity(0.3))
+                            Image(systemName: "music.note").font(.system(size: 36)).foregroundStyle(themeManager.current.primary.opacity(0.3))
                             Text("NO TRACKS YET")
                                 .font(.system(size: 13, weight: .black)).kerning(2)
                                 .foregroundStyle(.white.opacity(0.4))
@@ -366,10 +364,10 @@ struct PlaylistDetailView: View {
 
 struct LikedTracksView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
 
     private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let primary = Color(red: 0.753, green: 0.757, blue: 1.0)
 
     var body: some View {
         NavigationStack {
