@@ -77,7 +77,8 @@ struct NowPlayingView: View {
             SpeedPickerSheet(currentSpeed: $playerVM.playbackSpeed) { spd in
                 playerVM.setSpeed(spd)
             }
-            .presentationDetents([.height(320)])
+            .environmentObject(playerVM)
+            .presentationDetents([.height(380)])
             .presentationBackground(.ultraThinMaterial)
             .presentationCornerRadius(28)
         }
@@ -345,6 +346,7 @@ struct NowPlayingView: View {
 // MARK: - Speed picker sheet
 
 struct SpeedPickerSheet: View {
+    @EnvironmentObject var playerVM: PlayerViewModel
     @Binding var currentSpeed: Float
     let onSelect: (Float) -> Void
     @Environment(\.dismiss) var dismiss
@@ -357,21 +359,19 @@ struct SpeedPickerSheet: View {
         let speed: Float
     }
     private let modes: [SpeedMode] = [
-        SpeedMode(label: "Slowed",   icon: "person.wave.2",  speed: 0.8),
+        SpeedMode(label: "Slowed",   icon: "person.wave.2",  speed: 0.75),
         SpeedMode(label: "Default",  icon: "play.circle",    speed: 1.0),
         SpeedMode(label: "Speedup",  icon: "speedometer",    speed: 1.5),
     ]
 
     var body: some View {
         VStack(spacing: 0) {
-            // Drag handle
             Capsule()
                 .fill(Color.white.opacity(0.25))
                 .frame(width: 36, height: 4)
                 .padding(.top, 12)
                 .padding(.bottom, 20)
 
-            // Pitch note
             HStack(spacing: 6) {
                 Image(systemName: "waveform")
                     .font(.system(size: 11, weight: .semibold))
@@ -384,7 +384,6 @@ struct SpeedPickerSheet: View {
             .background(primary.opacity(0.12), in: Capsule())
             .padding(.bottom, 24)
 
-            // Three mode buttons
             HStack(spacing: 12) {
                 ForEach(modes, id: \.speed) { mode in
                     let selected = abs(currentSpeed - mode.speed) < 0.01
@@ -413,8 +412,44 @@ struct SpeedPickerSheet: View {
             }
             .padding(.horizontal, 20)
 
+            // Live waveform progress
+            waveformBar
+                .padding(.horizontal, 24)
+                .padding(.top, 28)
+
             Spacer()
         }
         .preferredColorScheme(.dark)
+    }
+
+    private var waveformBar: some View {
+        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
+        let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+        return Canvas { ctx, size in
+            let count = CGFloat(bars.count)
+            let step  = size.width / count
+            let barW  = max(1.5, step * 0.55)
+            for (i, h) in bars.enumerated() {
+                let filled = Double(i) / Double(bars.count) < progress
+                let barH = h * size.height
+                let rect = CGRect(
+                    x: CGFloat(i) * step + (step - barW) / 2,
+                    y: (size.height - barH) / 2,
+                    width: barW, height: barH
+                )
+                ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
+                         with: .color(filled ? .white : Color.white.opacity(0.2)))
+            }
+        }
+        .frame(height: 36)
+    }
+
+    private func waveformHeights(for seed: Int) -> [CGFloat] {
+        var rng = seed &* 1664525 &+ 1013904223
+        return (0..<52).map { _ in
+            rng = rng &* 1664525 &+ 1013904223
+            let v = CGFloat((rng >> 16) & 0xFFFF) / 65535.0
+            return 0.2 + v * 0.8
+        }
     }
 }
