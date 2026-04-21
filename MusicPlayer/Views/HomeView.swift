@@ -19,6 +19,10 @@ struct HomeView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
+                    quickAccessRow
+                        .padding(.horizontal, 16)
+                        .padding(.top, 20)
+
                     if !playerVM.recentlyPlayed.isEmpty {
                         recentSection
                             .padding(.top, 32)
@@ -60,6 +64,36 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showArchive) {
             RecentlyPlayedView().environmentObject(playerVM)
+        }
+    }
+
+    // MARK: - Quick access row
+
+    private var quickAccessRow: some View {
+        HStack(spacing: 12) {
+            QuickAccessCard(
+                title: "Recent",
+                trackCount: playerVM.recentlyPlayed.count,
+                artworks: playerVM.recentlyPlayed.prefix(2).compactMap { $0.thumbnailArtworkURL },
+                bgCard: bgCard
+            )
+            .onTapGesture {
+                guard !playerVM.recentlyPlayed.isEmpty else { return }
+                playerVM.playFromList(playerVM.recentlyPlayed, startingWith: playerVM.recentlyPlayed[0])
+                playerVM.showingNowPlaying = true
+            }
+
+            QuickAccessCard(
+                title: "Favorites",
+                trackCount: playerVM.likedTracks.count,
+                artworks: playerVM.likedTracks.prefix(2).compactMap { $0.thumbnailArtworkURL },
+                bgCard: bgCard
+            )
+            .onTapGesture {
+                guard !playerVM.likedTracks.isEmpty else { return }
+                playerVM.playFromList(playerVM.likedTracks, startingWith: playerVM.likedTracks[0])
+                playerVM.showingNowPlaying = true
+            }
         }
     }
 
@@ -187,6 +221,51 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 40)
+    }
+}
+
+// MARK: - Recent track card
+
+// MARK: - Quick access card
+
+private struct QuickAccessCard: View {
+    let title: String
+    let trackCount: Int
+    let artworks: [String]
+    let bgCard: Color
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Stacked artwork
+            ZStack(alignment: .bottomLeading) {
+                // Back image (offset right + up)
+                ArtworkThumbnail(url: artworks.count > 1 ? artworks[1] : artworks.first)
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .offset(x: 14, y: -10)
+                    .opacity(artworks.count > 1 ? 1 : 0)
+
+                // Front image
+                ArtworkThumbnail(url: artworks.first)
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .frame(width: 66, height: 62)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.custom("Courier", size: 18)).bold()
+                    .foregroundStyle(.white)
+                Text("\(trackCount) tracks")
+                    .font(.custom("Courier", size: 13))
+                    .foregroundStyle(.white.opacity(0.4))
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .background(bgCard, in: RoundedRectangle(cornerRadius: 18))
+        .frame(maxWidth: .infinity)
     }
 }
 
