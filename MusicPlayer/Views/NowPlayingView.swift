@@ -361,7 +361,7 @@ struct SpeedPickerSheet: View {
     private let modes: [SpeedMode] = [
         SpeedMode(label: "Slowed",   icon: "person.wave.2",  speed: 0.75),
         SpeedMode(label: "Default",  icon: "play.circle",    speed: 1.0),
-        SpeedMode(label: "Speedup",  icon: "speedometer",    speed: 1.5),
+        SpeedMode(label: "Speedup",  icon: "speedometer",    speed: 1.25),
     ]
 
     var body: some View {
