@@ -80,7 +80,7 @@ struct LibraryView: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("LIKED\nTRACKS")
-                        .font(.system(size: 28, weight: .black)).foregroundStyle(.white)
+                        .font(.system(size: 20, weight: .black)).foregroundStyle(.white)
                     Text(String(playerVM.likedTracks.count) + " CURATED MASTERPIECES")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(themeManager.current.primary.opacity(0.8)).kerning(1.5)
@@ -102,7 +102,7 @@ struct LibraryView: View {
             }
             .padding(20)
         }
-        .frame(height: 200)
+        .frame(height: 170)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .onTapGesture { if !playerVM.likedTracks.isEmpty { showLiked = true } }
     }
@@ -135,7 +135,7 @@ struct LibraryView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("PLAYLISTS")
-                    .font(.system(size: 18, weight: .black)).foregroundStyle(.white)
+                    .font(.system(size: 14, weight: .black)).foregroundStyle(.white)
                 Spacer()
                 Button { showCreateSheet = true } label: {
                     Text("CREATE NEW +")
@@ -180,7 +180,7 @@ private struct PlaylistCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             artworkView
-                .frame(height: 140)
+                .frame(height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
             Text(playlist.name.uppercased())
@@ -237,11 +237,11 @@ struct PlaylistDetailView: View {
                 VStack(spacing: 0) {
                     // Header artwork
                     artworkHeader
-                        .frame(height: 220)
+                        .frame(height: 180)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .padding(.horizontal, 40)
-                        .padding(.top, 20)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, 50)
+                        .padding(.top, 16)
+                        .padding(.bottom, 12)
 
                     // Title + track count
                     Text(currentPlaylist.name.uppercased())

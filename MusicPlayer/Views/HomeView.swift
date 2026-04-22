@@ -131,7 +131,7 @@ struct HomeView: View {
                 Text(featured != nil
                      ? featured!.title.uppercased()
                      : "YOUR\nMUSIC.")
-                    .font(.system(size: featured != nil ? 22 : 30, weight: .black))
+                    .font(.system(size: featured != nil ? 18 : 24, weight: .black))
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -165,7 +165,7 @@ struct HomeView: View {
             }
             .padding(20)
         }
-        .frame(height: 240)
+        .frame(height: 200)
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
@@ -176,7 +176,7 @@ struct HomeView: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("RECENTLY PLAYED")
-                        .font(.system(size: 18, weight: .black))
+                        .font(.system(size: 14, weight: .black))
                         .foregroundStyle(.white)
                     Text("YOUR LATEST SESSIONS")
                         .font(.system(size: 9, weight: .bold))
@@ -237,36 +237,36 @@ private struct QuickAccessCard: View {
     let bgCard: Color
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             // Stacked artwork
             ZStack(alignment: .bottomLeading) {
                 // Back image (offset right + up)
                 ArtworkThumbnail(url: artworks.count > 1 ? artworks[1] : artworks.first)
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .offset(x: 14, y: -10)
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .offset(x: 12, y: -8)
                     .opacity(artworks.count > 1 ? 1 : 0)
 
                 // Front image
                 ArtworkThumbnail(url: artworks.first)
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            .frame(width: 66, height: 62)
+            .frame(width: 56, height: 52)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.custom("Courier", size: 18)).bold()
+                    .font(.custom("Courier", size: 14)).bold()
                     .foregroundStyle(.white)
                 Text("\(trackCount) tracks")
-                    .font(.custom("Courier", size: 13))
+                    .font(.custom("Courier", size: 11))
                     .foregroundStyle(.white.opacity(0.4))
             }
 
             Spacer()
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
-        .background(bgCard, in: RoundedRectangle(cornerRadius: 18))
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
         .frame(maxWidth: .infinity)
     }
 }

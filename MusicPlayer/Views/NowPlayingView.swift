@@ -49,14 +49,14 @@ struct NowPlayingView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     trackInfo
                     waveformProgress
-                        .padding(.top, 20)
+                        .padding(.top, 14)
                     controlsRow
-                        .padding(.top, 18)
+                        .padding(.top, 12)
                     actionRow
-                        .padding(.top, 20)
+                        .padding(.top, 14)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 44)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 28)
             }
         }
         .preferredColorScheme(.dark)
@@ -156,7 +156,7 @@ struct NowPlayingView: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 5) {
                 Text(playerVM.currentTrack?.title ?? "Not Playing")
-                    .font(.system(size: 22, weight: .black))
+                    .font(.system(size: 18, weight: .black))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 Text((playerVM.currentTrack?.username ?? "").uppercased())
@@ -171,7 +171,7 @@ struct NowPlayingView: View {
             } label: {
                 Image(systemName: playerVM.currentTrack.map { playerVM.isLiked($0) } == true
                       ? "heart.fill" : "heart")
-                    .font(.system(size: 22))
+                    .font(.system(size: 18))
                     .foregroundStyle(playerVM.currentTrack.map { playerVM.isLiked($0) } == true
                                      ? .pink : .white.opacity(0.5))
             }
@@ -218,7 +218,7 @@ struct NowPlayingView: View {
                     playerVM.seek(to: pct * playerVM.duration)
                 })
             }
-            .frame(height: 48)
+            .frame(height: 40)
             timeLabels
         }
     }
@@ -253,7 +253,7 @@ struct NowPlayingView: View {
                     playerVM.seek(to: pct * playerVM.duration)
                 })
             }
-            .frame(height: 48)
+            .frame(height: 40)
             timeLabels
         }
     }
@@ -318,7 +318,7 @@ struct NowPlayingView: View {
             // Previous
             Button { playerVM.skipPrevious() } label: {
                 Image(systemName: "backward.end.fill")
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
             }
 
@@ -327,12 +327,12 @@ struct NowPlayingView: View {
             // Play / Pause
             Button { playerVM.togglePlayPause() } label: {
                 ZStack {
-                    Circle().fill(.white).frame(width: 64, height: 64)
+                    Circle().fill(.white).frame(width: 56, height: 56)
                     if playerVM.playerState == .loading {
-                        ProgressView().tint(.black).scaleEffect(1.1)
+                        ProgressView().tint(.black).scaleEffect(1.0)
                     } else {
                         Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(.black)
                             .offset(x: playerVM.isPlaying ? 0 : 2)
                     }
@@ -344,7 +344,7 @@ struct NowPlayingView: View {
             // Next
             Button { playerVM.skipNext() } label: {
                 Image(systemName: "forward.end.fill")
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
             }
 

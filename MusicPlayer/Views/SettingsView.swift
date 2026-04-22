@@ -425,18 +425,18 @@ private struct ThemeCard: View {
             if isSelected { RoundedRectangle(cornerRadius: 16).stroke(.white, lineWidth: 2) }
             VStack {
                 HStack(alignment: .top) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         ForEach(theme.swatches.indices, id: \.self) { i in
-                            RoundedRectangle(cornerRadius: 7).fill(theme.swatches[i]).frame(width: 28, height: 28)
+                            RoundedRectangle(cornerRadius: 6).fill(theme.swatches[i]).frame(width: 22, height: 22)
                         }
                     }
                     Spacer()
-                    if isSelected { Circle().fill(.white).frame(width: 16, height: 16) }
+                    if isSelected { Circle().fill(.white).frame(width: 14, height: 14) }
                 }.padding(12)
                 Spacer()
             }
-            Text(theme.name).font(.custom("Courier", size: 14)).bold().foregroundStyle(.white)
-                .padding(.horizontal, 12).padding(.bottom, 12)
+            Text(theme.name).font(.custom("Courier", size: 12)).bold().foregroundStyle(.white)
+                .padding(.horizontal, 10).padding(.bottom, 10)
         }
         .aspectRatio(1, contentMode: .fit)
     }
