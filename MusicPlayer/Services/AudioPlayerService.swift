@@ -58,7 +58,7 @@ final class AudioPlayerService {
         let interval = CMTime(seconds: 1, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard time.isValid, !time.isIndefinite else { return }
-            self?.onTimeUpdate?(time.seconds)
+            Task { @MainActor [weak self] in self?.onTimeUpdate?(time.seconds) }
         }
 
         // Duration becomes available once the item is ready
