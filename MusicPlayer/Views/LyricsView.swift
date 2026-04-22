@@ -54,6 +54,7 @@ struct LyricsView: View {
             }
             .toolbarBackground(bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
         }
         .task { await loadLyrics() }

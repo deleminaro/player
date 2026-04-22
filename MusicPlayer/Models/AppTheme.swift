@@ -16,7 +16,7 @@ private let _darkCard = Color(red: 0.110, green: 0.110, blue: 0.110)
 
 extension AppTheme {
     static let dark     = AppTheme(id:"dark",     name:"Dark",     primary:.white,                                                   onPrimary:.black,                                           background:_darkBg, card:_darkCard, swatches:[.white])
-    static let amoled   = AppTheme(id:"amoled",   name:"AMOLED",   primary:Color(white:0.92),                                        onPrimary:.black,                                           background:.black,  card:Color(white:0.08), swatches:[Color(white:0.92), Color(white:0.12)])
+    static let amoled   = AppTheme(id:"amoled",   name:"AMOLED",   primary:Color(white:0.92),                                        onPrimary:.black,                                           background:.black,  card:Color(white:0.13), swatches:[Color(white:0.92), Color(white:0.12)])
     static let midnight = AppTheme(id:"midnight", name:"Midnight", primary:Color(red:0.38,green:0.56,blue:1.0),   onPrimary:Color(red:0.05,green:0.14,blue:0.56), background:_darkBg, card:_darkCard, swatches:[Color(red:0.38,green:0.56,blue:1.0), Color(red:0.05,green:0.14,blue:0.56)])
     static let emerald  = AppTheme(id:"emerald",  name:"Emerald",  primary:Color(red:0.16,green:0.86,blue:0.50),  onPrimary:Color(red:0.03,green:0.40,blue:0.22), background:_darkBg, card:_darkCard, swatches:[Color(red:0.16,green:0.86,blue:0.50), Color(red:0.03,green:0.40,blue:0.22)])
     static let sunset   = AppTheme(id:"sunset",   name:"Sunset",   primary:Color(red:1.0, green:0.58,blue:0.18),  onPrimary:Color(red:0.55,green:0.12,blue:0.06), background:_darkBg, card:_darkCard, swatches:[Color(red:1.0,green:0.58,blue:0.18), Color(red:0.55,green:0.12,blue:0.06)])

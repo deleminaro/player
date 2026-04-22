@@ -62,6 +62,7 @@ struct SearchView: View {
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
         }
         .sheet(item: $addToPlaylistTrack) { track in

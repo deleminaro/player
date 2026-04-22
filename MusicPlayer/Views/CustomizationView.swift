@@ -40,6 +40,7 @@ struct CustomizationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(bg, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .preferredColorScheme(.dark)
         .onChange(of: photoItem) { _, item in
             Task {

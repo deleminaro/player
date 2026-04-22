@@ -32,6 +32,7 @@ struct LibraryView: View {
             .navigationTitle("Library")
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
         }
         .sheet(isPresented: $showLiked) {

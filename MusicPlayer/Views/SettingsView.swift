@@ -140,6 +140,7 @@ struct SettingsView: View {
             .navigationTitle("General")
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
         }
         .sheet(isPresented: $showQualitySheet) {
