@@ -19,7 +19,13 @@ struct NowPlayingView: View {
             GeometryReader { geo in
                 ZStack {
                     bg
-                    if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
+                    if themeManager.backgroundStyle == .customPhoto,
+                       let wallpaper = themeManager.customWallpaper {
+                        Image(uiImage: wallpaper)
+                            .resizable().aspectRatio(contentMode: .fill)
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                    } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
                         AsyncImage(url: url) { img in
                             img.resizable().aspectRatio(contentMode: .fill)
                                 .frame(width: geo.size.width, height: geo.size.height)

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct AppTheme: Identifiable, Equatable {
     let id: String
@@ -30,6 +31,13 @@ extension AppTheme {
     static let all: [AppTheme] = [dark, amoled, midnight, emerald, sunset, ocean, lavender, rose, amber, slate, light, sky, mint, violet, blossom, sand, aqua]
 }
 
+// MARK: - Background style
+
+enum BackgroundStyle: String {
+    case musicCover  = "musicCover"
+    case customPhoto = "customPhoto"
+}
+
 // MARK: - Slider type
 
 enum SliderType: String, CaseIterable {
@@ -47,11 +55,18 @@ enum SliderType: String, CaseIterable {
 }
 
 final class ThemeManager: ObservableObject {
-    @Published private(set) var current:    AppTheme   = .dark
-    @Published private(set) var sliderType: SliderType = .waveform1
+    @Published private(set) var current:         AppTheme       = .dark
+    @Published private(set) var sliderType:      SliderType     = .waveform1
+    @Published private(set) var backgroundStyle: BackgroundStyle = .musicCover
+    @Published private(set) var customWallpaper: UIImage?       = nil
 
-    private let themeKey  = "mp_theme"
-    private let sliderKey = "mp_slider_type"
+    private let themeKey   = "mp_theme"
+    private let sliderKey  = "mp_slider_type"
+    private let bgStyleKey = "mp_bg_style"
+    private var wallpaperURL: URL? {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("custom_wallpaper.jpg")
+    }
 
     init() {
         if let id = UserDefaults.standard.string(forKey: themeKey),
@@ -61,6 +76,14 @@ final class ThemeManager: ObservableObject {
         if let raw = UserDefaults.standard.string(forKey: sliderKey),
            let st = SliderType(rawValue: raw) {
             sliderType = st
+        }
+        if let raw = UserDefaults.standard.string(forKey: bgStyleKey),
+           let style = BackgroundStyle(rawValue: raw) {
+            backgroundStyle = style
+        }
+        if let url = wallpaperURL,
+           let data = try? Data(contentsOf: url) {
+            customWallpaper = UIImage(data: data)
         }
     }
 
@@ -72,5 +95,19 @@ final class ThemeManager: ObservableObject {
     func selectSlider(_ type: SliderType) {
         sliderType = type
         UserDefaults.standard.set(type.rawValue, forKey: sliderKey)
+    }
+
+    func selectBackground(_ style: BackgroundStyle) {
+        backgroundStyle = style
+        UserDefaults.standard.set(style.rawValue, forKey: bgStyleKey)
+    }
+
+    func saveCustomWallpaper(_ image: UIImage) {
+        customWallpaper = image
+        backgroundStyle = .customPhoto
+        UserDefaults.standard.set(BackgroundStyle.customPhoto.rawValue, forKey: bgStyleKey)
+        if let data = image.jpegData(compressionQuality: 0.85), let url = wallpaperURL {
+            try? data.write(to: url)
+        }
     }
 }

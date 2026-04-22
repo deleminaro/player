@@ -11,6 +11,33 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
+                    settingSection(title: "CUSTOMIZATION") {
+                        NavigationLink {
+                            CustomizationView().environmentObject(themeManager)
+                        } label: {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(themeManager.current.primary.opacity(0.15))
+                                        .frame(width: 42, height: 42)
+                                    Image(systemName: "paintbrush.fill")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(themeManager.current.primary)
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Customization")
+                                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                    Text("Background, cover & slider")
+                                        .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.3))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     settingSection(title: "THEME") {
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(AppTheme.all) { theme in
@@ -18,22 +45,6 @@ struct SettingsView: View {
                                           isSelected: themeManager.current.id == theme.id,
                                           bgCard: bgCard)
                                     .onTapGesture { withAnimation(.easeInOut(duration: 0.2)) { themeManager.select(theme) } }
-                            }
-                        }
-                    }
-
-                    settingSection(title: "SLIDER TYPE") {
-                        HStack(spacing: 12) {
-                            ForEach(SliderType.allCases, id: \.rawValue) { type in
-                                SliderTypeCard(
-                                    type: type,
-                                    isSelected: themeManager.sliderType == type,
-                                    accent: themeManager.current.primary,
-                                    bgCard: Color(red: 0.145, green: 0.145, blue: 0.145)
-                                )
-                                .onTapGesture {
-                                    withAnimation(.easeInOut(duration: 0.2)) { themeManager.selectSlider(type) }
-                                }
                             }
                         }
                     }
@@ -72,7 +83,7 @@ private extension SettingsView {
 
 // MARK: - Slider type card
 
-private struct SliderTypeCard: View {
+struct SliderTypeCard: View {
     let type: SliderType
     let isSelected: Bool
     let accent: Color

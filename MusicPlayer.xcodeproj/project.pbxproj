@@ -29,6 +29,7 @@
 		AA181016AA181016AA181016 /* AppTheme.swift in Sources */           = {isa = PBXBuildFile; fileRef = AA100018AA100018AA100018 /* AppTheme.swift */; };
 		AA181017AA181017AA181017 /* SettingsView.swift in Sources */       = {isa = PBXBuildFile; fileRef = AA100019AA100019AA100019 /* SettingsView.swift */; };
 		AA18101AAA18101AAA18101A /* DownloadManager.swift in Sources */    = {isa = PBXBuildFile; fileRef = AA10001AAA10001AAA10001A /* DownloadManager.swift */; };
+		AA18101BAA18101BAA18101B /* CustomizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001BAA10001BAA10001B /* CustomizationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,6 +57,7 @@
 		AA100018AA100018AA100018 /* AppTheme.swift */           = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift;           sourceTree = "<group>"; };
 		AA100019AA100019AA100019 /* SettingsView.swift */       = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift;       sourceTree = "<group>"; };
 		AA10001AAA10001AAA10001A /* DownloadManager.swift */    = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift;    sourceTree = "<group>"; };
+		AA10001BAA10001BAA10001B /* CustomizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomizationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +137,7 @@
 				AA100016AA100016AA100016 /* HomeView.swift */,
 				AA100017AA100017AA100017 /* LibraryView.swift */,
 				AA100019AA100019AA100019 /* SettingsView.swift */,
+				AA10001BAA10001BAA10001B /* CustomizationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -237,6 +240,7 @@
 				AA181016AA181016AA181016 /* AppTheme.swift in Sources */,
 				AA181017AA181017AA181017 /* SettingsView.swift in Sources */,
 				AA18101AAA18101AAA18101A /* DownloadManager.swift in Sources */,
+				AA18101BAA18101BAA18101B /* CustomizationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
