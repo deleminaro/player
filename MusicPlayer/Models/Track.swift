@@ -38,6 +38,27 @@ struct Track: Identifiable, Hashable {
                 ?? transcodings.first { $0.format.mimeType.contains("mpeg") }
                 ?? transcodings.first
         }
+
+        /// Picks the best transcoding for a given quality tier.
+        ///
+        /// SoundCloud returns up to three transcodings per track:
+        ///   • audio/ogg; codecs="opus"  + hls        (Opus, best codec)
+        ///   • audio/mpeg                + hls        (MP3 via HLS)
+        ///   • audio/mpeg                + progressive (direct MP3 download)
+        ///
+        /// AVPlayer handles all three natively, so we route high-quality tiers
+        /// to Opus/HLS and lower tiers to MP3/progressive.
+        func transcoding(for quality: AudioQuality) -> Transcoding? {
+            let opus       = transcodings.first { $0.format.mimeType.contains("opus") }
+            let hlsMp3     = transcodings.first { $0.format.protocolType == "hls" && $0.format.mimeType.contains("mpeg") }
+            let progressive = transcodings.first { $0.format.protocolType == "progressive" }
+            switch quality {
+            case .lossless: return opus ?? progressive ?? hlsMp3 ?? transcodings.first
+            case .high:     return opus ?? progressive ?? hlsMp3 ?? transcodings.first
+            case .medium:   return progressive ?? hlsMp3 ?? opus ?? transcodings.first
+            case .low:      return hlsMp3 ?? progressive ?? opus ?? transcodings.first
+            }
+        }
     }
 
     struct Transcoding: Codable, Hashable {

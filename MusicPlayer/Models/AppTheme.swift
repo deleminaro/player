@@ -64,16 +64,6 @@ enum AudioQuality: String, CaseIterable {
         }
     }
 
-    /// EQ gains (dB) for bands: 60 Hz, 230 Hz, 910 Hz, 3600 Hz, 14000 Hz.
-    /// Applied via AVAudioUnitEQ to simulate compression artefacts at lower quality tiers.
-    var eqGains: [Float] {
-        switch self {
-        case .low:      return [0, 0, 0, -2.5, -5.0]  // roll off presence + air → ~128 kbps feel
-        case .medium:   return [0, 0, 0, -1.0, -2.0]  // mild high-frequency reduction
-        case .high:     return [0, 0, 0,  0.0,  0.0]  // flat reference
-        case .lossless: return [0, 0, 0,  0.0,  1.5]  // slight air boost → open / detailed
-        }
-    }
 }
 
 // MARK: - Caching mode

@@ -11,74 +11,31 @@ final class AudioPlayerService {
     var onPlayStateChange: ((Bool) -> Void)?
     var onLoadingChange:   ((Bool) -> Void)?
 
-    private let engine     = AVAudioEngine()
-    private let playerNode = AVAudioPlayerNode()
-    let eqNode             = AVAudioUnitEQ(numberOfBands: 5)
-    private let timePitch  = AVAudioUnitTimePitch()
+    private var player:         AVPlayer?
+    private var currentItem:    AVPlayerItem?
+    private var timeObserver:   Any?
+    private var endObserver:    NSObjectProtocol?
+    private var statusObserver: NSKeyValueObservation?
+    private var bufferObserver: NSKeyValueObservation?
+    private var rateObserver:   NSKeyValueObservation?
 
-    private(set) var currentSpeed: Float  = 1.0
+    private(set) var currentSpeed: Float = 1.0
     private(set) var isPitchPreserved: Bool = true
-    private(set) var eqGains: [Float]     = [0, 0, 0, 0, 0]
-
-    private var audioFile:     AVAudioFile?
-    private var trackDuration: Double               = 0
-    private var sampleOffset:  AVAudioFramePosition = 0
-    private var isActive:      Bool                 = false
-    private var lastKnownTime: Double               = 0
-    private var downloadTask:  URLSessionDownloadTask?
-    private var tempFileURL:   URL?
-    private var timer:         Timer?
-    private var generation:    Int = 0
+    // EQ is stored but not applied — AVPlayer uses the system audio pipeline.
+    // A future MTAudioProcessingTap implementation can wire these back in.
+    private(set) var eqGains: [Float] = [0, 0, 0, 0, 0]
 
     init() {
-        setupEngine()
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.didEnterBackgroundNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.timer?.invalidate(); self?.timer = nil
-            }
-        }
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self, self.isActive else { return }
-                self.startTimer()
-            }
-        }
-    }
-
-    private func activateAudioSession() {
-        // Called lazily on first playback, not during app init.
-        // Using a plain GCD call avoids Swift Concurrency actor
-        // conflicts that can trigger SIGKILL during dyld startup.
         DispatchQueue.global(qos: .userInitiated).async {
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
             try? AVAudioSession.sharedInstance().setActive(true)
         }
-    }
-
-    private func setupEngine() {
-        engine.attach(playerNode)
-        engine.attach(eqNode)
-        engine.attach(timePitch)
-        engine.connect(playerNode, to: eqNode,    format: nil)
-        engine.connect(eqNode,    to: timePitch,  format: nil)
-        engine.connect(timePitch, to: engine.mainMixerNode, format: nil)
-
-        let freqs: [Float] = [60, 230, 910, 3600, 14000]
-        for (i, f) in freqs.enumerated() {
-            eqNode.bands[i].filterType = .parametric
-            eqNode.bands[i].frequency  = f
-            eqNode.bands[i].bandwidth  = 1.0
-            eqNode.bands[i].gain       = 0
-            eqNode.bands[i].bypass     = false
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil, queue: .main
+        ) { _ in
+            try? AVAudioSession.sharedInstance().setActive(true)
         }
-        // Do NOT start the engine here — start lazily on first playback
-        // so init() returns immediately and the first frame can render.
     }
 
     // MARK: - Playback
@@ -87,147 +44,115 @@ final class AudioPlayerService {
         stop()
         onLoadingChange?(true)
 
-        let tmp = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString + ".mp3")
-        tempFileURL = tmp
+        let item = AVPlayerItem(url: url)
+        item.audioTimePitchAlgorithm = isPitchPreserved ? .spectral : .varispeed
+        currentItem = item
 
-        downloadTask = URLSession.shared.downloadTask(with: url) { [weak self] local, _, err in
-            guard let self, let local, err == nil else {
-                Task { @MainActor [weak self] in self?.onLoadingChange?(false) }
-                return
-            }
-            try? FileManager.default.moveItem(at: local, to: tmp)
+        if player == nil {
+            player = AVPlayer(playerItem: item)
+        } else {
+            player?.replaceCurrentItem(with: item)
+        }
+
+        // Periodic time updates (1 s resolution)
+        let interval = CMTime(seconds: 1, preferredTimescale: 600)
+        timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            guard time.isValid, !time.isIndefinite else { return }
+            self?.onTimeUpdate?(time.seconds)
+        }
+
+        // Duration becomes available once the item is ready
+        statusObserver = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                do    { try self.beginPlayback(from: tmp) }
-                catch { self.onLoadingChange?(false) }
+                switch item.status {
+                case .readyToPlay:
+                    let d = item.duration.seconds
+                    if d.isFinite && d > 0 { self.onDurationReady?(d) }
+                    self.onLoadingChange?(false)
+                case .failed:
+                    self.onLoadingChange?(false)
+                default: break
+                }
             }
         }
-        downloadTask?.resume()
-    }
 
-    private func beginPlayback(from url: URL) throws {
-        activateAudioSession()
-        let file = try AVAudioFile(forReading: url)
-        audioFile     = file
-        trackDuration = Double(file.length) / file.processingFormat.sampleRate
-        sampleOffset  = 0
-        lastKnownTime = 0
-
-        onDurationReady?(trackDuration)
-        scheduleSegment(file: file, from: 0)
-        if !engine.isRunning { try engine.start() }
-        playerNode.play()
-        applyTimePitch()
-        isActive = true
-        onLoadingChange?(false)
-        onPlayStateChange?(true)
-        startTimer()
-    }
-
-    private func scheduleSegment(file: AVAudioFile, from offset: AVAudioFramePosition) {
-        generation += 1
-        let gen = generation
-        playerNode.stop()
-        let remaining = AVAudioFrameCount(max(0, file.length - offset))
-        guard remaining > 0 else { return }
-        playerNode.scheduleSegment(file, startingFrame: offset, frameCount: remaining, at: nil) {
-            [weak self] in
+        // Signal loading done once enough data is buffered
+        bufferObserver = item.observe(\.isPlaybackLikelyToKeepUp, options: [.new]) { [weak self] item, _ in
             Task { @MainActor [weak self] in
-                guard let self, self.generation == gen else { return }
-                self.isActive = false
-                self.onPlayStateChange?(false)
-                self.onTrackEnd?()
+                if item.isPlaybackLikelyToKeepUp { self?.onLoadingChange?(false) }
             }
         }
+
+        // Play state mirrors AVPlayer.rate
+        rateObserver = player?.observe(\.rate, options: [.new]) { [weak self] player, _ in
+            Task { @MainActor [weak self] in self?.onPlayStateChange?(player.rate > 0) }
+        }
+
+        // End-of-track
+        endObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.didPlayToEndTimeNotification,
+            object: item, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.onPlayStateChange?(false)
+                self?.onTrackEnd?()
+            }
+        }
+
+        // Start playback at the requested speed
+        player?.rate = currentSpeed
+        onPlayStateChange?(true)
     }
 
-    private func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.tick() }
-        }
-        // Use .common so timer fires during scroll/interaction, not just when idle
-        RunLoop.main.add(timer!, forMode: .common)
-    }
-
-    private func tick() {
-        guard let file = audioFile, file.processingFormat.sampleRate > 0 else { return }
-        let sr = file.processingFormat.sampleRate
-        if let nodeTime = playerNode.lastRenderTime,
-           let pt = playerNode.playerTime(forNodeTime: nodeTime), pt.sampleTime >= 0 {
-            let t = Double(sampleOffset) / sr + Double(pt.sampleTime) / sr
-            lastKnownTime = min(t, trackDuration)
-        }
-        onTimeUpdate?(lastKnownTime)
-    }
+    // MARK: - Controls
 
     func pause() {
-        tick()
-        playerNode.pause()
-        isActive = false
+        player?.pause()
         onPlayStateChange?(false)
     }
 
     func resume() {
-        if !engine.isRunning { try? engine.start() }
-        playerNode.play()
-        applyTimePitch()
-        isActive = true
+        player?.rate = currentSpeed
         onPlayStateChange?(true)
     }
 
     func stop() {
-        timer?.invalidate(); timer = nil
-        downloadTask?.cancel(); downloadTask = nil
-        generation += 1
-        playerNode.stop()
-        isActive = false
-        if let u = tempFileURL { try? FileManager.default.removeItem(at: u); tempFileURL = nil }
-        audioFile = nil; trackDuration = 0; sampleOffset = 0; lastKnownTime = 0
-        onPlayStateChange?(false); onTimeUpdate?(0); onDurationReady?(0)
+        if let obs = timeObserver { player?.removeTimeObserver(obs); timeObserver = nil }
+        if let obs = endObserver  { NotificationCenter.default.removeObserver(obs); endObserver = nil }
+        statusObserver?.invalidate(); statusObserver = nil
+        bufferObserver?.invalidate(); bufferObserver = nil
+        rateObserver?.invalidate();   rateObserver   = nil
+        player?.pause()
+        player?.replaceCurrentItem(with: nil)
+        currentItem = nil
+        onPlayStateChange?(false)
+        onTimeUpdate?(0)
+        onDurationReady?(0)
     }
 
     func seek(to seconds: Double) {
-        guard let file = audioFile, file.processingFormat.sampleRate > 0 else { return }
-        let sr = file.processingFormat.sampleRate
-        sampleOffset  = max(0, min(AVAudioFramePosition(seconds * sr), file.length - 1))
-        lastKnownTime = Double(sampleOffset) / sr
-        let wasPlaying = isActive
-        scheduleSegment(file: file, from: sampleOffset)
-        if !engine.isRunning { try? engine.start() }
-        playerNode.play()
-        applyTimePitch()
-        if !wasPlaying { playerNode.pause() }
+        let time = CMTime(seconds: seconds, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        player?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
     func setSpeed(_ rate: Float) {
         currentSpeed = rate
-        applyTimePitch()
+        if let p = player, p.rate != 0 { p.rate = rate }
     }
 
     func setPitchPreserved(_ on: Bool) {
         isPitchPreserved = on
-        applyTimePitch()
+        currentItem?.audioTimePitchAlgorithm = on ? .spectral : .varispeed
     }
 
-    private func applyTimePitch() {
-        timePitch.rate  = currentSpeed
-        timePitch.pitch = isPitchPreserved ? 0 : 1200 * log2(currentSpeed)
-    }
+    // MARK: - EQ (stored for future tap implementation)
 
     func setEQGain(_ gain: Float, band: Int) {
-        guard band < eqNode.bands.count else { return }
-        eqNode.bands[band].gain = gain
-        if band < eqGains.count { eqGains[band] = gain }
+        guard band < eqGains.count else { return }
+        eqGains[band] = gain
     }
 
-    /// Applies a quality preset EQ layer on top of any user-set EQ gains.
-    /// Only touches bands that aren't already controlled by the user's EQ slider.
-    func applyQualityEQ(_ gains: [Float]) {
-        for (i, gain) in gains.prefix(eqNode.bands.count).enumerated() {
-            eqNode.bands[i].gain = gain
-            if i < eqGains.count { eqGains[i] = gain }
-        }
-    }
+    /// Quality is handled by transcoding selection, not post-processing EQ.
+    func applyQualityEQ(_ gains: [Float]) {}
 }
