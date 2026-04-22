@@ -251,22 +251,20 @@ final class AudioPlayerService {
                     tapStorageOut.pointee = clientInfo
                 },
                 finalize: { tap in
-                    guard let s = MTAudioProcessingTapGetStorage(tap) else { return }
-                    Unmanaged<EQState>.fromOpaque(s).release()
+                    Unmanaged<EQState>.fromOpaque(MTAudioProcessingTapGetStorage(tap)).release()
                 },
                 prepare: { tap, _, processingFormat in
-                    guard let s = MTAudioProcessingTapGetStorage(tap),
-                          let fmt = processingFormat else { return }
-                    Unmanaged<EQState>.fromOpaque(s).takeUnretainedValue()
-                        .prepare(sampleRate: fmt.pointee.mSampleRate)
+                    Unmanaged<EQState>.fromOpaque(MTAudioProcessingTapGetStorage(tap))
+                        .takeUnretainedValue()
+                        .prepare(sampleRate: processingFormat.pointee.mSampleRate)
                 },
                 unprepare: { _ in },
                 process: { tap, numberFrames, _, bufferListInOut, numberFramesOut, flagsOut in
                     guard MTAudioProcessingTapGetSourceAudio(
                         tap, numberFrames, bufferListInOut, flagsOut, nil, numberFramesOut
-                    ) == noErr,
-                          let s = MTAudioProcessingTapGetStorage(tap) else { return }
-                    let st = Unmanaged<EQState>.fromOpaque(s).takeUnretainedValue()
+                    ) == noErr else { return }
+                    let st = Unmanaged<EQState>.fromOpaque(MTAudioProcessingTapGetStorage(tap))
+                        .takeUnretainedValue()
                     let frameCount = Int(numberFramesOut.pointee)
                     let buffers = UnsafeMutableAudioBufferListPointer(bufferListInOut)
                     for (ch, buf) in buffers.enumerated() {
