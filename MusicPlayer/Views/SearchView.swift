@@ -166,7 +166,7 @@ struct SearchView: View {
                 TrackRowView(track: track,
                              isLiked: playerVM.isLiked(track),
                              onToggleLike: { playerVM.toggleLike(track) })
-                    .onTapGesture { tap(track) }
+                    .onTapGesture { tap(track, in: tracks) }
                     .swipeActions(edge: .trailing) {
                         Button { playerVM.addToQueue(track) } label: {
                             Label("Queue", systemImage: "plus")
@@ -306,9 +306,8 @@ struct SearchView: View {
 
     // MARK: - Actions
 
-    private func tap(_ track: Track) {
-        playerVM.addToQueue(track)
-        playerVM.play(track)
+    private func tap(_ track: Track, in tracks: [Track]) {
+        playerVM.playFromList(tracks, startingWith: track)
         playerVM.showingNowPlaying = true
     }
 
