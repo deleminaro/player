@@ -40,7 +40,6 @@ struct CustomizationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(bg, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .preferredColorScheme(.dark)
         .onChange(of: photoItem) { _, item in
             Task {
@@ -185,7 +184,7 @@ struct CustomizationView: View {
                         type: type,
                         isSelected: themeManager.sliderType == type,
                         accent: themeManager.current.primary,
-                        bgCard: Color(red: 0.145, green: 0.145, blue: 0.145)
+                        bgCard: bgCard
                     )
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.2)) { themeManager.selectSlider(type) }
@@ -259,7 +258,7 @@ struct CustomizationView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 28)
         }
-        .background(Color(red: 0.110, green: 0.110, blue: 0.110), in: RoundedRectangle(cornerRadius: 16))
+        .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, 16)
     }
 }

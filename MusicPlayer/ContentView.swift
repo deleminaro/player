@@ -13,8 +13,9 @@ struct ContentView: View {
                let wallpaper = themeManager.customWallpaper {
                 Image(uiImage: wallpaper)
                     .resizable().aspectRatio(contentMode: .fill)
+                    .clipped()
                     .ignoresSafeArea()
-                    .overlay(Color.black.opacity(0.55))
+                    .overlay(Color.black.opacity(0.55).ignoresSafeArea())
             }
 
             TabView {

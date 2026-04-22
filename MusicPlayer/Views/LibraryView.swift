@@ -451,7 +451,7 @@ private struct LikedTrackRow: View {
             DownloadOptionsSheet(track: track)
                 .environmentObject(themeManager)
                 .presentationDetents([.fraction(0.55)])
-                .presentationBackground(Color(red: 0.075, green: 0.075, blue: 0.075))
+                .presentationBackground(themeManager.current.background)
                 .presentationCornerRadius(28)
         }
     }
@@ -577,7 +577,6 @@ struct DownloadOptionsSheet: View {
     private func optionRow(icon: String, title: String, subtitle: String,
                            badge: String?, done: Bool, busy: Bool,
                            action: @escaping () -> Void) -> some View {
-        let bgCard = Color(red: 0.110, green: 0.110, blue: 0.110)
         Button(action: { if !done && !busy { action() } }) {
             HStack(spacing: 16) {
                 ZStack(alignment: .bottom) {

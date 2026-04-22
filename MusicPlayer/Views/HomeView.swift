@@ -134,7 +134,7 @@ struct HomeView: View {
                     .font(.system(size: featured != nil ? 18 : 24, weight: .black))
                     .foregroundStyle(.white)
                     .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .truncationMode(.tail)
 
                 HStack(spacing: 10) {
                     Button {

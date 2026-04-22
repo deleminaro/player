@@ -52,7 +52,7 @@ struct MiniPlayerView: View {
                 // Skip
                 Button { playerVM.skipNext() } label: {
                     Image(systemName: "forward.fill")
-                        .font(.system(size: 18))
+                        .font(.system(size: 16))
                         .foregroundStyle(.white.opacity(0.45))
                 }
             }

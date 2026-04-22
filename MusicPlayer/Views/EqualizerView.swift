@@ -71,7 +71,8 @@ struct EqualizerView: View {
                             in: -12...12
                         )
                         .rotationEffect(.degrees(-90))
-                        .frame(width: 130).frame(width: 44, height: 130)
+                        .frame(width: 110)
+                        .frame(width: 44, height: 110)
                         .tint(themeManager.current.primary)
 
                         Text(bandNames[i])
@@ -85,7 +86,7 @@ struct EqualizerView: View {
             }
             .padding(.horizontal, 8).padding(.top, 24).padding(.bottom, 32)
         }
-        .background(bg)
+        .background(bg.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .presentationDetents([.height(390)])
         .presentationBackground(bg)

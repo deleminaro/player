@@ -23,10 +23,12 @@ struct NowPlayingView: View {
                    let wallpaper = themeManager.customWallpaper {
                     Image(uiImage: wallpaper)
                         .resizable().aspectRatio(contentMode: .fill)
+                        .clipped()
                         .ignoresSafeArea()
                 } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
                     AsyncImage(url: url) { img in
                         img.resizable().aspectRatio(contentMode: .fill)
+                            .clipped()
                             .ignoresSafeArea()
                     } placeholder: { Color.clear }
                 }
@@ -36,6 +38,7 @@ struct NowPlayingView: View {
                 )
                 .ignoresSafeArea()
             }
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Top bar
@@ -43,7 +46,7 @@ struct NowPlayingView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
 
-                Spacer()
+                Spacer(minLength: 16)
 
                 // Content pinned to bottom
                 VStack(alignment: .leading, spacing: 0) {
@@ -583,7 +586,6 @@ struct AddToPlaylistSheet: View {
                 }
             }
             .toolbarBackground(bg, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
         }

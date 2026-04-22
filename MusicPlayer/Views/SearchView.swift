@@ -41,8 +41,8 @@ struct SearchView: View {
     @State private var currentQuery  = ""
     @FocusState private var focused: Bool
 
-    private var bg:     Color { themeManager.current.background }
-    private let bgField = Color(red: 0.14,  green: 0.14,  blue: 0.14)
+    private var bg:      Color { themeManager.current.background }
+    private var bgField: Color { themeManager.current.card }
 
     var body: some View {
         NavigationStack {
