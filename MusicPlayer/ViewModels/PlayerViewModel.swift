@@ -42,6 +42,7 @@ final class PlayerViewModel: ObservableObject {
     private let kLiked      = "mp_liked_tracks"
     private let kSearches   = "mp_recent_searches"
     private let kPlaylists  = "mp_playlists"
+    private let kQuality    = "mp_audio_quality"
 
     // MARK: - Init
 
@@ -58,6 +59,22 @@ final class PlayerViewModel: ObservableObject {
                 self?.saveLiked(); self?.saveSearches(); self?.savePlaylists()
             }
         }
+        // Re-apply quality EQ whenever the setting changes (e.g. from Settings screen).
+        NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.applyCurrentQuality() }
+        }
+        applyCurrentQuality()
+    }
+
+    private var currentQuality: AudioQuality {
+        AudioQuality(rawValue: UserDefaults.standard.string(forKey: kQuality) ?? "") ?? .lossless
+    }
+
+    private func applyCurrentQuality() {
+        audio.applyQualityEQ(currentQuality.eqGains)
     }
 
     // MARK: - Audio callback bridge
@@ -99,6 +116,7 @@ final class PlayerViewModel: ObservableObject {
                 }
                 let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
                 guard currentTrack?.id == track.id else { return }
+                applyCurrentQuality()
                 audio.play(url: url)
             } catch {
                 if currentTrack?.id == track.id { playerState = .idle }

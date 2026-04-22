@@ -31,6 +31,74 @@ extension AppTheme {
     static let all: [AppTheme] = [dark, amoled, midnight, emerald, sunset, ocean, lavender, rose, amber, slate, light, sky, mint, violet, blossom, sand, aqua]
 }
 
+// MARK: - Audio quality
+
+enum AudioQuality: String, CaseIterable {
+    case low      = "low"
+    case medium   = "medium"
+    case high     = "high"
+    case lossless = "lossless"
+
+    var label: String {
+        switch self {
+        case .low:      return "Low"
+        case .medium:   return "Medium"
+        case .high:     return "High"
+        case .lossless: return "Lossless"
+        }
+    }
+    var subtitle: String {
+        switch self {
+        case .low:      return "192 kbps"
+        case .medium:   return "256 kbps"
+        case .high:     return "320 kbps"
+        case .lossless: return "FLAC / LOSSLESS"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .low:      return "radio"
+        case .medium:   return "headphones"
+        case .high:     return "opticaldisc"
+        case .lossless: return "waveform"
+        }
+    }
+
+    /// EQ gains (dB) for bands: 60 Hz, 230 Hz, 910 Hz, 3600 Hz, 14000 Hz.
+    /// Applied via AVAudioUnitEQ to simulate compression artefacts at lower quality tiers.
+    var eqGains: [Float] {
+        switch self {
+        case .low:      return [0, 0, 0, -2.5, -5.0]  // roll off presence + air → ~128 kbps feel
+        case .medium:   return [0, 0, 0, -1.0, -2.0]  // mild high-frequency reduction
+        case .high:     return [0, 0, 0,  0.0,  0.0]  // flat reference
+        case .lossless: return [0, 0, 0,  0.0,  1.5]  // slight air boost → open / detailed
+        }
+    }
+}
+
+// MARK: - Caching mode
+
+enum CachingMode: String, CaseIterable {
+    case off    = "off"
+    case memory = "memory"
+    case device = "device"
+
+    var label: String {
+        switch self {
+        case .off:    return "Off"
+        case .memory: return "In memory"
+        case .device: return "On device"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .off:    return "nosign"
+        case .memory: return "cylinder.split.1x2"
+        case .device: return "internaldrive"
+        }
+    }
+}
+
 // MARK: - Background style
 
 enum BackgroundStyle: String {

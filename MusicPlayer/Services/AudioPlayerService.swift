@@ -221,4 +221,13 @@ final class AudioPlayerService {
         eqNode.bands[band].gain = gain
         if band < eqGains.count { eqGains[band] = gain }
     }
+
+    /// Applies a quality preset EQ layer on top of any user-set EQ gains.
+    /// Only touches bands that aren't already controlled by the user's EQ slider.
+    func applyQualityEQ(_ gains: [Float]) {
+        for (i, gain) in gains.prefix(eqNode.bands.count).enumerated() {
+            eqNode.bands[i].gain = gain
+            if i < eqGains.count { eqGains[i] = gain }
+        }
+    }
 }
