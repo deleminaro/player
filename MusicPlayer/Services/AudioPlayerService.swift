@@ -247,8 +247,8 @@ final class AudioPlayerService {
             var callbacks = MTAudioProcessingTapCallbacks(
                 version: kMTAudioProcessingTapCallbacksVersion_0,
                 clientInfo: retained,
-                `init`: { _, clientInfo, tapStorageOut in
-                    tapStorageOut?.pointee = clientInfo
+                init: { _, clientInfo, tapStorageOut in
+                    tapStorageOut.pointee = clientInfo
                 },
                 finalize: { tap in
                     guard let s = MTAudioProcessingTapGetStorage(tap) else { return }
@@ -265,11 +265,10 @@ final class AudioPlayerService {
                     guard MTAudioProcessingTapGetSourceAudio(
                         tap, numberFrames, bufferListInOut, flagsOut, nil, numberFramesOut
                     ) == noErr,
-                          let s   = MTAudioProcessingTapGetStorage(tap),
-                          let abl = bufferListInOut else { return }
+                          let s = MTAudioProcessingTapGetStorage(tap) else { return }
                     let st = Unmanaged<EQState>.fromOpaque(s).takeUnretainedValue()
-                    let frameCount = Int(numberFramesOut?.pointee ?? CMItemCount(numberFrames))
-                    let buffers = UnsafeMutableAudioBufferListPointer(abl)
+                    let frameCount = Int(numberFramesOut.pointee)
+                    let buffers = UnsafeMutableAudioBufferListPointer(bufferListInOut)
                     for (ch, buf) in buffers.enumerated() {
                         guard let data = buf.mData else { continue }
                         let samples = data.assumingMemoryBound(to: Float.self)
