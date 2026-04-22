@@ -277,14 +277,14 @@ final class AudioPlayerService {
                 }
             )
 
-            var tapRef: Unmanaged<MTAudioProcessingTap>?
+            var tapRef: MTAudioProcessingTap?
             guard MTAudioProcessingTapCreate(
                 kCFAllocatorDefault, &callbacks,
                 kMTAudioProcessingTapCreationFlag_PostEffects, &tapRef
             ) == noErr, let tap = tapRef else { return }
 
             let params = AVMutableAudioMixInputParameters(track: track)
-            params.audioTapProcessor = tap.takeRetainedValue()
+            params.audioTapProcessor = tap
 
             let mix = AVMutableAudioMix()
             mix.inputParameters = [params]
