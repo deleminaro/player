@@ -4,11 +4,18 @@ struct ContentView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
 
-    private let bg = Color(red: 0.075, green: 0.075, blue: 0.075)
-
     var body: some View {
         ZStack(alignment: .bottom) {
-            bg.ignoresSafeArea()
+            themeManager.current.background.ignoresSafeArea()
+
+            // Custom wallpaper fills the whole app when selected
+            if themeManager.backgroundStyle == .customPhoto,
+               let wallpaper = themeManager.customWallpaper {
+                Image(uiImage: wallpaper)
+                    .resizable().aspectRatio(contentMode: .fill)
+                    .ignoresSafeArea()
+                    .overlay(Color.black.opacity(0.55))
+            }
 
             TabView {
                 HomeView()

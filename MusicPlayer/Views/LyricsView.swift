@@ -9,7 +9,7 @@ struct LyricsView: View {
     @State private var isLoading = true
     @State private var notFound  = false
 
-    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private var bg:     Color { themeManager.current.background }
 
     var body: some View {
         NavigationStack {

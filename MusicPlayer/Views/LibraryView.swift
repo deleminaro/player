@@ -9,8 +9,8 @@ struct LibraryView: View {
     @State private var newPlaylistName  = ""
     @State private var selectedPlaylist: LocalPlaylist?
 
-    private let bg       = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard   = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:      Color { themeManager.current.background }
+    private var bgCard:  Color { themeManager.current.card }
 
     var body: some View {
         NavigationStack {
@@ -174,7 +174,7 @@ struct LibraryView: View {
 private struct PlaylistCard: View {
     let playlist: LocalPlaylist
     @EnvironmentObject var themeManager: ThemeManager
-    private let bg    = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:    Color { themeManager.current.card }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -227,8 +227,8 @@ struct PlaylistDetailView: View {
         playerVM.playlists.first(where: { $0.id == playlist.id }) ?? playlist
     }
 
-    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard  = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:     Color { themeManager.current.background }
+    private var bgCard: Color { themeManager.current.card }
 
     var body: some View {
         NavigationStack {
@@ -368,7 +368,7 @@ struct LikedTracksView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
 
-    private let bg = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private var bg: Color { themeManager.current.background }
 
     var body: some View {
         NavigationStack {
@@ -470,8 +470,8 @@ struct DownloadOptionsSheet: View {
     @State private var toast: String?
     @State private var toastTask: Task<Void, Never>?
 
-    private let bg     = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:     Color { themeManager.current.background }
+    private var bgCard: Color { themeManager.current.card }
 
     var body: some View {
         VStack(spacing: 0) {

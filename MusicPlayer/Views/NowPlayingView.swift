@@ -11,39 +11,28 @@ struct NowPlayingView: View {
     @State private var isScrubbingClassic = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
-    private let bg        = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private var bg:       Color { themeManager.current.background }
 
     var body: some View {
         ZStack {
-            // Full-bleed artwork background
-            GeometryReader { geo in
-                ZStack {
-                    bg
-                    if themeManager.backgroundStyle == .customPhoto,
-                       let wallpaper = themeManager.customWallpaper {
-                        Image(uiImage: wallpaper)
-                            .resizable().aspectRatio(contentMode: .fill)
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipped()
-                    } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
-                        AsyncImage(url: url) { img in
-                            img.resizable().aspectRatio(contentMode: .fill)
-                                .frame(width: geo.size.width, height: geo.size.height)
-                                .clipped()
-                        } placeholder: { Color.clear }
-                    }
-                    // Gradient: lighter on top so artwork shows, darker on bottom for readability
-                    LinearGradient(
-                        colors: [
-                            .black.opacity(0.15),
-                            .black.opacity(0.35),
-                            .black.opacity(0.65),
-                            .black.opacity(0.88)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+            // Full-bleed background — custom photo or album art
+            ZStack {
+                bg
+                if themeManager.backgroundStyle == .customPhoto,
+                   let wallpaper = themeManager.customWallpaper {
+                    Image(uiImage: wallpaper)
+                        .resizable().aspectRatio(contentMode: .fill)
+                        .ignoresSafeArea()
+                } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
+                    AsyncImage(url: url) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                            .ignoresSafeArea()
+                    } placeholder: { Color.clear }
                 }
+                LinearGradient(
+                    colors: [.black.opacity(0.15), .black.opacity(0.35), .black.opacity(0.65), .black.opacity(0.88)],
+                    startPoint: .top, endPoint: .bottom
+                )
                 .ignoresSafeArea()
             }
 
@@ -96,7 +85,7 @@ struct NowPlayingView: View {
                     .environmentObject(playerVM)
                     .environmentObject(themeManager)
                     .presentationDetents([.medium, .large])
-                    .presentationBackground(Color(red: 0.075, green: 0.075, blue: 0.075))
+                    .presentationBackground(themeManager.current.background)
                     .presentationCornerRadius(28)
             }
         }
@@ -456,8 +445,8 @@ struct AddToPlaylistSheet: View {
     @State private var toastMessage: String?
     @State private var toastTask:    Task<Void, Never>?
 
-    private let bg     = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:     Color { themeManager.current.background }
+    private var bgCard: Color { themeManager.current.card }
 
     var body: some View {
         NavigationStack {

@@ -5,8 +5,8 @@ struct HomeView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showArchive = false
 
-    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard  = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:     Color { themeManager.current.background }
+    private var bgCard: Color { themeManager.current.card }
 
     private var featured: Track? { playerVM.recentlyPlayed.first }
     private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]

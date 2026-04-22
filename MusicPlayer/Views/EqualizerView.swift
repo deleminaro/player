@@ -6,7 +6,7 @@ struct EqualizerView: View {
     @Environment(\.dismiss) var dismiss
 
     private let bandNames = ["BASS", "LOW\nMID", "MID", "HIGH\nMID", "TREBLE"]
-    private let bg        = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private var bg:       Color { themeManager.current.background }
 
     @State private var gains: [Float] = [0, 0, 0, 0, 0]
 

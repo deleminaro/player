@@ -41,7 +41,7 @@ struct SearchView: View {
     @State private var currentQuery  = ""
     @FocusState private var focused: Bool
 
-    private let bg      = Color(red: 0.075, green: 0.075, blue: 0.075)
+    private var bg:     Color { themeManager.current.background }
     private let bgField = Color(red: 0.14,  green: 0.14,  blue: 0.14)
 
     var body: some View {
@@ -488,8 +488,8 @@ struct SCPlaylistDetailView: View {
     @State private var failed:    Bool    = false
     @State private var toast:     String? = nil
 
-    private let bg       = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard   = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:      Color { themeManager.current.background }
+    private var bgCard:  Color { themeManager.current.card }
 
     var body: some View {
         NavigationStack {

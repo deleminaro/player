@@ -4,7 +4,7 @@ struct MiniPlayerView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
 
-    private let bg        = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:       Color { themeManager.current.card }
 
     var body: some View {
         let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0

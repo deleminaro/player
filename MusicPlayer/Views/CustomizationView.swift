@@ -6,8 +6,8 @@ struct CustomizationView: View {
     @State private var tab: CTab = .background
     @State private var photoItem: PhotosPickerItem?
 
-    private let bg     = Color(red: 0.075, green: 0.075, blue: 0.075)
-    private let bgCard = Color(red: 0.110, green: 0.110, blue: 0.110)
+    private var bg:     Color { themeManager.current.background }
+    private var bgCard: Color { themeManager.current.card }
 
     enum CTab { case background, cover, slider }
 
