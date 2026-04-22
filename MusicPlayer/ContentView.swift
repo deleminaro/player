@@ -12,10 +12,10 @@ struct ContentView: View {
             if themeManager.backgroundStyle == .customPhoto,
                let wallpaper = themeManager.customWallpaper {
                 Image(uiImage: wallpaper)
-                    .resizable().aspectRatio(contentMode: .fill)
-                    .clipped()
+                    .resizable()
+                    .scaledToFill()
                     .ignoresSafeArea()
-                    .overlay(Color.black.opacity(0.55).ignoresSafeArea())
+                    .overlay(Color.black.opacity(0.55))
             }
 
             TabView {

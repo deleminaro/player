@@ -15,55 +15,51 @@ struct NowPlayingView: View {
     private var bg:       Color { themeManager.current.background }
 
     var body: some View {
-        ZStack {
-            // Full-bleed background — custom photo or album art
+        VStack(spacing: 0) {
+            // Top bar
+            topBar
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+
+            Spacer(minLength: 16)
+
+            // Content pinned to bottom
+            VStack(alignment: .leading, spacing: 0) {
+                trackInfo
+                waveformProgress
+                    .padding(.top, 14)
+                controlsRow
+                    .padding(.top, 12)
+                actionRow
+                    .padding(.top, 14)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 28)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            // Full-bleed background — always fills entire sheet behind safe areas
             ZStack {
                 bg
                 if themeManager.backgroundStyle == .customPhoto,
                    let wallpaper = themeManager.customWallpaper {
                     Image(uiImage: wallpaper)
-                        .resizable().aspectRatio(contentMode: .fill)
-                        .clipped()
-                        .ignoresSafeArea()
+                        .resizable()
+                        .scaledToFill()
                 } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
                     AsyncImage(url: url) { img in
-                        img.resizable().aspectRatio(contentMode: .fill)
-                            .clipped()
-                            .ignoresSafeArea()
+                        img.resizable().scaledToFill()
                     } placeholder: { Color.clear }
                 }
                 LinearGradient(
                     colors: [.black.opacity(0.15), .black.opacity(0.35), .black.opacity(0.65), .black.opacity(0.88)],
                     startPoint: .top, endPoint: .bottom
                 )
-                .ignoresSafeArea()
             }
             .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // Top bar
-                topBar
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-
-                Spacer(minLength: 16)
-
-                // Content pinned to bottom
-                VStack(alignment: .leading, spacing: 0) {
-                    trackInfo
-                    waveformProgress
-                        .padding(.top, 14)
-                    controlsRow
-                        .padding(.top, 12)
-                    actionRow
-                        .padding(.top, 14)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 28)
-            }
         }
         .preferredColorScheme(.dark)
-        .presentationBackground(.black)
+        .presentationBackground(bg)
         .sheet(isPresented: $showLyrics) {
             if let t = playerVM.currentTrack { LyricsView(track: t).environmentObject(themeManager) }
         }
