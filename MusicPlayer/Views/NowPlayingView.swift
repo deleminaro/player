@@ -3,6 +3,7 @@ import SwiftUI
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
+    @AppStorage("mp_audio_quality") private var audioQuality: AudioQuality = .lossless
     @State private var showLyrics        = false
     @State private var showQueue         = false
     @State private var showEQ            = false
@@ -377,6 +378,23 @@ struct NowPlayingView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
             .background(Color.white.opacity(0.1), in: Capsule())
+
+            Spacer()
+
+            // Centre: lossless badge (only when quality = lossless and track has Opus)
+            if audioQuality == .lossless,
+               playerVM.currentTrack?.media?.transcodings.contains(where: { $0.format.mimeType.contains("opus") }) == true {
+                VStack(spacing: 2) {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("LOSSLESS")
+                        .font(.system(size: 8, weight: .black)).kerning(1.2)
+                }
+                .foregroundStyle(themeManager.current.primary)
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(themeManager.current.primary.opacity(0.15), in: Capsule())
+                .overlay(Capsule().stroke(themeManager.current.primary.opacity(0.35), lineWidth: 1))
+            }
 
             Spacer()
 
