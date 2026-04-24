@@ -269,6 +269,9 @@ struct LikedTracksView: View {
     @State private var searchText  = ""
     @State private var sortOrder: FavoritesSort = .default
     @State private var randomized: [Track]?
+    @State private var downloadToast: String?
+    @State private var downloadToastTask: Task<Void, Never>?
+    @StateObject private var dm = DownloadManager.shared
 
     private var bg:      Color { themeManager.current.background }
     private var primary: Color { themeManager.current.primary }
@@ -423,6 +426,12 @@ struct LikedTracksView: View {
                                 playerVM.playFromList(s, startingWith: s[0])
                                 playerVM.showingNowPlaying = true
                             } label: { Label("Shuffle", systemImage: "shuffle") }
+
+                            Divider()
+
+                            Button {
+                                downloadAll()
+                            } label: { Label("Download All", systemImage: "arrow.down.circle") }
                         } label: {
                             Image(systemName: "ellipsis")
                                 .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
@@ -435,6 +444,17 @@ struct LikedTracksView: View {
             .toolbarBackground(.visible, for: .navigationBar)
         }
         .presentationBackground(bg)
+        .overlay(alignment: .bottom) {
+            if let msg = downloadToast {
+                Text(msg)
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 12)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.bottom, 32)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.3), value: downloadToast)
         .sheet(isPresented: $showSort) {
             FavoritesSortSheet(sortOrder: $sortOrder)
                 .environmentObject(themeManager)
@@ -446,6 +466,34 @@ struct LikedTracksView: View {
         .onChange(of: sortOrder) { _, new in
             if new == .random { randomized = playerVM.likedTracks.shuffled() }
             else { randomized = nil }
+        }
+    }
+
+    private func downloadAll() {
+        let tracks = playerVM.likedTracks.filter {
+            !dm.offlineIDs.contains($0.id) && !dm.downloading.contains($0.id)
+        }
+        guard !tracks.isEmpty else {
+            showDownloadToast("Already downloaded")
+            return
+        }
+        showDownloadToast("Downloading \(tracks.count) track\(tracks.count == 1 ? "" : "s")…")
+        for track in tracks {
+            Task {
+                guard let transcoding = track.media?.progressiveTranscoding else { return }
+                guard let url = try? await SoundCloudService.shared.resolveStreamURL(transcodingURL: transcoding.url) else { return }
+                await dm.downloadOffline(track: track, streamURL: url)
+            }
+        }
+    }
+
+    private func showDownloadToast(_ msg: String) {
+        downloadToastTask?.cancel()
+        downloadToast = msg
+        downloadToastTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            downloadToast = nil
         }
     }
 

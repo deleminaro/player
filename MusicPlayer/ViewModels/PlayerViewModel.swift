@@ -98,6 +98,12 @@ final class PlayerViewModel: ObservableObject {
 
         Task {
             do {
+                // Use local offline/cached file when available — works without network
+                if let localURL = DownloadManager.shared.localURL(for: track.id) {
+                    guard currentTrack?.id == track.id else { return }
+                    audio.play(url: localURL)
+                    return
+                }
                 guard let transcoding = track.media?.transcoding(for: currentQuality) else {
                     if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
                     return
