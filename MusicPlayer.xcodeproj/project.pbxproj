@@ -14,6 +14,7 @@
 		AA181005AA181005AA181005 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100005AA100005AA100005 /* AudioPlayerService.swift */; };
 		AA181006AA181006AA181006 /* SoundCloudService.swift in Sources */  = {isa = PBXBuildFile; fileRef = AA100006AA100006AA100006 /* SoundCloudService.swift */; };
 		AA181007AA181007AA181007 /* GeniusService.swift in Sources */      = {isa = PBXBuildFile; fileRef = AA100007AA100007AA100007 /* GeniusService.swift */; };
+		AA18101CAA18101CAA18101C /* SpotifyService.swift in Sources */     = {isa = PBXBuildFile; fileRef = AA10001CAA10001CAA10001C /* SpotifyService.swift */; };
 		AA181008AA181008AA181008 /* PlayerViewModel.swift in Sources */    = {isa = PBXBuildFile; fileRef = AA100008AA100008AA100008 /* PlayerViewModel.swift */; };
 		AA181009AA181009AA181009 /* TrackRowView.swift in Sources */       = {isa = PBXBuildFile; fileRef = AA100009AA100009AA100009 /* TrackRowView.swift */; };
 		AA18100AAA18100AAA18100A /* SearchView.swift in Sources */         = {isa = PBXBuildFile; fileRef = AA10000AAA10000AAA10000A /* SearchView.swift */; };
@@ -40,6 +41,7 @@
 		AA100005AA100005AA100005 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
 		AA100006AA100006AA100006 /* SoundCloudService.swift */  = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundCloudService.swift;  sourceTree = "<group>"; };
 		AA100007AA100007AA100007 /* GeniusService.swift */      = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeniusService.swift;      sourceTree = "<group>"; };
+		AA10001CAA10001CAA10001C /* SpotifyService.swift */     = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyService.swift;     sourceTree = "<group>"; };
 		AA100008AA100008AA100008 /* PlayerViewModel.swift */    = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift;    sourceTree = "<group>"; };
 		AA100009AA100009AA100009 /* TrackRowView.swift */       = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRowView.swift;       sourceTree = "<group>"; };
 		AA10000AAA10000AAA10000A /* SearchView.swift */         = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift;         sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 				AA100006AA100006AA100006 /* SoundCloudService.swift */,
 				AA100007AA100007AA100007 /* GeniusService.swift */,
 				AA10001AAA10001AAA10001A /* DownloadManager.swift */,
+				AA10001CAA10001CAA10001C /* SpotifyService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -240,6 +243,7 @@
 				AA181016AA181016AA181016 /* AppTheme.swift in Sources */,
 				AA181017AA181017AA181017 /* SettingsView.swift in Sources */,
 				AA18101AAA18101AAA18101A /* DownloadManager.swift in Sources */,
+				AA18101CAA18101CAA18101C /* SpotifyService.swift in Sources */,
 				AA18101BAA18101BAA18101B /* CustomizationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

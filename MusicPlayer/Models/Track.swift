@@ -1,5 +1,11 @@
 import Foundation
 
+// MARK: - Track source
+
+enum TrackSource: String, Codable {
+    case soundcloud, spotify
+}
+
 // MARK: - Track
 
 struct Track: Identifiable, Hashable {
@@ -10,6 +16,22 @@ struct Track: Identifiable, Hashable {
     let duration: Int          // milliseconds
     let permalinkURL: String
     let media: Media?
+    let source: TrackSource
+    let previewURL: String?    // Spotify 30s MP3 preview
+
+    init(id: Int, title: String, username: String, artworkURL: String?,
+         duration: Int, permalinkURL: String, media: Media?,
+         source: TrackSource = .soundcloud, previewURL: String? = nil) {
+        self.id           = id
+        self.title        = title
+        self.username     = username
+        self.artworkURL   = artworkURL
+        self.duration     = duration
+        self.permalinkURL = permalinkURL
+        self.media        = media
+        self.source       = source
+        self.previewURL   = previewURL
+    }
 
     var durationFormatted: String {
         let s = duration / 1000
@@ -81,7 +103,7 @@ struct Track: Identifiable, Hashable {
 
 extension Track: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, title, media
+        case id, title, media, source, previewURL
         case artworkURL   = "artwork_url"
         case duration
         case permalinkURL = "permalink_url"
@@ -100,6 +122,8 @@ extension Track: Codable {
         duration     = try c.decode(Int.self,    forKey: .duration)
         permalinkURL = try c.decode(String.self, forKey: .permalinkURL)
         media        = try c.decodeIfPresent(Media.self, forKey: .media)
+        source       = (try? c.decode(TrackSource.self, forKey: .source)) ?? .soundcloud
+        previewURL   = try? c.decodeIfPresent(String.self, forKey: .previewURL)
 
         let u  = try c.nestedContainer(keyedBy: UserKeys.self, forKey: .user)
         username = try u.decode(String.self, forKey: .username)
@@ -113,6 +137,8 @@ extension Track: Codable {
         try c.encode(duration,     forKey: .duration)
         try c.encode(permalinkURL, forKey: .permalinkURL)
         try c.encodeIfPresent(media, forKey: .media)
+        try c.encode(source,       forKey: .source)
+        try c.encodeIfPresent(previewURL, forKey: .previewURL)
 
         var u = c.nestedContainer(keyedBy: UserKeys.self, forKey: .user)
         try u.encode(username, forKey: .username)

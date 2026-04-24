@@ -9,6 +9,19 @@ struct TrackRowView: View {
     var body: some View {
         HStack(spacing: 14) {
             ArtworkThumbnail(url: track.thumbnailArtworkURL)
+                .overlay(alignment: .bottomTrailing) {
+                    if track.source == .spotify {
+                        Circle()
+                            .fill(Color(red: 0.11, green: 0.73, blue: 0.33))
+                            .frame(width: 14, height: 14)
+                            .overlay(
+                                Text("S")
+                                    .font(.system(size: 8, weight: .black))
+                                    .foregroundStyle(.black)
+                            )
+                            .offset(x: 3, y: 3)
+                    }
+                }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(track.title.uppercased())

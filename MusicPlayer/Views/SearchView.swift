@@ -39,6 +39,7 @@ struct SearchView: View {
     @State private var searchTask:   Task<Void, Never>?
     @State private var filter        = SearchFilter.all
     @State private var currentQuery  = ""
+    @State private var source        = TrackSource.soundcloud
     @FocusState private var focused: Bool
 
     private var bg:      Color { themeManager.current.background }
@@ -49,10 +50,16 @@ struct SearchView: View {
             VStack(spacing: 0) {
                 searchBar
                     .padding(.horizontal, 16)
-                    .padding(.top, 12).padding(.bottom, 14)
+                    .padding(.top, 12).padding(.bottom, 10)
 
-                filterChips
-                    .padding(.bottom, 12)
+                sourcePicker
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 10)
+
+                if source == .soundcloud {
+                    filterChips
+                        .padding(.bottom, 12)
+                }
 
                 Divider().background(Color.white.opacity(0.06))
 
@@ -73,6 +80,12 @@ struct SearchView: View {
         }
         .onTapGesture { focused = false }
         .onChange(of: filter) { _, _ in
+            guard !currentQuery.isEmpty, source == .soundcloud else { return }
+            Task { await performSearch(currentQuery, reset: true) }
+        }
+        .onChange(of: source) { _, _ in
+            resultSet = .empty
+            searchError = nil
             guard !currentQuery.isEmpty else { return }
             Task { await performSearch(currentQuery, reset: true) }
         }
@@ -108,6 +121,45 @@ struct SearchView: View {
         }
         .padding(.horizontal, 16).padding(.vertical, 13)
         .background(bgField, in: Capsule())
+    }
+
+    // MARK: - Source picker
+
+    private var sourcePicker: some View {
+        HStack(spacing: 0) {
+            ForEach([TrackSource.soundcloud, .spotify], id: \.self) { s in
+                let selected = source == s
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) { source = s }
+                } label: {
+                    HStack(spacing: 6) {
+                        if s == .spotify {
+                            Circle()
+                                .fill(selected ? Color.black : Color(red: 0.11, green: 0.73, blue: 0.33))
+                                .frame(width: 12, height: 12)
+                                .overlay(Text("S").font(.system(size: 7, weight: .black))
+                                    .foregroundStyle(selected ? .white : .black))
+                        } else {
+                            Image(systemName: "cloud.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(selected ? .black : .white.opacity(0.6))
+                        }
+                        Text(s == .soundcloud ? "SoundCloud" : "Spotify")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(selected ? .black : .white.opacity(0.6))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 9)
+                    .background(selected ? (s == .spotify ? Color(red: 0.11, green: 0.73, blue: 0.33) : .white) : bgField)
+                }
+                .buttonStyle(.plain)
+                if s == .soundcloud {
+                    Divider().frame(width: 1).background(Color.white.opacity(0.1))
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.08), lineWidth: 1))
     }
 
     // MARK: - Filter chips
@@ -350,6 +402,17 @@ struct SearchView: View {
         do {
             let offset = reset ? 0 : currentResultCount
             currentQuery = q
+
+            if source == .spotify {
+                let tracks = try await SpotifyService.shared.search(query: q, offset: offset)
+                if reset { resultSet = .tracks(tracks) }
+                else if case .tracks(var existing) = resultSet {
+                    existing.append(contentsOf: tracks.filter { t in !existing.contains { $0.id == t.id } })
+                    resultSet = .tracks(existing)
+                }
+                return
+            }
+
             switch filter {
             case .all, .tracks:
                 let tracks = try await SoundCloudService.shared.search(query: q, offset: offset)

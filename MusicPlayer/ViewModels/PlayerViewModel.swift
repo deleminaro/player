@@ -98,12 +98,23 @@ final class PlayerViewModel: ObservableObject {
 
         Task {
             do {
-                // Use local offline/cached file when available — works without network
+                // Local offline/cached file takes priority for both sources
                 if let localURL = DownloadManager.shared.localURL(for: track.id) {
                     guard currentTrack?.id == track.id else { return }
                     audio.play(url: localURL)
                     return
                 }
+                // Spotify: play the 30s preview URL directly — no stream resolution needed
+                if track.source == .spotify {
+                    guard let preview = track.previewURL, let url = URL(string: preview) else {
+                        if currentTrack?.id == track.id { playerState = .idle }
+                        return
+                    }
+                    guard currentTrack?.id == track.id else { return }
+                    audio.play(url: url)
+                    return
+                }
+                // SoundCloud: resolve transcoding URL
                 guard let transcoding = track.media?.transcoding(for: currentQuality) else {
                     if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
                     return
