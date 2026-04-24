@@ -14,7 +14,7 @@ struct ContentView: View {
                 LibraryView()
                     .tabItem { Label("Library", systemImage: "building.columns.fill") }
                 SettingsView()
-                    .tabItem { Label("Settings", systemImage: "paintpalette.fill") }
+                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
             }
             .tint(themeManager.current.primary)
 
