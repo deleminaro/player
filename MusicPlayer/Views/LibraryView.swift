@@ -286,10 +286,10 @@ struct LikedTracksView: View {
         case .default:     return filtered
         case .titleAZ:     return filtered.sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
         case .artistAZ:    return filtered.sorted { $0.username.localizedCompare($1.username) == .orderedAscending }
-        case .durationAsc: return filtered.sorted { ($0.duration ?? 0) < ($1.duration ?? 0) }
+        case .durationAsc: return filtered.sorted { $0.duration < $1.duration }
         case .titleZA:     return filtered.sorted { $0.title.localizedCompare($1.title) == .orderedDescending }
         case .artistZA:    return filtered.sorted { $0.username.localizedCompare($1.username) == .orderedDescending }
-        case .durationDesc: return filtered.sorted { ($0.duration ?? 0) > ($1.duration ?? 0) }
+        case .durationDesc: return filtered.sorted { $0.duration > $1.duration }
         case .random:      return randomized ?? filtered
         case .newestFirst: return filtered
         case .oldestFirst: return filtered.reversed()
