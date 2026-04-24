@@ -6,18 +6,6 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            themeManager.current.background.ignoresSafeArea()
-
-            // Custom wallpaper fills the whole app when selected
-            if themeManager.backgroundStyle == .customPhoto,
-               let wallpaper = themeManager.customWallpaper {
-                Image(uiImage: wallpaper)
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .overlay(Color.black.opacity(0.55))
-            }
-
             TabView {
                 HomeView()
                     .tabItem { Label("Home", systemImage: "house.fill") }
@@ -36,6 +24,19 @@ struct ContentView: View {
                     .padding(.bottom, 58)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+        }
+        .background {
+            ZStack {
+                themeManager.current.background
+                if themeManager.backgroundStyle == .customPhoto,
+                   let wallpaper = themeManager.customWallpaper {
+                    Image(uiImage: wallpaper)
+                        .resizable()
+                        .scaledToFill()
+                        .overlay(Color.black.opacity(0.55))
+                }
+            }
+            .ignoresSafeArea()
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: playerVM.currentTrack != nil)
         .sheet(isPresented: $playerVM.showingNowPlaying) {
