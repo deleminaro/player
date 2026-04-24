@@ -400,10 +400,9 @@ struct NowPlayingView: View {
             // Right: speed, queue
             HStack(spacing: 12) {
                 Button { showSpeed = true } label: {
-                    Text(speedLabel(playerVM.playbackSpeed))
-                        .font(.system(size: 13, weight: .black))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .monospacedDigit()
+                    Image(systemName: speedIcon(playerVM.playbackSpeed))
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(playerVM.playbackSpeed == 1.0 ? .white.opacity(0.6) : themeManager.current.primary)
                 }
 
                 Button { showQueue = true } label: {
@@ -435,8 +434,10 @@ struct NowPlayingView: View {
         return String(format: "%d:%02d", t / 60, t % 60)
     }
 
-    private func speedLabel(_ s: Float) -> String {
-        s == 1.0 ? "1×" : "\(String(format: "%g", s))×"
+    private func speedIcon(_ s: Float) -> String {
+        if s < 0.99 { return "person.wave.2" }
+        if s > 1.01 { return "speedometer" }
+        return "play.circle"
     }
 
     private func waveformHeights(for seed: Int) -> [CGFloat] {
@@ -701,7 +702,6 @@ struct SpeedPickerSheet: View {
                     Button {
                         onSelect(mode.speed)
                         currentSpeed = mode.speed
-                        dismiss()
                     } label: {
                         VStack(spacing: 10) {
                             Image(systemName: mode.icon)
@@ -771,10 +771,9 @@ struct SpeedPickerSheet: View {
             .frame(height: 44)
 
             Text(currentSpeed == 1.0 ? "1×" : "\(String(format: "%g", currentSpeed))×")
-                .font(.custom("Courier", size: 13)).bold()
-                .foregroundStyle(.white.opacity(0.45))
+                .font(.custom("Courier New", size: 14)).bold()
+                .foregroundStyle(.white.opacity(0.55))
                 .monospacedDigit()
-                .animation(.none, value: currentSpeed)
         }
     }
 
