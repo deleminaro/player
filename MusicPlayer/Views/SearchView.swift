@@ -68,6 +68,7 @@ struct SearchView: View {
                 } else {
                     contentArea
                 }
+
             }
             .background(bg.ignoresSafeArea())
             .navigationTitle("Search")
@@ -508,6 +509,8 @@ struct SearchView: View {
                     resultSet = .artists(existing)
                 }
             }
+        } catch SpotifyError.notAuthenticated {
+            // Token was cleared — connect prompt will reappear automatically
         } catch {
             searchError = error.localizedDescription
         }

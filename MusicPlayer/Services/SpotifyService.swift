@@ -37,7 +37,15 @@ final class SpotifyService: NSObject, ObservableObject {
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (data, resp) = try await URLSession.shared.data(for: req)
-        try checkStatus(resp, data: data)
+        do {
+            try checkStatus(resp, data: data)
+        } catch {
+            // Token rejected — clear it so the connect screen reappears
+            if let http = resp as? HTTPURLResponse, http.statusCode == 401 || http.statusCode == 403 {
+                logout()
+            }
+            throw error
+        }
         let decoded = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
         return decoded.tracks.items.compactMap { track(from: $0) }
     }
@@ -122,7 +130,16 @@ final class SpotifyService: NSObject, ObservableObject {
 
     private func validToken() async throws -> String {
         if let tok = accessToken, tokenExpiry > Date() { return tok }
-        if refreshToken != nil { try await refreshAccessToken(); return accessToken! }
+        if refreshToken != nil {
+            do {
+                try await refreshAccessToken()
+            } catch {
+                logout()
+                throw SpotifyError.notAuthenticated
+            }
+            guard let tok = accessToken else { throw SpotifyError.notAuthenticated }
+            return tok
+        }
         throw SpotifyError.notAuthenticated
     }
 
