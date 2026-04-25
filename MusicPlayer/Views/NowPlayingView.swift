@@ -24,6 +24,7 @@ struct NowPlayingView: View {
 
             // Cover artwork
             coverArtwork
+                .frame(maxHeight: 300)
                 .padding(.horizontal, 28)
                 .padding(.top, 8)
                 .id(playerVM.currentTrack?.id)
@@ -204,32 +205,27 @@ struct NowPlayingView: View {
     }
 
     private var albumArtSquare: some View {
-        GeometryReader { geo in
-            let side = min(geo.size.width, geo.size.height)
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.08))
-                if let urlStr = playerVM.currentTrack?.highResArtworkURL ?? playerVM.currentTrack?.artworkURL,
-                   let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { img in
-                        img.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 48, weight: .ultraLight))
-                            .foregroundStyle(.white.opacity(0.2))
-                    }
-                } else {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.08))
+            if let urlStr = playerVM.currentTrack?.highResArtworkURL ?? playerVM.currentTrack?.artworkURL,
+               let url = URL(string: urlStr) {
+                AsyncImage(url: url) { img in
+                    img.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
                     Image(systemName: "music.note")
                         .font(.system(size: 48, weight: .ultraLight))
                         .foregroundStyle(.white.opacity(0.2))
                 }
+            } else {
+                Image(systemName: "music.note")
+                    .font(.system(size: 48, weight: .ultraLight))
+                    .foregroundStyle(.white.opacity(0.2))
             }
-            .frame(width: side, height: side)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
-            .frame(maxWidth: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
     }
 
     // MARK: - Track info
