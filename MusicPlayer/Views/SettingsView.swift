@@ -402,7 +402,7 @@ struct SliderTypeCard: View {
 
 // MARK: - Theme card
 
-private struct ThemeCard: View {
+struct ThemeCard: View {
     let theme: AppTheme
     let isSelected: Bool
     let bgCard: Color
