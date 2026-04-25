@@ -37,9 +37,15 @@ struct TrackRowView: View {
 
             Spacer()
 
-            Text(track.durationFormatted)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white.opacity(0.3))
+            if track.source == .spotify && track.previewURL == nil {
+                Text("NO PREVIEW")
+                    .font(.system(size: 8, weight: .bold)).kerning(0.5)
+                    .foregroundStyle(.white.opacity(0.2))
+            } else {
+                Text(track.durationFormatted)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.3))
+            }
 
             Button(action: onToggleLike) {
                 Image(systemName: isLiked ? "heart.fill" : "heart")

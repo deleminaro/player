@@ -216,7 +216,6 @@ final class SpotifyService: NSObject, ObservableObject {
     // MARK: - Track mapping
 
     private func track(from dto: SpotifyTrackDTO) -> Track? {
-        guard let previewURL = dto.previewUrl else { return nil }
         let artwork = dto.album?.images.first(where: { $0.width ?? 0 >= 300 })?.url
                    ?? dto.album?.images.first?.url
         return Track(
@@ -228,7 +227,7 @@ final class SpotifyService: NSObject, ObservableObject {
             permalinkURL: dto.externalUrls?.spotify ?? "https://open.spotify.com",
             media:        nil,
             source:       .spotify,
-            previewURL:   previewURL
+            previewURL:   dto.previewUrl   // may be nil — handled at playback time
         )
     }
 
