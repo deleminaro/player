@@ -40,7 +40,11 @@ struct SearchView: View {
     @State private var filter        = SearchFilter.all
     @State private var currentQuery  = ""
     @State private var source        = TrackSource.soundcloud
+    @State private var showSpotifyLogin = false
+    @State private var spotifyAuthError: String?
     @FocusState private var focused: Bool
+
+    @ObservedObject private var spotify = SpotifyService.shared
 
     private var bg:      Color { themeManager.current.background }
     private var bgField: Color { themeManager.current.card }
@@ -50,11 +54,7 @@ struct SearchView: View {
             VStack(spacing: 0) {
                 searchBar
                     .padding(.horizontal, 16)
-                    .padding(.top, 12).padding(.bottom, 10)
-
-                sourcePicker
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 10)
+                    .padding(.top, 12).padding(.bottom, 14)
 
                 if source == .soundcloud {
                     filterChips
@@ -63,7 +63,11 @@ struct SearchView: View {
 
                 Divider().background(Color.white.opacity(0.06))
 
-                contentArea
+                if source == .spotify && !spotify.isAuthenticated {
+                    spotifyConnectPrompt
+                } else {
+                    contentArea
+                }
             }
             .background(bg.ignoresSafeArea())
             .navigationTitle("Search")
@@ -71,6 +75,11 @@ struct SearchView: View {
             .toolbarBackground(bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    sourceToggleButton
+                }
+            }
         }
         .sheet(item: $addToPlaylistTrack) { track in
             AddToPlaylistSheet(track: track).environmentObject(playerVM).environmentObject(themeManager)
@@ -123,43 +132,99 @@ struct SearchView: View {
         .background(bgField, in: Capsule())
     }
 
-    // MARK: - Source picker
+    // MARK: - Source toggle button (nav bar)
 
-    private var sourcePicker: some View {
-        HStack(spacing: 0) {
-            ForEach([TrackSource.soundcloud, .spotify], id: \.self) { s in
-                let selected = source == s
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) { source = s }
-                } label: {
-                    HStack(spacing: 6) {
-                        if s == .spotify {
-                            Circle()
-                                .fill(selected ? Color.black : Color(red: 0.11, green: 0.73, blue: 0.33))
-                                .frame(width: 12, height: 12)
-                                .overlay(Text("S").font(.system(size: 7, weight: .black))
-                                    .foregroundStyle(selected ? .white : .black))
-                        } else {
-                            Image(systemName: "cloud.fill")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(selected ? .black : .white.opacity(0.6))
-                        }
-                        Text(s == .soundcloud ? "SoundCloud" : "Spotify")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(selected ? .black : .white.opacity(0.6))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 9)
-                    .background(selected ? (s == .spotify ? Color(red: 0.11, green: 0.73, blue: 0.33) : .white) : bgField)
+    private var sourceToggleButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                source = source == .soundcloud ? .spotify : .soundcloud
+                resultSet = .empty
+                searchError = nil
+                if !currentQuery.isEmpty {
+                    Task { await performSearch(currentQuery, reset: true) }
                 }
-                .buttonStyle(.plain)
-                if s == .soundcloud {
-                    Divider().frame(width: 1).background(Color.white.opacity(0.1))
+            }
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(source == .spotify
+                          ? Color(red: 0.11, green: 0.73, blue: 0.33)
+                          : Color(red: 1.0, green: 0.34, blue: 0.0))
+                    .frame(width: 36, height: 36)
+
+                if source == .spotify {
+                    Text("S")
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundStyle(.black)
+                } else {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.08), lineWidth: 1))
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Spotify connect prompt
+
+    private var spotifyConnectPrompt: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Circle()
+                .fill(Color(red: 0.11, green: 0.73, blue: 0.33).opacity(0.15))
+                .frame(width: 80, height: 80)
+                .overlay(
+                    Text("S")
+                        .font(.system(size: 40, weight: .black))
+                        .foregroundStyle(Color(red: 0.11, green: 0.73, blue: 0.33))
+                )
+
+            Text("CONNECT SPOTIFY")
+                .font(.system(size: 14, weight: .black)).kerning(2)
+                .foregroundStyle(.white)
+
+            Text("Sign in to search Spotify's catalog\nand play 30s previews.")
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.4))
+                .multilineTextAlignment(.center)
+
+            if let err = spotifyAuthError {
+                Text(err)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.red.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            Button {
+                Task {
+                    spotifyAuthError = nil
+                    do {
+                        try await SpotifyService.shared.startAuth()
+                        if !currentQuery.isEmpty {
+                            await performSearch(currentQuery, reset: true)
+                        }
+                    } catch SpotifyError.authCancelled {
+                        // user cancelled — no error shown
+                    } catch {
+                        spotifyAuthError = error.localizedDescription
+                    }
+                }
+            } label: {
+                Text("CONNECT")
+                    .font(.system(size: 14, weight: .black)).kerning(1.5)
+                    .foregroundStyle(.black)
+                    .frame(width: 180)
+                    .padding(.vertical, 14)
+                    .background(Color(red: 0.11, green: 0.73, blue: 0.33), in: Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 32)
     }
 
     // MARK: - Filter chips

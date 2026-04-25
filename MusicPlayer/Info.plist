@@ -35,6 +35,17 @@
         <true/>
     </dict>
 
+    <!-- Spotify PKCE callback URL scheme -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>postor</string>
+            </array>
+        </dict>
+    </array>
+
     <!-- Blank launch screen (no storyboard needed) -->
     <key>UILaunchScreen</key>
     <dict/>

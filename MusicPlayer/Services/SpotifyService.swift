@@ -1,12 +1,27 @@
 import Foundation
+import AuthenticationServices
+import CryptoKit
 
-final class SpotifyService {
+@MainActor
+final class SpotifyService: NSObject, ObservableObject {
     static let shared = SpotifyService()
-    private init() {}
+    private override init() {
+        super.init()
+        loadTokens()
+    }
 
-    private var accessToken: String?
-    private var tokenExpiry: Date = .distantPast
-    private let session = URLSession.shared
+    @Published var isAuthenticated = false
+
+    private var accessToken:  String?
+    private var refreshToken: String?
+    private var tokenExpiry:  Date = .distantPast
+    private var codeVerifier: String?
+    private var authSession:  ASWebAuthenticationSession?
+
+    private let kAccess  = "sp_access_token"
+    private let kRefresh = "sp_refresh_token"
+    private let kExpiry  = "sp_token_expiry"
+    private let redirectURI = "postor://spotify-callback"
 
     // MARK: - Search
 
@@ -21,50 +36,169 @@ final class SpotifyService {
         ]
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let (data, resp) = try await session.data(for: req)
+        let (data, resp) = try await URLSession.shared.data(for: req)
         try checkStatus(resp, data: data)
         let decoded = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
         return decoded.tracks.items.compactMap { track(from: $0) }
     }
 
-    // MARK: - Token
+    // MARK: - PKCE Auth
+
+    func startAuth() async throws {
+        let verifier  = generateCodeVerifier()
+        codeVerifier  = verifier
+        let challenge = generateCodeChallenge(from: verifier)
+
+        var comps = URLComponents(string: "https://accounts.spotify.com/authorize")!
+        comps.queryItems = [
+            .init(name: "client_id",             value: Constants.spotifyClientID),
+            .init(name: "response_type",          value: "code"),
+            .init(name: "redirect_uri",           value: redirectURI),
+            .init(name: "code_challenge_method",  value: "S256"),
+            .init(name: "code_challenge",         value: challenge),
+            .init(name: "scope",                  value: "user-read-private")
+        ]
+        guard let authURL = comps.url else { throw SpotifyError.authFailed }
+
+        let callbackURL: URL = try await withCheckedThrowingContinuation { cont in
+            let session = ASWebAuthenticationSession(
+                url: authURL,
+                callbackURLScheme: "postor"
+            ) { url, error in
+                if let err = error {
+                    let asErr = err as? ASWebAuthenticationSessionError
+                    cont.resume(throwing: asErr?.code == .canceledLogin
+                        ? SpotifyError.authCancelled : err)
+                } else if let url {
+                    cont.resume(returning: url)
+                } else {
+                    cont.resume(throwing: SpotifyError.authFailed)
+                }
+            }
+            session.presentationContextProvider = self
+            session.prefersEphemeralWebBrowserSession = false
+            self.authSession = session
+            session.start()
+        }
+        authSession = nil
+
+        guard let code = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "code" })?.value
+        else { throw SpotifyError.authFailed }
+
+        try await exchangeCode(code)
+    }
+
+    private func exchangeCode(_ code: String) async throws {
+        guard let verifier = codeVerifier else { throw SpotifyError.authFailed }
+        var req = URLRequest(url: URL(string: Constants.Spotify.tokenURL)!)
+        req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        req.httpBody = [
+            "grant_type=authorization_code",
+            "code=\(code)",
+            "redirect_uri=\(redirectURI)",
+            "client_id=\(Constants.spotifyClientID)",
+            "code_verifier=\(verifier)"
+        ].joined(separator: "&").data(using: .utf8)
+
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try checkStatus(resp, data: data)
+        let t = try JSONDecoder().decode(PKCETokenResponse.self, from: data)
+        applyTokenResponse(t)
+    }
+
+    func logout() {
+        accessToken  = nil
+        refreshToken = nil
+        tokenExpiry  = .distantPast
+        isAuthenticated = false
+        UserDefaults.standard.removeObject(forKey: kAccess)
+        UserDefaults.standard.removeObject(forKey: kRefresh)
+        UserDefaults.standard.removeObject(forKey: kExpiry)
+    }
+
+    // MARK: - Token management
 
     private func validToken() async throws -> String {
         if let tok = accessToken, tokenExpiry > Date() { return tok }
-        return try await fetchToken()
+        if refreshToken != nil { try await refreshAccessToken(); return accessToken! }
+        throw SpotifyError.notAuthenticated
     }
 
-    private func fetchToken() async throws -> String {
-        let creds = "\(Constants.spotifyClientID):\(Constants.spotifyClientSecret)"
-        guard let credsData = creds.data(using: .utf8) else { throw SpotifyError.badCredentials }
-        let b64 = credsData.base64EncodedString()
-
+    private func refreshAccessToken() async throws {
+        guard let refresh = refreshToken else { throw SpotifyError.notAuthenticated }
         var req = URLRequest(url: URL(string: Constants.Spotify.tokenURL)!)
         req.httpMethod = "POST"
-        req.setValue("Basic \(b64)", forHTTPHeaderField: "Authorization")
         req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        req.httpBody = "grant_type=client_credentials".data(using: .utf8)
+        req.httpBody = [
+            "grant_type=refresh_token",
+            "refresh_token=\(refresh)",
+            "client_id=\(Constants.spotifyClientID)"
+        ].joined(separator: "&").data(using: .utf8)
 
-        let (data, resp) = try await session.data(for: req)
+        let (data, resp) = try await URLSession.shared.data(for: req)
         try checkStatus(resp, data: data)
-        let tokenResp = try JSONDecoder().decode(TokenResponse.self, from: data)
-        accessToken = tokenResp.accessToken
-        tokenExpiry = Date().addingTimeInterval(Double(tokenResp.expiresIn) - 30)
-        return tokenResp.accessToken
+        let t = try JSONDecoder().decode(PKCETokenResponse.self, from: data)
+        applyTokenResponse(t)
     }
 
-    // MARK: - HTTP status check
+    private func applyTokenResponse(_ t: PKCETokenResponse) {
+        accessToken  = t.accessToken
+        if let r = t.refreshToken { refreshToken = r }
+        tokenExpiry  = Date().addingTimeInterval(Double(t.expiresIn) - 30)
+        isAuthenticated = true
+        saveTokens()
+    }
+
+    // MARK: - Persistence
+
+    private func saveTokens() {
+        let d = UserDefaults.standard
+        d.set(accessToken,  forKey: kAccess)
+        d.set(refreshToken, forKey: kRefresh)
+        d.set(tokenExpiry,  forKey: kExpiry)
+    }
+
+    private func loadTokens() {
+        let d = UserDefaults.standard
+        accessToken  = d.string(forKey: kAccess)
+        refreshToken = d.string(forKey: kRefresh)
+        tokenExpiry  = d.object(forKey: kExpiry) as? Date ?? .distantPast
+        isAuthenticated = refreshToken != nil
+    }
+
+    // MARK: - PKCE helpers
+
+    private func generateCodeVerifier() -> String {
+        var buf = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, buf.count, &buf)
+        return Data(buf).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    private func generateCodeChallenge(from verifier: String) -> String {
+        let hash = SHA256.hash(data: Data(verifier.utf8))
+        return Data(hash).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    // MARK: - HTTP check
 
     private func checkStatus(_ response: URLResponse, data: Data) throws {
-        guard let http = response as? HTTPURLResponse else { return }
-        guard (200..<300).contains(http.statusCode) else {
-            let msg = (try? JSONDecoder().decode(SpotifyAPIError.self, from: data))?.error.message
-                   ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
-            throw SpotifyError.apiError("Spotify \(http.statusCode): \(msg)")
-        }
+        guard let http = response as? HTTPURLResponse,
+              !(200..<300).contains(http.statusCode) else { return }
+        let msg = (try? JSONDecoder().decode(SpotifyAPIError.self, from: data))?.error.message
+               ?? (try? JSONDecoder().decode(SpotifyTokenError.self, from: data))?.errorDescription
+               ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
+        throw SpotifyError.apiError("Spotify \(http.statusCode): \(msg)")
     }
 
-    // MARK: - Mapping
+    // MARK: - Track mapping
 
     private func track(from dto: SpotifyTrackDTO) -> Track? {
         guard let previewURL = dto.previewUrl else { return nil }
@@ -83,21 +217,34 @@ final class SpotifyService {
         )
     }
 
-    private func stableID(from spotifyID: String) -> Int {
+    private func stableID(from id: String) -> Int {
         var h: UInt64 = 5381
-        for c in spotifyID.utf8 { h = (h &<< 5) &+ h &+ UInt64(c) }
+        for c in id.utf8 { h = (h &<< 5) &+ h &+ UInt64(c) }
         return Int(bitPattern: UInt(h & 0x7FFFFFFFFFFFFFFF))
+    }
+}
+
+// MARK: - ASWebAuthenticationPresentationContextProviding
+
+extension SpotifyService: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
     }
 }
 
 // MARK: - Response types
 
-private struct TokenResponse: Decodable {
-    let accessToken: String
-    let expiresIn:   Int
+private struct PKCETokenResponse: Decodable {
+    let accessToken:  String
+    let refreshToken: String?
+    let expiresIn:    Int
     enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case expiresIn   = "expires_in"
+        case accessToken  = "access_token"
+        case refreshToken = "refresh_token"
+        case expiresIn    = "expires_in"
     }
 }
 
@@ -106,25 +253,20 @@ private struct SpotifySearchResponse: Decodable {
 }
 
 private struct SpotifyTrackPage: Decodable {
-    // Use a safe wrapper so one bad item doesn't break the whole list
     let items: [SpotifyTrackDTO]
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        var arr = try container.nestedUnkeyedContainer(forKey: .items)
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        var arr = try c.nestedUnkeyedContainer(forKey: .items)
         var result: [SpotifyTrackDTO] = []
         while !arr.isAtEnd {
-            if let item = try? arr.decode(SpotifyTrackDTO.self) {
-                result.append(item)
-            } else {
-                _ = try? arr.decode(AnyDecodable.self)
-            }
+            if let item = try? arr.decode(SpotifyTrackDTO.self) { result.append(item) }
+            else { _ = try? arr.decode(AnyDecodable.self) }
         }
         items = result
     }
     enum CodingKeys: String, CodingKey { case items }
 }
 
-// Sink for skipping undecodable items
 private struct AnyDecodable: Decodable {}
 
 private struct SpotifyTrackDTO: Decodable {
@@ -135,7 +277,6 @@ private struct SpotifyTrackDTO: Decodable {
     let artists:      [SpotifyArtistDTO]
     let album:        SpotifyAlbumDTO?
     let externalUrls: SpotifyExternalURLs?
-
     enum CodingKeys: String, CodingKey {
         case id, name, artists, album
         case durationMs   = "duration_ms"
@@ -144,37 +285,35 @@ private struct SpotifyTrackDTO: Decodable {
     }
 }
 
-private struct SpotifyArtistDTO: Decodable {
-    let name: String
-}
-
-private struct SpotifyAlbumDTO: Decodable {
-    let images: [SpotifyImageDTO]
-}
-
-private struct SpotifyImageDTO: Decodable {
-    let url:    String
-    let width:  Int?
-    let height: Int?
-}
-
-private struct SpotifyExternalURLs: Decodable {
-    let spotify: String
-}
+private struct SpotifyArtistDTO: Decodable { let name: String }
+private struct SpotifyAlbumDTO:  Decodable { let images: [SpotifyImageDTO] }
+private struct SpotifyImageDTO:  Decodable { let url: String; let width: Int?; let height: Int? }
+private struct SpotifyExternalURLs: Decodable { let spotify: String }
 
 private struct SpotifyAPIError: Decodable {
     struct Detail: Decodable { let message: String }
     let error: Detail
 }
 
+private struct SpotifyTokenError: Decodable {
+    let error: String
+    let errorDescription: String?
+    enum CodingKeys: String, CodingKey {
+        case error; case errorDescription = "error_description"
+    }
+}
+
 enum SpotifyError: LocalizedError {
-    case badCredentials
+    case badCredentials, authFailed, authCancelled, notAuthenticated
     case apiError(String)
 
     var errorDescription: String? {
         switch self {
-        case .badCredentials:   return "Invalid Spotify credentials"
-        case .apiError(let m):  return m
+        case .badCredentials:    return "Invalid Spotify credentials"
+        case .authFailed:        return "Spotify authentication failed"
+        case .authCancelled:     return "Spotify login was cancelled"
+        case .notAuthenticated:  return "Connect your Spotify account first"
+        case .apiError(let m):   return m
         }
     }
 }
