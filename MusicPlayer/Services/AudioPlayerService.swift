@@ -138,7 +138,7 @@ final class AudioPlayerService {
 
         setupEQTap(for: item)
 
-        let interval = CMTime(seconds: 1, preferredTimescale: 600)
+        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard time.isValid, !time.isIndefinite else { return }
             Task { @MainActor [weak self] in self?.onTimeUpdate?(time.seconds) }

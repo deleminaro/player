@@ -9,7 +9,8 @@ struct NowPlayingView: View {
     @State private var showEQ            = false
     @State private var showSpeed         = false
     @State private var showAddToPlaylist = false
-    @State private var isScrubbingClassic = false
+    @State private var isScrubbing  = false
+    @State private var hasAppeared  = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private var bg:       Color { themeManager.current.background }
@@ -38,13 +39,30 @@ struct NowPlayingView: View {
                 trackInfo
                 waveformProgress
                     .padding(.top, 14)
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.55, dampingFraction: 0.82).delay(0.15), value: hasAppeared)
                 controlsRow
                     .padding(.top, 12)
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared ? 0 : 16)
+                    .animation(.spring(response: 0.55, dampingFraction: 0.82).delay(0.22), value: hasAppeared)
                 actionRow
                     .padding(.top, 14)
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared ? 0 : 20)
+                    .animation(.spring(response: 0.55, dampingFraction: 0.82).delay(0.28), value: hasAppeared)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 28)
+            .onAppear {
+                hasAppeared = false
+                withAnimation { hasAppeared = true }
+            }
+            .onChange(of: playerVM.currentTrack?.id) { _, _ in
+                hasAppeared = false
+                withAnimation { hasAppeared = true }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
@@ -267,27 +285,39 @@ struct NowPlayingView: View {
 
         return VStack(spacing: 6) {
             GeometryReader { geo in
-                Canvas { ctx, size in
-                    let count = CGFloat(bars.count)
-                    let step  = size.width / count
-                    let barW  = max(2, step * 0.72)
-                    for (i, h) in bars.enumerated() {
-                        let filled = Double(i) / Double(bars.count) < progress
-                        let barH = h * size.height
-                        let rect = CGRect(
-                            x: CGFloat(i) * step + (step - barW) / 2,
-                            y: (size.height - barH) / 2,
-                            width: barW, height: barH
-                        )
-                        ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
-                                 with: .color(filled ? themeManager.current.primary : Color.white.opacity(0.22)))
+                ZStack(alignment: .leading) {
+                    // Dim background layer — full width
+                    Canvas { ctx, size in
+                        let step = size.width / CGFloat(bars.count)
+                        let barW = max(2, step * 0.72)
+                        for (i, h) in bars.enumerated() {
+                            let barH = h * size.height
+                            let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: (size.height-barH)/2, width: barW, height: barH)
+                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Color.white.opacity(0.22)))
+                        }
                     }
+                    // Accent foreground layer — clipped to progress width (animatable)
+                    Canvas { ctx, size in
+                        let step = size.width / CGFloat(bars.count)
+                        let barW = max(2, step * 0.72)
+                        for (i, h) in bars.enumerated() {
+                            let barH = h * size.height
+                            let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: (size.height-barH)/2, width: barW, height: barH)
+                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(themeManager.current.primary))
+                        }
+                    }
+                    .frame(width: max(0, geo.size.width * CGFloat(progress)))
+                    .clipped()
+                    .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
                 }
                 .contentShape(Rectangle())
-                .gesture(DragGesture(minimumDistance: 0).onChanged { v in
-                    let pct = max(0, min(1, v.location.x / geo.size.width))
-                    playerVM.seek(to: pct * playerVM.duration)
-                })
+                .gesture(DragGesture(minimumDistance: 0)
+                    .onChanged { v in
+                        isScrubbing = true
+                        playerVM.seek(to: max(0, min(1, v.location.x / geo.size.width)) * playerVM.duration)
+                    }
+                    .onEnded { _ in isScrubbing = false }
+                )
             }
             .frame(height: 40)
             timeLabels
@@ -301,60 +331,73 @@ struct NowPlayingView: View {
 
         return VStack(spacing: 6) {
             GeometryReader { geo in
-                Canvas { ctx, size in
-                    let count = CGFloat(bars.count)
-                    let step  = size.width / count
-                    let barW  = max(2, step * 0.65)
-                    let cy    = size.height / 2
-                    for (i, h) in bars.enumerated() {
-                        let filled = Double(i) / Double(bars.count) < progress
-                        let halfH  = h * cy * 0.92
-                        let rect = CGRect(
-                            x: CGFloat(i) * step + (step - barW) / 2,
-                            y: cy - halfH,
-                            width: barW, height: halfH * 2
-                        )
-                        ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
-                                 with: .color(filled ? themeManager.current.primary : Color.white.opacity(0.22)))
+                ZStack(alignment: .leading) {
+                    // Dim background layer
+                    Canvas { ctx, size in
+                        let step = size.width / CGFloat(bars.count)
+                        let barW = max(2, step * 0.65)
+                        let cy   = size.height / 2
+                        for (i, h) in bars.enumerated() {
+                            let halfH = h * cy * 0.92
+                            let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: cy-halfH, width: barW, height: halfH*2)
+                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Color.white.opacity(0.22)))
+                        }
                     }
+                    // Accent foreground layer — clipped to progress width (animatable)
+                    Canvas { ctx, size in
+                        let step = size.width / CGFloat(bars.count)
+                        let barW = max(2, step * 0.65)
+                        let cy   = size.height / 2
+                        for (i, h) in bars.enumerated() {
+                            let halfH = h * cy * 0.92
+                            let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: cy-halfH, width: barW, height: halfH*2)
+                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(themeManager.current.primary))
+                        }
+                    }
+                    .frame(width: max(0, geo.size.width * CGFloat(progress)))
+                    .clipped()
+                    .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
                 }
                 .contentShape(Rectangle())
-                .gesture(DragGesture(minimumDistance: 0).onChanged { v in
-                    let pct = max(0, min(1, v.location.x / geo.size.width))
-                    playerVM.seek(to: pct * playerVM.duration)
-                })
+                .gesture(DragGesture(minimumDistance: 0)
+                    .onChanged { v in
+                        isScrubbing = true
+                        playerVM.seek(to: max(0, min(1, v.location.x / geo.size.width)) * playerVM.duration)
+                    }
+                    .onEnded { _ in isScrubbing = false }
+                )
             }
             .frame(height: 40)
             timeLabels
         }
     }
 
-    // Classic — iOS 26 / Apple Music thick capsule, expands on scrub
+    // Classic — thick capsule, expands on scrub
     private var classicProgress: some View {
         let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
+        let trackH: CGFloat = isScrubbing ? 14 : 5
 
         return VStack(spacing: 10) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(Color.white.opacity(0.15))
-                        .frame(height: isScrubbingClassic ? 14 : 5)
+                        .frame(height: trackH)
                     Capsule()
                         .fill(Color.white)
-                        .frame(width: max(0, geo.size.width * CGFloat(progress)),
-                               height: isScrubbingClassic ? 14 : 5)
+                        .frame(width: max(0, geo.size.width * CGFloat(progress)), height: trackH)
+                        .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
                 }
                 .frame(maxHeight: .infinity, alignment: .center)
-                .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isScrubbingClassic)
+                .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isScrubbing)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { v in
-                            isScrubbingClassic = true
-                            let pct = max(0, min(1, v.location.x / geo.size.width))
-                            playerVM.seek(to: pct * playerVM.duration)
+                            isScrubbing = true
+                            playerVM.seek(to: max(0, min(1, v.location.x / geo.size.width)) * playerVM.duration)
                         }
-                        .onEnded { _ in isScrubbingClassic = false }
+                        .onEnded { _ in isScrubbing = false }
                 )
             }
             .frame(height: 20)
