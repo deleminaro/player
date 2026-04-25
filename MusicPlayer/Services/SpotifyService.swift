@@ -21,9 +21,10 @@ final class SpotifyService {
         ]
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let (data, _) = try await session.data(for: req)
-        let resp = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
-        return resp.tracks.items.compactMap { track(from: $0) }
+        let (data, resp) = try await session.data(for: req)
+        try checkStatus(resp, data: data)
+        let decoded = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
+        return decoded.tracks.items.compactMap { track(from: $0) }
     }
 
     // MARK: - Token
@@ -44,29 +45,41 @@ final class SpotifyService {
         req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         req.httpBody = "grant_type=client_credentials".data(using: .utf8)
 
-        let (data, _) = try await session.data(for: req)
-        let resp = try JSONDecoder().decode(TokenResponse.self, from: data)
-        accessToken  = resp.accessToken
-        tokenExpiry  = Date().addingTimeInterval(Double(resp.expiresIn) - 30)
-        return resp.accessToken
+        let (data, resp) = try await session.data(for: req)
+        try checkStatus(resp, data: data)
+        let tokenResp = try JSONDecoder().decode(TokenResponse.self, from: data)
+        accessToken = tokenResp.accessToken
+        tokenExpiry = Date().addingTimeInterval(Double(tokenResp.expiresIn) - 30)
+        return tokenResp.accessToken
+    }
+
+    // MARK: - HTTP status check
+
+    private func checkStatus(_ response: URLResponse, data: Data) throws {
+        guard let http = response as? HTTPURLResponse else { return }
+        guard (200..<300).contains(http.statusCode) else {
+            let msg = (try? JSONDecoder().decode(SpotifyAPIError.self, from: data))?.error.message
+                   ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
+            throw SpotifyError.apiError("Spotify \(http.statusCode): \(msg)")
+        }
     }
 
     // MARK: - Mapping
 
     private func track(from dto: SpotifyTrackDTO) -> Track? {
         guard let previewURL = dto.previewUrl else { return nil }
-        let artwork = dto.album.images.first(where: { $0.width ?? 0 >= 300 })?.url
-                   ?? dto.album.images.first?.url
+        let artwork = dto.album?.images.first(where: { $0.width ?? 0 >= 300 })?.url
+                   ?? dto.album?.images.first?.url
         return Track(
-            id:          stableID(from: dto.id),
-            title:       dto.name,
-            username:    dto.artists.first?.name ?? "Unknown",
-            artworkURL:  artwork,
-            duration:    dto.durationMs,
-            permalinkURL: dto.externalUrls.spotify,
-            media:       nil,
-            source:      .spotify,
-            previewURL:  previewURL
+            id:           stableID(from: dto.id),
+            title:        dto.name,
+            username:     dto.artists.first?.name ?? "Unknown",
+            artworkURL:   artwork,
+            duration:     dto.durationMs,
+            permalinkURL: dto.externalUrls?.spotify ?? "https://open.spotify.com",
+            media:        nil,
+            source:       .spotify,
+            previewURL:   previewURL
         )
     }
 
@@ -93,17 +106,35 @@ private struct SpotifySearchResponse: Decodable {
 }
 
 private struct SpotifyTrackPage: Decodable {
+    // Use a safe wrapper so one bad item doesn't break the whole list
     let items: [SpotifyTrackDTO]
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        var arr = try container.nestedUnkeyedContainer(forKey: .items)
+        var result: [SpotifyTrackDTO] = []
+        while !arr.isAtEnd {
+            if let item = try? arr.decode(SpotifyTrackDTO.self) {
+                result.append(item)
+            } else {
+                _ = try? arr.decode(AnyDecodable.self)
+            }
+        }
+        items = result
+    }
+    enum CodingKeys: String, CodingKey { case items }
 }
 
+// Sink for skipping undecodable items
+private struct AnyDecodable: Decodable {}
+
 private struct SpotifyTrackDTO: Decodable {
-    let id:          String
-    let name:        String
-    let durationMs:  Int
-    let previewUrl:  String?
-    let artists:     [SpotifyArtistDTO]
-    let album:       SpotifyAlbumDTO
-    let externalUrls: SpotifyExternalURLs
+    let id:           String
+    let name:         String
+    let durationMs:   Int
+    let previewUrl:   String?
+    let artists:      [SpotifyArtistDTO]
+    let album:        SpotifyAlbumDTO?
+    let externalUrls: SpotifyExternalURLs?
 
     enum CodingKeys: String, CodingKey {
         case id, name, artists, album
@@ -131,6 +162,19 @@ private struct SpotifyExternalURLs: Decodable {
     let spotify: String
 }
 
-enum SpotifyError: Error {
+private struct SpotifyAPIError: Decodable {
+    struct Detail: Decodable { let message: String }
+    let error: Detail
+}
+
+enum SpotifyError: LocalizedError {
     case badCredentials
+    case apiError(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .badCredentials:   return "Invalid Spotify credentials"
+        case .apiError(let m):  return m
+        }
+    }
 }
