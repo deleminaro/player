@@ -114,7 +114,7 @@ final class PlayerViewModel: ObservableObject {
                         if currentTrack?.id == track.id { playerState = .idle; currentTrack = nil }
                         if let link = URL(string: track.permalinkURL),
                            UIApplication.shared.canOpenURL(link) {
-                            UIApplication.shared.open(link)
+                            await UIApplication.shared.open(link)
                         }
                     }
                     return
