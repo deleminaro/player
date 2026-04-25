@@ -4,8 +4,8 @@ enum Constants {
     // MARK: - Replace these with your actual keys before running
     static var soundcloudClientID  = "yNSW5UvBmb1A5j7qPUtIMuB9Itx3jsOC"
     static var geniusToken         = "rWlzywghaCWdSYpBF1OJQlMsiXghcIGb1uX0UmT8nhBMYBFUNL8LVhXs4Fhwg-_N"
-    static var spotifyClientID     = "YOUR_SPOTIFY_CLIENT_ID"
-    static var spotifyClientSecret = "YOUR_SPOTIFY_CLIENT_SECRET"
+    static var spotifyClientID     = "0f013be207984993b94822b2e7085b68"
+    static var spotifyClientSecret = "8570bb3671f64588b7361603b40d8bd6"
 
     enum SoundCloud {
         static let baseURL    = "https://api-v2.soundcloud.com"
