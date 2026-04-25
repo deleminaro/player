@@ -95,6 +95,7 @@ final class PlayerViewModel: ObservableObject {
         playerState  = .loading
         addToRecent(track)
         updateNowPlayingInfo(track: track)
+        MPRemoteCommandCenter.shared().likeCommand.isActive = isLiked(track)
 
         Task {
             do {
@@ -263,6 +264,14 @@ final class PlayerViewModel: ObservableObject {
             likedTracks.insert(track, at: 0)
         }
         saveLiked()
+        updateNowPlayingLikedState(track)
+    }
+
+    private func updateNowPlayingLikedState(_ track: Track) {
+        MPRemoteCommandCenter.shared().likeCommand.isActive = isLiked(track)
+        guard var info = MPNowPlayingInfoCenter.default().nowPlayingInfo else { return }
+        info[MPNowPlayingInfoPropertyIsLiked] = NSNumber(value: isLiked(track))
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
     }
 
     // MARK: - Recent searches
@@ -319,6 +328,14 @@ final class PlayerViewModel: ObservableObject {
         center.changePlaybackPositionCommand.addTarget { [weak self] event in
             guard let e = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
             self?.seek(to: e.positionTime)
+            return .success
+        }
+
+        center.likeCommand.isEnabled = true
+        center.likeCommand.localizedTitle = "Favorite"
+        center.likeCommand.addTarget { [weak self] _ in
+            guard let self, let track = self.currentTrack else { return .commandFailed }
+            Task { @MainActor in self.toggleLike(track) }
             return .success
         }
     }
