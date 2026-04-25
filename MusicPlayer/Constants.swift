@@ -19,6 +19,6 @@ enum Constants {
     enum Spotify {
         static let baseURL    = "https://api.spotify.com/v1"
         static let tokenURL   = "https://accounts.spotify.com/api/token"
-        static let searchLimit = 50
+        static let searchLimit = 20
     }
 }
