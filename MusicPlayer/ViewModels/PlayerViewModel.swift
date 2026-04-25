@@ -269,9 +269,6 @@ final class PlayerViewModel: ObservableObject {
 
     private func updateNowPlayingLikedState(_ track: Track) {
         MPRemoteCommandCenter.shared().likeCommand.isActive = isLiked(track)
-        guard var info = MPNowPlayingInfoCenter.default().nowPlayingInfo else { return }
-        info[MPNowPlayingInfoPropertyIsLiked] = NSNumber(value: isLiked(track))
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
     }
 
     // MARK: - Recent searches
