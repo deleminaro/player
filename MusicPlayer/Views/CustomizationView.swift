@@ -5,6 +5,7 @@ struct CustomizationView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var tab: CTab = .background
     @State private var photoItem: PhotosPickerItem?
+    @State private var coverPhotoItem: PhotosPickerItem?
 
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
@@ -48,6 +49,13 @@ struct CustomizationView: View {
                 guard let data = try? await item?.loadTransferable(type: Data.self),
                       let image = UIImage(data: data) else { return }
                 themeManager.saveCustomWallpaper(image)
+            }
+        }
+        .onChange(of: coverPhotoItem) { _, item in
+            Task {
+                guard let data = try? await item?.loadTransferable(type: Data.self),
+                      let image = UIImage(data: data) else { return }
+                themeManager.saveCustomCoverImage(image)
             }
         }
     }
@@ -170,8 +178,117 @@ struct CustomizationView: View {
 
     private var coverTab: some View {
         VStack(alignment: .leading, spacing: 20) {
-            sectionHeader("COVER STYLE")
-            emptyCard(icon: "photo.on.rectangle.angled", title: "Cover Styles", subtitle: "Coming soon")
+            sectionHeader("COVER SOURCE")
+
+            // Style cards row
+            HStack(spacing: 14) {
+                // Album Art
+                let artOn = themeManager.coverStyle == .albumArt
+                Button { themeManager.selectCover(.albumArt) } label: {
+                    sourceCard(label: "Album Art", selected: artOn, accent: themeManager.current.primary) {
+                        ZStack {
+                            LinearGradient(colors: [Color(white: 0.28), Color(white: 0.06)],
+                                           startPoint: .top, endPoint: .bottom)
+                            Image(systemName: "music.note")
+                                .font(.system(size: 26, weight: .light))
+                                .foregroundStyle(.white.opacity(0.35))
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+
+                // Custom Photo
+                let photoOn = themeManager.coverStyle == .customPhoto
+                PhotosPicker(selection: $coverPhotoItem, matching: .images) {
+                    sourceCard(label: "Custom Photo", selected: photoOn, accent: themeManager.current.primary) {
+                        if let img = themeManager.customCoverImage {
+                            Image(uiImage: img)
+                                .resizable().aspectRatio(contentMode: .fill)
+                        } else {
+                            ZStack {
+                                Color(white: 0.14)
+                                VStack(spacing: 6) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 22, weight: .light))
+                                        .foregroundStyle(.white.opacity(0.35))
+                                    Text("Add Photo")
+                                        .font(.system(size: 9, weight: .bold)).kerning(1)
+                                        .foregroundStyle(.white.opacity(0.25))
+                                }
+                            }
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+
+                // Hidden
+                let hiddenOn = themeManager.coverStyle == .hidden
+                Button { themeManager.selectCover(.hidden) } label: {
+                    sourceCard(label: "Hidden", selected: hiddenOn, accent: themeManager.current.primary) {
+                        ZStack {
+                            Color(white: 0.10)
+                            Image(systemName: "eye.slash")
+                                .font(.system(size: 22, weight: .light))
+                                .foregroundStyle(.white.opacity(0.25))
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+
+            // Library — show saved cover if any
+            sectionHeader("LIBRARY")
+
+            if let img = themeManager.customCoverImage {
+                HStack(spacing: 14) {
+                    Image(uiImage: img)
+                        .resizable().aspectRatio(1, contentMode: .fill)
+                        .frame(width: 72, height: 72)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Custom Cover")
+                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                        Text("Tap replace to update")
+                            .font(.system(size: 11)).foregroundStyle(.white.opacity(0.35))
+                    }
+                    Spacer()
+
+                    PhotosPicker(selection: $coverPhotoItem, matching: .images) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 16)).foregroundStyle(.white.opacity(0.45))
+                    }
+
+                    Button { themeManager.deleteCustomCoverImage() } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 16)).foregroundStyle(.red.opacity(0.6))
+                    }
+                }
+                .padding(16)
+                .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 16)
+            } else {
+                PhotosPicker(selection: $coverPhotoItem, matching: .images) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.system(size: 20)).foregroundStyle(themeManager.current.primary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Add Custom Cover")
+                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                            Text("Choose from your photo library")
+                                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.35))
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.2))
+                    }
+                    .padding(16)
+                    .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal, 16)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 

@@ -101,6 +101,14 @@ enum BackgroundStyle: String {
     case customPhoto = "customPhoto"
 }
 
+// MARK: - Cover style
+
+enum CoverStyle: String {
+    case albumArt    = "albumArt"
+    case customPhoto = "customPhoto"
+    case hidden      = "hidden"
+}
+
 // MARK: - Slider type
 
 enum SliderType: String, CaseIterable {
@@ -121,14 +129,21 @@ final class ThemeManager: ObservableObject {
     @Published private(set) var current:         AppTheme       = .dark
     @Published private(set) var sliderType:      SliderType     = .waveform1
     @Published private(set) var backgroundStyle: BackgroundStyle = .musicCover
+    @Published private(set) var coverStyle:      CoverStyle     = .albumArt
     @Published private(set) var customWallpaper: UIImage?       = nil
+    @Published private(set) var customCoverImage: UIImage?      = nil
 
-    private let themeKey   = "mp_theme"
-    private let sliderKey  = "mp_slider_type"
-    private let bgStyleKey = "mp_bg_style"
-    private var wallpaperURL: URL? {
+    private let themeKey      = "mp_theme"
+    private let sliderKey     = "mp_slider_type"
+    private let bgStyleKey    = "mp_bg_style"
+    private let coverStyleKey = "mp_cover_style"
+
+    private var wallpaperURL: URL? { docURL("custom_wallpaper.jpg") }
+    private var coverImageURL: URL? { docURL("custom_cover.jpg") }
+
+    private func docURL(_ name: String) -> URL? {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("custom_wallpaper.jpg")
+            .appendingPathComponent(name)
     }
 
     init() {
@@ -144,9 +159,15 @@ final class ThemeManager: ObservableObject {
            let style = BackgroundStyle(rawValue: raw) {
             backgroundStyle = style
         }
-        if let url = wallpaperURL,
-           let data = try? Data(contentsOf: url) {
+        if let raw = UserDefaults.standard.string(forKey: coverStyleKey),
+           let style = CoverStyle(rawValue: raw) {
+            coverStyle = style
+        }
+        if let url = wallpaperURL, let data = try? Data(contentsOf: url) {
             customWallpaper = UIImage(data: data)
+        }
+        if let url = coverImageURL, let data = try? Data(contentsOf: url) {
+            customCoverImage = UIImage(data: data)
         }
     }
 
@@ -165,6 +186,11 @@ final class ThemeManager: ObservableObject {
         UserDefaults.standard.set(style.rawValue, forKey: bgStyleKey)
     }
 
+    func selectCover(_ style: CoverStyle) {
+        coverStyle = style
+        UserDefaults.standard.set(style.rawValue, forKey: coverStyleKey)
+    }
+
     func saveCustomWallpaper(_ image: UIImage) {
         customWallpaper = image
         backgroundStyle = .customPhoto
@@ -172,5 +198,21 @@ final class ThemeManager: ObservableObject {
         if let data = image.jpegData(compressionQuality: 0.85), let url = wallpaperURL {
             try? data.write(to: url)
         }
+    }
+
+    func saveCustomCoverImage(_ image: UIImage) {
+        customCoverImage = image
+        coverStyle = .customPhoto
+        UserDefaults.standard.set(CoverStyle.customPhoto.rawValue, forKey: coverStyleKey)
+        if let data = image.jpegData(compressionQuality: 0.85), let url = coverImageURL {
+            try? data.write(to: url)
+        }
+    }
+
+    func deleteCustomCoverImage() {
+        customCoverImage = nil
+        coverStyle = .albumArt
+        UserDefaults.standard.set(CoverStyle.albumArt.rawValue, forKey: coverStyleKey)
+        if let url = coverImageURL { try? FileManager.default.removeItem(at: url) }
     }
 }

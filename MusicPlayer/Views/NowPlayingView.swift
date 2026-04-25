@@ -21,7 +21,12 @@ struct NowPlayingView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
 
-            Spacer(minLength: 16)
+            // Cover artwork
+            coverArtwork
+                .padding(.horizontal, 28)
+                .padding(.top, 8)
+
+            Spacer(minLength: 12)
 
             // Content pinned to bottom
             VStack(alignment: .leading, spacing: 0) {
@@ -147,6 +152,58 @@ struct NowPlayingView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Cover artwork
+
+    @ViewBuilder
+    private var coverArtwork: some View {
+        switch themeManager.coverStyle {
+        case .hidden:
+            EmptyView()
+        case .customPhoto:
+            if let img = themeManager.customCoverImage {
+                Image(uiImage: img)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
+                    .frame(maxWidth: .infinity)
+            } else {
+                albumArtSquare
+            }
+        case .albumArt:
+            albumArtSquare
+        }
+    }
+
+    private var albumArtSquare: some View {
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height)
+            ZStack {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white.opacity(0.08))
+                if let urlStr = playerVM.currentTrack?.highResArtworkURL ?? playerVM.currentTrack?.artworkURL,
+                   let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 48, weight: .ultraLight))
+                            .foregroundStyle(.white.opacity(0.2))
+                    }
+                } else {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 48, weight: .ultraLight))
+                        .foregroundStyle(.white.opacity(0.2))
+                }
+            }
+            .frame(width: side, height: side)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
+            .frame(maxWidth: .infinity)
+        }
+        .aspectRatio(1, contentMode: .fit)
     }
 
     // MARK: - Track info
