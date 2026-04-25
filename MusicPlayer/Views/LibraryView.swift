@@ -63,7 +63,7 @@ struct LibraryView: View {
             }
             .background(bg.ignoresSafeArea())
             .navigationTitle("Library")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
