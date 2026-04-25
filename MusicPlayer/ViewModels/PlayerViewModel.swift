@@ -104,18 +104,23 @@ final class PlayerViewModel: ObservableObject {
                     audio.play(url: localURL)
                     return
                 }
-                // Spotify: play the 30s preview URL directly — no stream resolution needed
+                // Spotify: play preview URL if available, otherwise fall back to SoundCloud
                 if track.source == .spotify {
                     if let preview = track.previewURL, let url = URL(string: preview) {
                         guard currentTrack?.id == track.id else { return }
                         audio.play(url: url)
                     } else {
-                        // No preview available — open full track in Spotify app
-                        if currentTrack?.id == track.id { playerState = .idle; currentTrack = nil }
-                        if let link = URL(string: track.permalinkURL),
-                           UIApplication.shared.canOpenURL(link) {
-                            await UIApplication.shared.open(link)
+                        // No preview — search SoundCloud for the same track and play from there
+                        let fallbackResults = try? await sc.search(query: "\(track.title) \(track.username)")
+                        guard currentTrack?.id == track.id else { return }
+                        guard let scTrack = fallbackResults?.first,
+                              let transcoding = scTrack.media?.transcoding(for: currentQuality) else {
+                            if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
+                            return
                         }
+                        let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
+                        guard currentTrack?.id == track.id else { return }
+                        audio.play(url: url)
                     }
                     return
                 }
