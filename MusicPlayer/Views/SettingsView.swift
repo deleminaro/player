@@ -96,48 +96,30 @@ struct SettingsView: View {
 
                     // CUSTOMIZATION
                     settingSection(title: "CUSTOMIZATION") {
-                        VStack(spacing: 14) {
-                            NavigationLink {
-                                CustomizationView().environmentObject(themeManager)
-                            } label: {
-                                HStack(spacing: 14) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(themeManager.current.primary.opacity(0.15))
-                                            .frame(width: 42, height: 42)
-                                        Image(systemName: "paintbrush.fill")
-                                            .font(.system(size: 16, weight: .semibold))
-                                            .foregroundStyle(themeManager.current.primary)
-                                    }
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Customization")
-                                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-                                        Text("Background, cover & slider")
-                                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.3))
+                        NavigationLink {
+                            CustomizationView().environmentObject(themeManager)
+                        } label: {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(themeManager.current.primary.opacity(0.15))
+                                        .frame(width: 42, height: 42)
+                                    Image(systemName: "paintbrush.fill")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(themeManager.current.primary)
                                 }
-                            }
-                            .buttonStyle(.plain)
-
-                            Divider().background(Color.white.opacity(0.07))
-
-                            Text("THEME")
-                                .font(.system(size: 9, weight: .black)).kerning(1.5)
-                                .foregroundStyle(.white.opacity(0.35))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            LazyVGrid(columns: columns, spacing: 12) {
-                                ForEach(AppTheme.all) { theme in
-                                    ThemeCard(theme: theme,
-                                              isSelected: themeManager.current.id == theme.id,
-                                              bgCard: bgCard)
-                                        .onTapGesture { withAnimation(.easeInOut(duration: 0.2)) { themeManager.select(theme) } }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Customization")
+                                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                    Text("Background, cover, slider & theme")
+                                        .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
                                 }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.3))
                             }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.bottom, 120)

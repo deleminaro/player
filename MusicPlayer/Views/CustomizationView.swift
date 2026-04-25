@@ -9,7 +9,7 @@ struct CustomizationView: View {
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
 
-    enum CTab { case background, cover, slider }
+    enum CTab { case background, cover, slider, theme }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -17,9 +17,10 @@ struct CustomizationView: View {
                 // Filter pills
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        pill("Background", icon: "photo.fill",              t: .background)
+                        pill("Background", icon: "photo.fill",                t: .background)
                         pill("Cover",      icon: "photo.on.rectangle.angled", t: .cover)
-                        pill("Slider",     icon: "slider.horizontal.3",     t: .slider)
+                        pill("Slider",     icon: "slider.horizontal.3",       t: .slider)
+                        pill("Theme",      icon: "paintpalette.fill",         t: .theme)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
@@ -29,6 +30,7 @@ struct CustomizationView: View {
                     case .background: backgroundTab
                     case .cover:      coverTab
                     case .slider:     sliderTab
+                    case .theme:      themeTab
                     }
                 }
                 .padding(.top, 8)
@@ -189,6 +191,26 @@ struct CustomizationView: View {
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.2)) { themeManager.selectSlider(type) }
                     }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Theme tab
+
+    private var themeTab: some View {
+        let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+        return VStack(alignment: .leading, spacing: 20) {
+            sectionHeader("THEME")
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(AppTheme.all) { theme in
+                    ThemeCard(theme: theme,
+                              isSelected: themeManager.current.id == theme.id,
+                              bgCard: bgCard)
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.2)) { themeManager.select(theme) }
+                        }
                 }
             }
             .padding(.horizontal, 16)
