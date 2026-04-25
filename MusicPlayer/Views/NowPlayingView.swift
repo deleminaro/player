@@ -25,6 +25,11 @@ struct NowPlayingView: View {
             coverArtwork
                 .padding(.horizontal, 28)
                 .padding(.top, 8)
+                .id(playerVM.currentTrack?.id)
+                .transition(.scale(scale: 0.94).combined(with: .opacity))
+                .animation(.spring(response: 0.45, dampingFraction: 0.8), value: playerVM.currentTrack?.id)
+                .scaleEffect(playerVM.isPlaying ? 1.0 : 0.94)
+                .animation(.spring(response: 0.5, dampingFraction: 0.72), value: playerVM.isPlaying)
 
             Spacer(minLength: 12)
 
@@ -55,6 +60,9 @@ struct NowPlayingView: View {
                     AsyncImage(url: url) { img in
                         img.resizable().scaledToFill()
                     } placeholder: { Color.clear }
+                        .id(playerVM.currentTrack?.id)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.6), value: playerVM.currentTrack?.id)
                 }
                 LinearGradient(
                     colors: [.black.opacity(0.15), .black.opacity(0.35), .black.opacity(0.65), .black.opacity(0.88)],
@@ -209,28 +217,35 @@ struct NowPlayingView: View {
     // MARK: - Track info
 
     private var trackInfo: some View {
-        HStack(alignment: .center) {
+        let liked = playerVM.currentTrack.map { playerVM.isLiked($0) } == true
+        return HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 5) {
                 Text(playerVM.currentTrack?.title ?? "Not Playing")
                     .font(.system(size: 18, weight: .black))
                     .foregroundStyle(.white)
                     .lineLimit(1)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.3), value: playerVM.currentTrack?.id)
                 Text((playerVM.currentTrack?.username ?? "").uppercased())
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(themeManager.current.primary)
                     .kerning(1.5)
                     .lineLimit(1)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.3).delay(0.05), value: playerVM.currentTrack?.id)
             }
             Spacer()
             Button {
                 if let t = playerVM.currentTrack { playerVM.toggleLike(t) }
             } label: {
-                Image(systemName: playerVM.currentTrack.map { playerVM.isLiked($0) } == true
-                      ? "heart.fill" : "heart")
+                Image(systemName: liked ? "heart.fill" : "heart")
                     .font(.system(size: 18))
-                    .foregroundStyle(playerVM.currentTrack.map { playerVM.isLiked($0) } == true
-                                     ? .pink : .white.opacity(0.5))
+                    .foregroundStyle(liked ? .pink : .white.opacity(0.5))
+                    .scaleEffect(liked ? 1.15 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
+                    .contentTransition(.symbolEffect(.replace))
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.85))
         }
     }
 
@@ -363,11 +378,13 @@ struct NowPlayingView: View {
     private var controlsRow: some View {
         HStack {
             // Shuffle
-            Button { playerVM.isShuffling.toggle() } label: {
+            Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isShuffling.toggle() } } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(playerVM.isShuffling ? themeManager.current.primary : .white.opacity(0.4))
+                    .animation(.easeInOut(duration: 0.2), value: playerVM.isShuffling)
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.82))
 
             Spacer()
 
@@ -377,6 +394,7 @@ struct NowPlayingView: View {
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.82))
 
             Spacer()
 
@@ -391,9 +409,12 @@ struct NowPlayingView: View {
                             .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(.black)
                             .offset(x: playerVM.isPlaying ? 0 : 2)
+                            .contentTransition(.symbolEffect(.replace))
+                            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: playerVM.isPlaying)
                     }
                 }
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.9))
 
             Spacer()
 
@@ -403,15 +424,19 @@ struct NowPlayingView: View {
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.82))
 
             Spacer()
 
             // Repeat
-            Button { playerVM.isRepeating.toggle() } label: {
+            Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isRepeating.toggle() } } label: {
                 Image(systemName: playerVM.isRepeating ? "repeat.1" : "repeat")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(playerVM.isRepeating ? themeManager.current.primary : .white.opacity(0.4))
+                    .contentTransition(.symbolEffect(.replace))
+                    .animation(.easeInOut(duration: 0.2), value: playerVM.isRepeating)
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.82))
         }
     }
 
@@ -426,11 +451,13 @@ struct NowPlayingView: View {
                         .font(.system(size: 18))
                         .foregroundStyle(.white.opacity(0.6))
                 }
+                .buttonStyle(ScaleButtonStyle(scale: 0.82))
                 Button { showEQ = true } label: {
                     Image(systemName: "slider.vertical.3")
                         .font(.system(size: 18))
                         .foregroundStyle(.white.opacity(0.6))
                 }
+                .buttonStyle(ScaleButtonStyle(scale: 0.82))
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
             .background(Color.white.opacity(0.1), in: Capsule())
@@ -460,7 +487,10 @@ struct NowPlayingView: View {
                     Image(systemName: speedIcon(playerVM.playbackSpeed))
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(playerVM.playbackSpeed == 1.0 ? .white.opacity(0.6) : themeManager.current.primary)
+                        .contentTransition(.symbolEffect(.replace))
+                        .animation(.easeInOut(duration: 0.2), value: playerVM.playbackSpeed)
                 }
+                .buttonStyle(ScaleButtonStyle(scale: 0.82))
 
                 Button { showQueue = true } label: {
                     ZStack(alignment: .topTrailing) {
@@ -474,9 +504,11 @@ struct NowPlayingView: View {
                                 .padding(3)
                                 .background(themeManager.current.primary, in: Circle())
                                 .offset(x: 8, y: -6)
+                                .transition(.scale.combined(with: .opacity))
                         }
                     }
                 }
+                .buttonStyle(ScaleButtonStyle(scale: 0.82))
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
             .background(Color.white.opacity(0.1), in: Capsule())
@@ -504,6 +536,17 @@ struct NowPlayingView: View {
             let v = CGFloat((rng >> 16) & 0xFFFF) / 65535.0
             return 0.2 + v * 0.8
         }
+    }
+}
+
+// MARK: - Scale button style
+
+struct ScaleButtonStyle: ButtonStyle {
+    var scale: CGFloat = 0.88
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1.0)
+            .animation(.spring(response: 0.22, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 
@@ -757,8 +800,10 @@ struct SpeedPickerSheet: View {
                 ForEach(modes, id: \.speed) { mode in
                     let selected = abs(currentSpeed - mode.speed) < 0.01
                     Button {
-                        onSelect(mode.speed)
-                        currentSpeed = mode.speed
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+                            onSelect(mode.speed)
+                            currentSpeed = mode.speed
+                        }
                     } label: {
                         VStack(spacing: 10) {
                             Image(systemName: mode.icon)
@@ -774,8 +819,9 @@ struct SpeedPickerSheet: View {
                             RoundedRectangle(cornerRadius: 20)
                                 .fill(selected ? .white : Color.white.opacity(0.1))
                         )
+                        .animation(.spring(response: 0.35, dampingFraction: 0.72), value: selected)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(ScaleButtonStyle(scale: 0.94))
                 }
             }
             .padding(.horizontal, 20)
