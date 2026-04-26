@@ -37,18 +37,19 @@ actor SoundCloudService {
         guard let url = comps.url else { throw SCError.invalidURL }
         let (data, resp) = try await URLSession.shared.data(from: url)
         try validate(resp)
-        return try JSONDecoder().decode([Track].self, from: data)
+        return try JSONDecoder().decode(SearchResponse<Track>.self, from: data).collection
     }
 
     func fetchUserPlaylists(userID: Int) async throws -> [SCPlaylist] {
         var comps = URLComponents(string: "\(base)/users/\(userID)/playlists")!
         comps.queryItems = [
-            URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
+            URLQueryItem(name: "client_id",           value: Constants.soundcloudClientID),
+            URLQueryItem(name: "linked_partitioning", value: "1"),
         ]
         guard let url = comps.url else { throw SCError.invalidURL }
         let (data, resp) = try await URLSession.shared.data(from: url)
         try validate(resp)
-        return try JSONDecoder().decode([SCPlaylist].self, from: data)
+        return try JSONDecoder().decode(SearchResponse<SCPlaylist>.self, from: data).collection
     }
 
     func fetchPlaylistTracks(id: Int) async throws -> [Track] {
