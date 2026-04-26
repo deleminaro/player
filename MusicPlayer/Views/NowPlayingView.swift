@@ -239,25 +239,33 @@ struct NowPlayingView: View {
     // MARK: - Track info
 
     private var trackInfo: some View {
-        let liked = playerVM.currentTrack.map { playerVM.isLiked($0) } == true
+        let liked  = playerVM.currentTrack.map { playerVM.isLiked($0) } == true
+        let track  = playerVM.currentTrack
+        let accent = themeManager.current.primary
+
         return HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(playerVM.currentTrack?.title ?? "Not Playing")
+            VStack(alignment: .leading, spacing: 5) {
+                Text(track?.title ?? "Not Playing")
                     .font(themeManager.font(18, .bold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .contentTransition(.opacity)
-                    .animation(.easeInOut(duration: 0.3), value: playerVM.currentTrack?.id)
-                Text(playerVM.currentTrack?.username ?? "")
-                    .font(themeManager.font(13))
-                    .foregroundStyle(themeManager.current.primary.opacity(0.85))
-                    .lineLimit(1)
-                    .contentTransition(.opacity)
-                    .animation(.easeInOut(duration: 0.3).delay(0.05), value: playerVM.currentTrack?.id)
+                    .animation(.easeInOut(duration: 0.3), value: track?.id)
+
+                HStack(spacing: 8) {
+                    Text(track?.username ?? "")
+                        .font(themeManager.font(13))
+                        .foregroundStyle(accent.opacity(0.85))
+                        .lineLimit(1)
+                        .contentTransition(.opacity)
+                        .animation(.easeInOut(duration: 0.3).delay(0.05), value: track?.id)
+
+                    qualityBadge(for: track)
+                }
             }
             Spacer()
             Button {
-                if let t = playerVM.currentTrack { playerVM.toggleLike(t) }
+                if let t = track { playerVM.toggleLike(t) }
             } label: {
                 Image(systemName: liked ? "heart.fill" : "heart")
                     .font(.system(size: 18))
@@ -268,6 +276,34 @@ struct NowPlayingView: View {
             }
             .buttonStyle(ScaleButtonStyle(scale: 0.85))
         }
+    }
+
+    @ViewBuilder
+    private func qualityBadge(for track: Track?) -> some View {
+        let accent = themeManager.current.primary
+        if track?.source == .spotify {
+            badge(icon: "s.circle.fill", label: "PREVIEW", color: Color(red: 0.11, green: 0.73, blue: 0.33))
+        } else if audioQuality == .lossless,
+                  track?.media?.transcodings.contains(where: { $0.format.mimeType.contains("opus") }) == true {
+            badge(icon: "waveform", label: "LOSSLESS", color: accent)
+        } else if let q = AudioQuality(rawValue: UserDefaults.standard.string(forKey: "mp_audio_quality") ?? ""),
+                  q != .lossless {
+            badge(icon: "headphones", label: q.label.uppercased(), color: .white.opacity(0.5))
+        }
+    }
+
+    private func badge(icon: String, label: String, color: Color) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.system(size: 8, weight: .bold))
+            Text(label)
+                .font(.system(size: 8, weight: .bold))
+                .kerning(0.5)
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 7).padding(.vertical, 3)
+        .background(color.opacity(0.15), in: Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.3), lineWidth: 0.5))
     }
 
     // MARK: - Progress slider (switches on sliderType)
