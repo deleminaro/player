@@ -128,37 +128,47 @@ enum SliderType: String, CaseIterable {
 // MARK: - App font
 
 enum AppFont: String, CaseIterable {
-    case system  = "system"
-    case rounded = "rounded"
-    case serif   = "serif"
-    case mono    = "mono"
+    case system     = "system"
+    case rounded    = "rounded"
+    case serif      = "serif"
+    case mono       = "mono"
+    case minecraft  = "minecraft"
 
     var label: String {
         switch self {
-        case .system:  return "Default"
-        case .rounded: return "Rounded"
-        case .serif:   return "Serif"
-        case .mono:    return "Pixel"
+        case .system:    return "Default"
+        case .rounded:   return "Rounded"
+        case .serif:     return "Serif"
+        case .mono:      return "Pixel"
+        case .minecraft: return "Minecraft"
         }
     }
 
     var icon: String {
         switch self {
-        case .system:  return "textformat"
-        case .rounded: return "textformat.alt"
-        case .serif:   return "f.cursive"
-        case .mono:    return "chevron.left.forwardslash.chevron.right"
+        case .system:    return "textformat"
+        case .rounded:   return "textformat.alt"
+        case .serif:     return "f.cursive"
+        case .mono:      return "chevron.left.forwardslash.chevron.right"
+        case .minecraft: return "square.grid.3x3.fill"
         }
     }
 
     var preview: String { "The quick fox" }
 
+    private static let minecraftFontName = "Minecraft"
+
     func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         switch self {
-        case .system:  return .system(size: size, weight: weight)
-        case .rounded: return .system(size: size, weight: weight, design: .rounded)
-        case .serif:   return .system(size: size, weight: weight, design: .serif)
-        case .mono:    return .system(size: size, weight: weight, design: .monospaced)
+        case .system:    return .system(size: size, weight: weight)
+        case .rounded:   return .system(size: size, weight: weight, design: .rounded)
+        case .serif:     return .system(size: size, weight: weight, design: .serif)
+        case .mono:      return .system(size: size, weight: weight, design: .monospaced)
+        case .minecraft:
+            if UIFont(name: AppFont.minecraftFontName, size: size) != nil {
+                return .custom(AppFont.minecraftFontName, size: size)
+            }
+            return .system(size: size, weight: weight, design: .monospaced)
         }
     }
 }

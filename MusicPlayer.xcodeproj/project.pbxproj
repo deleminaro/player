@@ -24,6 +24,7 @@
 		AA18100EAA18100EAA18100E /* RecentlyPlayedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10000EAA10000EAA10000E /* RecentlyPlayedView.swift */; };
 		AA18100FAA18100FAA18100F /* LyricsView.swift in Sources */         = {isa = PBXBuildFile; fileRef = AA10000FAA10000FAA10000F /* LyricsView.swift */; };
 		AA181010AA181010AA181010 /* Assets.xcassets in Resources */        = {isa = PBXBuildFile; fileRef = AA100010AA100010AA100010 /* Assets.xcassets */; };
+		AA18102FAA18102FAA18102F /* Minecraft.ttf in Resources */          = {isa = PBXBuildFile; fileRef = AA10002FAA10002FAA10002F /* Minecraft.ttf */; };
 		AA181011AA181011AA181011 /* EqualizerView.swift in Sources */      = {isa = PBXBuildFile; fileRef = AA100013AA100013AA100013 /* EqualizerView.swift */; };
 		AA181014AA181014AA181014 /* HomeView.swift in Sources */           = {isa = PBXBuildFile; fileRef = AA100016AA100016AA100016 /* HomeView.swift */; };
 		AA181015AA181015AA181015 /* LibraryView.swift in Sources */        = {isa = PBXBuildFile; fileRef = AA100017AA100017AA100017 /* LibraryView.swift */; };
@@ -54,6 +55,7 @@
 		AA10000FAA10000FAA10000F /* LyricsView.swift */         = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsView.swift;         sourceTree = "<group>"; };
 		AA100010AA100010AA100010 /* Assets.xcassets */          = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets;        sourceTree = "<group>"; };
 		AA100011AA100011AA100011 /* Info.plist */               = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist;                  sourceTree = "<group>"; };
+		AA10002FAA10002FAA10002F /* Minecraft.ttf */            = {isa = PBXFileReference; lastKnownFileType = file; path = Minecraft.ttf;                          sourceTree = "<group>"; };
 		AA100012AA100012AA100012 /* MusicPlayer.app */          = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA100013AA100013AA100013 /* EqualizerView.swift */      = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EqualizerView.swift;      sourceTree = "<group>"; };
 		AA100016AA100016AA100016 /* HomeView.swift */           = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift;           sourceTree = "<group>"; };
@@ -93,6 +95,7 @@
 				AA100003AA100003AA100003 /* Constants.swift */,
 				AA100011AA100011AA100011 /* Info.plist */,
 				AA100010AA100010AA100010 /* Assets.xcassets */,
+				AA10002FAA10002FAA10002F /* Minecraft.ttf */,
 				AA300003AA300003AA300003 /* Models */,
 				AA300004AA300004AA300004 /* Services */,
 				AA300005AA300005AA300005 /* ViewModels */,
@@ -218,6 +221,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA181010AA181010AA181010 /* Assets.xcassets in Resources */,
+				AA18102FAA18102FAA18102F /* Minecraft.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
