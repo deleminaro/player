@@ -278,11 +278,12 @@ struct NowPlayingView: View {
     private var waveform1Progress: some View {
         let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
         let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+        let accent = themeManager.current.primary
 
         return VStack(spacing: 6) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    // Dim background layer — full width
+                    // Dim background — full width
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.72)
@@ -292,19 +293,21 @@ struct NowPlayingView: View {
                             ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Color.white.opacity(0.22)))
                         }
                     }
-                    // Accent foreground layer — clipped to progress width (animatable)
+                    // Accent foreground — same full width, masked to progress
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.72)
                         for (i, h) in bars.enumerated() {
                             let barH = h * size.height
                             let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: (size.height-barH)/2, width: barW, height: barH)
-                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(themeManager.current.primary))
+                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(accent))
                         }
                     }
-                    .frame(width: max(0, geo.size.width * CGFloat(progress)))
-                    .clipped()
-                    .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
+                    .mask(alignment: .leading) {
+                        Rectangle()
+                            .frame(width: max(0, geo.size.width * CGFloat(progress)))
+                            .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
+                    }
                 }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0)
@@ -324,11 +327,12 @@ struct NowPlayingView: View {
     private var waveform2Progress: some View {
         let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
         let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+        let accent = themeManager.current.primary
 
         return VStack(spacing: 6) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    // Dim background layer
+                    // Dim background — full width
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.65)
@@ -339,7 +343,7 @@ struct NowPlayingView: View {
                             ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Color.white.opacity(0.22)))
                         }
                     }
-                    // Accent foreground layer — clipped to progress width (animatable)
+                    // Accent foreground — same full width, masked to progress
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.65)
@@ -347,12 +351,14 @@ struct NowPlayingView: View {
                         for (i, h) in bars.enumerated() {
                             let halfH = h * cy * 0.92
                             let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: cy-halfH, width: barW, height: halfH*2)
-                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(themeManager.current.primary))
+                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(accent))
                         }
                     }
-                    .frame(width: max(0, geo.size.width * CGFloat(progress)))
-                    .clipped()
-                    .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
+                    .mask(alignment: .leading) {
+                        Rectangle()
+                            .frame(width: max(0, geo.size.width * CGFloat(progress)))
+                            .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
+                    }
                 }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0)
