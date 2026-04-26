@@ -344,10 +344,11 @@ struct LikedTracksView: View {
                                 Text("Play").font(.system(size: 16, weight: .bold))
                             }
                             .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity).padding(.vertical, 14)
+                            .frame(maxWidth: .infinity).padding(.vertical, 16)
                             .background(.white, in: RoundedRectangle(cornerRadius: 14))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ScaleButtonStyle(scale: 0.96))
+                        .sensoryFeedback(.impact(.medium), trigger: playerVM.isPlaying)
 
                         Button {
                             guard !displayedTracks.isEmpty else { return }
@@ -356,12 +357,12 @@ struct LikedTracksView: View {
                             playerVM.showingNowPlaying = true
                         } label: {
                             Image(systemName: "shuffle")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(primary)
-                                .frame(width: 50, height: 50)
+                                .frame(width: 54, height: 54)
                                 .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ScaleButtonStyle(scale: 0.92))
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .listRowInsets(EdgeInsets())

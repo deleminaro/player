@@ -137,12 +137,13 @@ struct NowPlayingView: View {
         HStack {
             Button { playerVM.showingNowPlaying = false } label: {
                 ZStack {
-                    Circle().fill(Color.white.opacity(0.12)).frame(width: 36, height: 36)
+                    Circle().fill(Color.white.opacity(0.12)).frame(width: 40, height: 40)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)
                 }
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.88))
 
             Spacer()
 
@@ -180,12 +181,13 @@ struct NowPlayingView: View {
                 Button { showAddToPlaylist = true } label: { Label("Add to Playlist", systemImage: "music.note.list") }
             } label: {
                 ZStack {
-                    Circle().fill(Color.white.opacity(0.12)).frame(width: 36, height: 36)
+                    Circle().fill(Color.white.opacity(0.12)).frame(width: 40, height: 40)
                     Image(systemName: "ellipsis")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(.white)
                 }
             }
+            .buttonStyle(ScaleButtonStyle(scale: 0.88))
         }
     }
 
@@ -267,14 +269,21 @@ struct NowPlayingView: View {
             Button {
                 if let t = track { playerVM.toggleLike(t) }
             } label: {
-                Image(systemName: liked ? "heart.fill" : "heart")
-                    .font(.system(size: 18))
-                    .foregroundStyle(liked ? .pink : .white.opacity(0.5))
-                    .scaleEffect(liked ? 1.15 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
-                    .contentTransition(.symbolEffect(.replace))
+                ZStack {
+                    Circle()
+                        .fill(liked ? Color.pink.opacity(0.18) : Color.white.opacity(0.1))
+                        .frame(width: 46, height: 46)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
+                    Image(systemName: liked ? "heart.fill" : "heart")
+                        .font(.system(size: 19))
+                        .foregroundStyle(liked ? .pink : .white.opacity(0.6))
+                        .scaleEffect(liked ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
+                        .contentTransition(.symbolEffect(.replace))
+                }
             }
             .buttonStyle(ScaleButtonStyle(scale: 0.85))
+            .sensoryFeedback(.impact(.medium), trigger: liked)
         }
     }
 
@@ -458,37 +467,51 @@ struct NowPlayingView: View {
     // MARK: - Controls
 
     private var controlsRow: some View {
-        HStack {
+        HStack(spacing: 0) {
             // Shuffle
-            Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isShuffling.toggle() } } label: {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isShuffling.toggle() }
+            } label: {
                 Image(systemName: "shuffle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(playerVM.isShuffling ? themeManager.current.primary : .white.opacity(0.4))
-                    .animation(.easeInOut(duration: 0.2), value: playerVM.isShuffling)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(playerVM.isShuffling ? themeManager.current.primary : .white.opacity(0.45))
+                    .frame(width: 46, height: 46)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(playerVM.isShuffling ? themeManager.current.primary.opacity(0.18) : Color.clear)
+                            .animation(.easeInOut(duration: 0.2), value: playerVM.isShuffling)
+                    )
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.82))
+            .buttonStyle(ScaleButtonStyle(scale: 0.85))
+            .sensoryFeedback(.selection, trigger: playerVM.isShuffling)
 
             Spacer()
 
             // Previous
             Button { playerVM.skipPrevious() } label: {
-                Image(systemName: "backward.end.fill")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(.white)
+                ZStack {
+                    Circle().fill(Color.white.opacity(0.1)).frame(width: 56, height: 56)
+                    Image(systemName: "backward.end.fill")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.82))
+            .buttonStyle(ScaleButtonStyle(scale: 0.88))
 
             Spacer()
 
             // Play / Pause
             Button { playerVM.togglePlayPause() } label: {
                 ZStack {
-                    Circle().fill(.white).frame(width: 56, height: 56)
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 72, height: 72)
+                        .shadow(color: .white.opacity(0.18), radius: 18, y: 4)
                     if playerVM.playerState == .loading {
-                        ProgressView().tint(.black).scaleEffect(1.0)
+                        ProgressView().tint(.black).scaleEffect(1.1)
                     } else {
                         Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: 26, weight: .bold))
                             .foregroundStyle(.black)
                             .offset(x: playerVM.isPlaying ? 0 : 2)
                             .contentTransition(.symbolEffect(.replace))
@@ -496,105 +519,97 @@ struct NowPlayingView: View {
                     }
                 }
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.9))
+            .buttonStyle(ScaleButtonStyle(scale: 0.93))
+            .sensoryFeedback(.impact(.heavy), trigger: playerVM.isPlaying)
 
             Spacer()
 
             // Next
             Button { playerVM.skipNext() } label: {
-                Image(systemName: "forward.end.fill")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(.white)
+                ZStack {
+                    Circle().fill(Color.white.opacity(0.1)).frame(width: 56, height: 56)
+                    Image(systemName: "forward.end.fill")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.82))
+            .buttonStyle(ScaleButtonStyle(scale: 0.88))
+            .sensoryFeedback(.impact(.medium), trigger: playerVM.currentTrack?.id)
 
             Spacer()
 
             // Repeat
-            Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isRepeating.toggle() } } label: {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isRepeating.toggle() }
+            } label: {
                 Image(systemName: playerVM.isRepeating ? "repeat.1" : "repeat")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(playerVM.isRepeating ? themeManager.current.primary : .white.opacity(0.4))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(playerVM.isRepeating ? themeManager.current.primary : .white.opacity(0.45))
                     .contentTransition(.symbolEffect(.replace))
                     .animation(.easeInOut(duration: 0.2), value: playerVM.isRepeating)
+                    .frame(width: 46, height: 46)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(playerVM.isRepeating ? themeManager.current.primary.opacity(0.18) : Color.clear)
+                            .animation(.easeInOut(duration: 0.2), value: playerVM.isRepeating)
+                    )
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.82))
+            .buttonStyle(ScaleButtonStyle(scale: 0.85))
+            .sensoryFeedback(.selection, trigger: playerVM.isRepeating)
         }
     }
 
     // MARK: - Action row
 
     private var actionRow: some View {
-        HStack {
-            // Left: like, lyrics, chat
-            HStack(spacing: 18) {
-                Button { showLyrics = true } label: {
-                    Image(systemName: "text.alignleft")
-                        .font(.system(size: 18))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .buttonStyle(ScaleButtonStyle(scale: 0.82))
-                Button { showEQ = true } label: {
-                    Image(systemName: "slider.vertical.3")
-                        .font(.system(size: 18))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .buttonStyle(ScaleButtonStyle(scale: 0.82))
-            }
-            .padding(.horizontal, 16).padding(.vertical, 10)
-            .background(Color.white.opacity(0.1), in: Capsule())
+        HStack(spacing: 0) {
+            actionPill(icon: "text.alignleft",    label: "Lyrics",
+                       tint: .white.opacity(0.65)) { showLyrics = true }
+            actionPill(icon: "slider.vertical.3", label: "EQ",
+                       tint: .white.opacity(0.65)) { showEQ = true }
+            actionPill(icon: speedIcon(playerVM.playbackSpeed),
+                       label: playerVM.playbackSpeed == 1.0 ? "Speed" : "\(String(format: "%g", playerVM.playbackSpeed))×",
+                       tint: playerVM.playbackSpeed == 1.0 ? .white.opacity(0.65) : themeManager.current.primary) { showSpeed = true }
+            actionPill(icon: "list.bullet",       label: "Queue",
+                       tint: .white.opacity(0.65),
+                       badge: playerVM.queue.isEmpty ? nil : "\(playerVM.queue.count)") { showQueue = true }
+            actionPill(icon: "music.note.list",   label: "Playlist",
+                       tint: .white.opacity(0.65)) { showAddToPlaylist = true }
+        }
+        .padding(.horizontal, 4).padding(.vertical, 6)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20))
+    }
 
-            Spacer()
-
-            // Centre: lossless badge (only when quality = lossless and track has Opus)
-            if audioQuality == .lossless,
-               playerVM.currentTrack?.media?.transcodings.contains(where: { $0.format.mimeType.contains("opus") }) == true {
-                VStack(spacing: 2) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text("Lossless")
-                        .font(themeManager.font(8, .semibold))
-                }
-                .foregroundStyle(themeManager.current.primary)
-                .padding(.horizontal, 10).padding(.vertical, 7)
-                .background(themeManager.current.primary.opacity(0.15), in: Capsule())
-                .overlay(Capsule().stroke(themeManager.current.primary.opacity(0.35), lineWidth: 1))
-            }
-
-            Spacer()
-
-            // Right: speed, queue
-            HStack(spacing: 12) {
-                Button { showSpeed = true } label: {
-                    Image(systemName: speedIcon(playerVM.playbackSpeed))
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(playerVM.playbackSpeed == 1.0 ? .white.opacity(0.6) : themeManager.current.primary)
+    private func actionPill(icon: String, label: String, tint: Color,
+                            badge: String? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: icon)
+                        .font(.system(size: 19, weight: .regular))
+                        .foregroundStyle(tint)
+                        .frame(height: 24)
                         .contentTransition(.symbolEffect(.replace))
-                        .animation(.easeInOut(duration: 0.2), value: playerVM.playbackSpeed)
-                }
-                .buttonStyle(ScaleButtonStyle(scale: 0.82))
-
-                Button { showQueue = true } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "list.bullet")
-                            .font(.system(size: 18))
-                            .foregroundStyle(.white.opacity(0.6))
-                        if !playerVM.queue.isEmpty {
-                            Text("\(playerVM.queue.count)")
-                                .font(.system(size: 8, weight: .black))
-                                .foregroundStyle(.black)
-                                .padding(3)
-                                .background(themeManager.current.primary, in: Circle())
-                                .offset(x: 8, y: -6)
-                                .transition(.scale.combined(with: .opacity))
-                        }
+                    if let b = badge {
+                        Text(b)
+                            .font(.system(size: 8, weight: .black))
+                            .foregroundStyle(.black)
+                            .padding(3.5)
+                            .background(themeManager.current.primary, in: Circle())
+                            .offset(x: 10, y: -8)
+                            .transition(.scale.combined(with: .opacity))
                     }
                 }
-                .buttonStyle(ScaleButtonStyle(scale: 0.82))
+                Text(label)
+                    .font(themeManager.font(9, .medium))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .padding(.horizontal, 16).padding(.vertical, 10)
-            .background(Color.white.opacity(0.1), in: Capsule())
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 52)
         }
+        .buttonStyle(ScaleButtonStyle(scale: 0.84))
     }
 
     // MARK: - Helpers

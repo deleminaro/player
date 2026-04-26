@@ -135,24 +135,27 @@ struct HomeView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "play.fill")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: 12, weight: .bold))
                             Text("Play")
-                                .font(themeManager.font(13, .semibold))
+                                .font(themeManager.font(14, .semibold))
                         }
                         .foregroundStyle(themeManager.current.onPrimary)
-                        .padding(.horizontal, 18).padding(.vertical, 9)
+                        .padding(.horizontal, 22).padding(.vertical, 11)
                         .background(accent, in: Capsule())
                     }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.93))
+                    .sensoryFeedback(.impact(.medium), trigger: playerVM.currentTrack?.id)
                     .opacity(featured == nil ? 0.35 : 1)
                     .disabled(featured == nil)
 
                     Button { showArchive = true } label: {
                         Text("Archive")
-                            .font(themeManager.font(13))
+                            .font(themeManager.font(14))
                             .foregroundStyle(.white.opacity(0.65))
-                            .padding(.horizontal, 18).padding(.vertical, 9)
+                            .padding(.horizontal, 22).padding(.vertical, 11)
                             .background(Color.white.opacity(0.12), in: Capsule())
                     }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.93))
                 }
             }
             .padding(18)
@@ -245,8 +248,19 @@ private struct QuickAccessCard: View {
             }
 
             Spacer()
+
+            // Explicit play affordance
+            ZStack {
+                Circle()
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 34, height: 34)
+                Image(systemName: "play.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(accent)
+                    .offset(x: 1)
+            }
         }
-        .padding(.horizontal, 12).padding(.vertical, 11)
+        .padding(.horizontal, 14).padding(.vertical, 13)
         .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
         .frame(maxWidth: .infinity)
     }
@@ -260,18 +274,31 @@ struct RecentTrackCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            AsyncImage(url: URL(string: track.highResArtworkURL ?? "")) { img in
-                img.resizable().aspectRatio(contentMode: .fill)
-            } placeholder: {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.07))
-                    .overlay(
-                        Image(systemName: "music.note")
-                            .font(.system(size: 22))
-                            .foregroundStyle(.white.opacity(0.12))
-                    )
+            ZStack(alignment: .bottomTrailing) {
+                AsyncImage(url: URL(string: track.highResArtworkURL ?? "")) { img in
+                    img.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Color.white.opacity(0.07)
+                        .overlay(
+                            Image(systemName: "music.note")
+                                .font(.system(size: 22))
+                                .foregroundStyle(.white.opacity(0.12))
+                        )
+                }
+                .aspectRatio(1, contentMode: .fill)
+
+                // Play badge — shows this is tappable
+                ZStack {
+                    Circle()
+                        .fill(.black.opacity(0.52))
+                        .frame(width: 30, height: 30)
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .offset(x: 1)
+                }
+                .padding(7)
             }
-            .aspectRatio(1, contentMode: .fill)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 2) {
