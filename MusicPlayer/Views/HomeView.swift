@@ -7,9 +7,10 @@ struct HomeView: View {
 
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
+    private var accent: Color { themeManager.current.primary }
 
     private var featured: Track? { playerVM.recentlyPlayed.first }
-    private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
         NavigationStack {
@@ -21,11 +22,11 @@ struct HomeView: View {
 
                     quickAccessRow
                         .padding(.horizontal, 16)
-                        .padding(.top, 20)
+                        .padding(.top, 16)
 
                     if !playerVM.recentlyPlayed.isEmpty {
                         recentSection
-                            .padding(.top, 32)
+                            .padding(.top, 28)
                     } else {
                         emptyHero
                             .padding(.top, 48)
@@ -39,33 +40,20 @@ struct HomeView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    HStack(spacing: 6) {
-                        Text("P")
-                            .font(.system(size: 18, weight: .black))
-                            .foregroundStyle(themeManager.current.primary)
-                            .padding(6)
-                            .background(themeManager.current.primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
-                        Text("POSTOR.")
-                            .font(.system(size: 16, weight: .black))
-                            .foregroundStyle(.white)
-                    }
+                    Text("Postor")
+                        .font(themeManager.font(20, .bold))
+                        .foregroundStyle(.white)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 4) {
-                        Circle().fill(.green).frame(width: 7, height: 7)
-                        Text("LIVE")
-                            .font(.system(size: 10, weight: .black))
-                            .foregroundStyle(.white)
-                            .kerning(1)
-                    }
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(Color.white.opacity(0.08), in: Capsule())
-                    .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                    Circle()
+                        .fill(accent)
+                        .frame(width: 8, height: 8)
                 }
             }
         }
         .sheet(isPresented: $showArchive) {
-            RecentlyPlayedView().environmentObject(playerVM)
+            RecentlyPlayedView()
+                .environmentObject(playerVM)
         }
     }
 
@@ -77,7 +65,9 @@ struct HomeView: View {
                 title: "Recent",
                 trackCount: playerVM.recentlyPlayed.count,
                 artworks: playerVM.recentlyPlayed.prefix(2).compactMap { $0.thumbnailArtworkURL },
-                bgCard: bgCard
+                bgCard: bgCard,
+                accent: accent,
+                themeManager: themeManager
             )
             .onTapGesture {
                 guard !playerVM.recentlyPlayed.isEmpty else { return }
@@ -89,7 +79,9 @@ struct HomeView: View {
                 title: "Favorites",
                 trackCount: playerVM.likedTracks.count,
                 artworks: playerVM.likedTracks.prefix(2).compactMap { $0.thumbnailArtworkURL },
-                bgCard: bgCard
+                bgCard: bgCard,
+                accent: accent,
+                themeManager: themeManager
             )
             .onTapGesture {
                 guard !playerVM.likedTracks.isEmpty else { return }
@@ -103,101 +95,93 @@ struct HomeView: View {
 
     private var heroCard: some View {
         ZStack(alignment: .bottomLeading) {
-            // Full artwork fill
             Group {
                 if let url = URL(string: featured?.highResArtworkURL ?? "") {
                     AsyncImage(url: url) { img in
                         img.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        bgCard
-                    }
+                    } placeholder: { bgCard }
                 } else {
                     bgCard
                 }
             }
 
-            // Gradient for text legibility
             LinearGradient(
-                colors: [.black.opacity(0.05), .black.opacity(0.72)],
+                colors: [.clear, .black.opacity(0.75)],
                 startPoint: .top, endPoint: .bottom
             )
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("FEATURED RELEASE / " + String(Calendar.current.component(.year, from: Date())))
-                    .font(.system(size: 9, weight: .black))
-                    .foregroundStyle(themeManager.current.primary.opacity(0.8))
-                    .kerning(2)
-
-                Text(featured != nil
-                     ? featured!.title.uppercased()
-                     : "YOUR\nMUSIC.")
-                    .font(.system(size: featured != nil ? 18 : 24, weight: .black))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
+            VStack(alignment: .leading, spacing: 8) {
+                if let t = featured {
+                    Text(t.title)
+                        .font(themeManager.font(20, .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                    Text(t.username)
+                        .font(themeManager.font(13))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
+                } else {
+                    Text("Your music,\neverywhere.")
+                        .font(themeManager.font(22, .bold))
+                        .foregroundStyle(.white)
+                }
 
                 HStack(spacing: 10) {
                     Button {
                         if let t = playerVM.recentlyPlayed.first {
-                            playerVM.addToQueue(t)
                             playerVM.play(t)
                             playerVM.showingNowPlaying = true
                         }
                     } label: {
-                        Text("PLAY RECENT")
-                            .font(.system(size: 11, weight: .black)).kerning(1)
-                            .foregroundStyle(themeManager.current.onPrimary)
-                            .padding(.horizontal, 16).padding(.vertical, 9)
-                            .background(themeManager.current.primary, in: Capsule())
+                        HStack(spacing: 6) {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text("Play")
+                                .font(themeManager.font(13, .semibold))
+                        }
+                        .foregroundStyle(themeManager.current.onPrimary)
+                        .padding(.horizontal, 18).padding(.vertical, 9)
+                        .background(accent, in: Capsule())
                     }
-                    .opacity(featured == nil ? 0.4 : 1)
+                    .opacity(featured == nil ? 0.35 : 1)
                     .disabled(featured == nil)
 
                     Button { showArchive = true } label: {
-                        Text("VIEW ARCHIVE")
-                            .font(.system(size: 11, weight: .black)).kerning(1)
-                            .foregroundStyle(.white.opacity(0.7))
-                            .padding(.horizontal, 16).padding(.vertical, 9)
-                            .background(Color.white.opacity(0.1), in: Capsule())
-                            .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                        Text("Archive")
+                            .font(themeManager.font(13))
+                            .foregroundStyle(.white.opacity(0.65))
+                            .padding(.horizontal, 18).padding(.vertical, 9)
+                            .background(Color.white.opacity(0.12), in: Capsule())
                     }
                 }
             }
-            .padding(20)
+            .padding(18)
         }
-        .frame(height: 200)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .frame(height: 210)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
     // MARK: - Recently played grid
 
     private var recentSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("RECENTLY PLAYED")
-                        .font(.system(size: 14, weight: .black))
-                        .foregroundStyle(.white)
-                    Text("YOUR LATEST SESSIONS")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.35))
-                        .kerning(1.5)
-                }
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Recently played")
+                    .font(themeManager.font(16, .semibold))
+                    .foregroundStyle(.white)
                 Spacer()
                 Button { showArchive = true } label: {
-                    Text("VIEW ALL [\(playerVM.recentlyPlayed.count)]")
-                        .font(.system(size: 10, weight: .black))
-                        .foregroundStyle(themeManager.current.primary)
-                        .kerning(0.5)
+                    Text("See all")
+                        .font(themeManager.font(13))
+                        .foregroundStyle(accent)
                 }
             }
             .padding(.horizontal, 16)
 
-            LazyVGrid(columns: columns, spacing: 14) {
+            LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(playerVM.recentlyPlayed.prefix(6)) { track in
                     RecentTrackCard(track: track)
                         .onTapGesture {
-                            playerVM.addToQueue(track)
                             playerVM.play(track)
                             playerVM.showingNowPlaying = true
                         }
@@ -210,23 +194,21 @@ struct HomeView: View {
     // MARK: - Empty state
 
     private var emptyHero: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Image(systemName: "music.note.list")
-                .font(.system(size: 40))
-                .foregroundStyle(themeManager.current.primary.opacity(0.4))
-            Text("NOTHING YET")
-                .font(.system(size: 14, weight: .black)).kerning(2)
+                .font(.system(size: 36))
+                .foregroundStyle(accent.opacity(0.4))
+            Text("Nothing yet")
+                .font(themeManager.font(16, .semibold))
                 .foregroundStyle(.white.opacity(0.5))
             Text("Search for tracks to get started.")
-                .font(.system(size: 12))
+                .font(themeManager.font(13))
                 .foregroundStyle(.white.opacity(0.3))
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 40)
     }
 }
-
-// MARK: - Recent track card
 
 // MARK: - Quick access card
 
@@ -235,38 +217,37 @@ private struct QuickAccessCard: View {
     let trackCount: Int
     let artworks: [String]
     let bgCard: Color
+    let accent: Color
+    let themeManager: ThemeManager
 
     var body: some View {
         HStack(spacing: 12) {
-            // Stacked artwork
             ZStack(alignment: .bottomLeading) {
-                // Back image (offset right + up)
                 ArtworkThumbnail(url: artworks.count > 1 ? artworks[1] : artworks.first)
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .offset(x: 12, y: -8)
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                    .offset(x: 10, y: -7)
                     .opacity(artworks.count > 1 ? 1 : 0)
 
-                // Front image
                 ArtworkThumbnail(url: artworks.first)
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
             }
-            .frame(width: 56, height: 52)
+            .frame(width: 52, height: 48)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.custom("Courier", size: 14)).bold()
+                    .font(themeManager.font(13, .semibold))
                     .foregroundStyle(.white)
                 Text("\(trackCount) tracks")
-                    .font(.custom("Courier", size: 11))
+                    .font(themeManager.font(11))
                     .foregroundStyle(.white.opacity(0.4))
             }
 
             Spacer()
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 12).padding(.vertical, 11)
+        .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
         .frame(maxWidth: .infinity)
     }
 }
@@ -278,30 +259,29 @@ struct RecentTrackCard: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 7) {
             AsyncImage(url: URL(string: track.highResArtworkURL ?? "")) { img in
                 img.resizable().aspectRatio(contentMode: .fill)
             } placeholder: {
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(Color.white.opacity(0.07))
                     .overlay(
                         Image(systemName: "music.note")
-                            .font(.system(size: 24))
-                            .foregroundStyle(.white.opacity(0.15))
+                            .font(.system(size: 22))
+                            .foregroundStyle(.white.opacity(0.12))
                     )
             }
             .aspectRatio(1, contentMode: .fill)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(track.title.uppercased())
-                    .font(.system(size: 11, weight: .black))
+                Text(track.title)
+                    .font(themeManager.font(12, .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                Text(track.username.uppercased())
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(themeManager.current.primary)
-                    .kerning(1)
+                Text(track.username)
+                    .font(themeManager.font(11))
+                    .foregroundStyle(themeManager.current.primary.opacity(0.75))
                     .lineLimit(1)
             }
         }

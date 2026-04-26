@@ -125,11 +125,50 @@ enum SliderType: String, CaseIterable {
     }
 }
 
+// MARK: - App font
+
+enum AppFont: String, CaseIterable {
+    case system  = "system"
+    case rounded = "rounded"
+    case serif   = "serif"
+    case mono    = "mono"
+
+    var label: String {
+        switch self {
+        case .system:  return "Default"
+        case .rounded: return "Rounded"
+        case .serif:   return "Serif"
+        case .mono:    return "Pixel"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .system:  return "textformat"
+        case .rounded: return "textformat.alt"
+        case .serif:   return "f.cursive"
+        case .mono:    return "chevron.left.forwardslash.chevron.right"
+        }
+    }
+
+    var preview: String { "The quick fox" }
+
+    func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        switch self {
+        case .system:  return .system(size: size, weight: weight)
+        case .rounded: return .system(size: size, weight: weight, design: .rounded)
+        case .serif:   return .system(size: size, weight: weight, design: .serif)
+        case .mono:    return .system(size: size, weight: weight, design: .monospaced)
+        }
+    }
+}
+
 final class ThemeManager: ObservableObject {
     @Published private(set) var current:         AppTheme       = .dark
     @Published private(set) var sliderType:      SliderType     = .waveform1
     @Published private(set) var backgroundStyle: BackgroundStyle = .musicCover
     @Published private(set) var coverStyle:      CoverStyle     = .albumArt
+    @Published private(set) var appFont:         AppFont        = .system
     @Published private(set) var customWallpaper: UIImage?       = nil
     @Published private(set) var customCoverImage: UIImage?      = nil
 
@@ -137,6 +176,11 @@ final class ThemeManager: ObservableObject {
     private let sliderKey     = "mp_slider_type"
     private let bgStyleKey    = "mp_bg_style"
     private let coverStyleKey = "mp_cover_style"
+    private let fontKey       = "mp_app_font"
+
+    func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        appFont.font(size, weight)
+    }
 
     private var wallpaperURL: URL? { docURL("custom_wallpaper.jpg") }
     private var coverImageURL: URL? { docURL("custom_cover.jpg") }
@@ -162,6 +206,10 @@ final class ThemeManager: ObservableObject {
         if let raw = UserDefaults.standard.string(forKey: coverStyleKey),
            let style = CoverStyle(rawValue: raw) {
             coverStyle = style
+        }
+        if let raw = UserDefaults.standard.string(forKey: fontKey),
+           let f = AppFont(rawValue: raw) {
+            appFont = f
         }
         if let url = wallpaperURL, let data = try? Data(contentsOf: url) {
             customWallpaper = UIImage(data: data)
@@ -189,6 +237,11 @@ final class ThemeManager: ObservableObject {
     func selectCover(_ style: CoverStyle) {
         coverStyle = style
         UserDefaults.standard.set(style.rawValue, forKey: coverStyleKey)
+    }
+
+    func selectFont(_ f: AppFont) {
+        appFont = f
+        UserDefaults.standard.set(f.rawValue, forKey: fontKey)
     }
 
     func saveCustomWallpaper(_ image: UIImage) {

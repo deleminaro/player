@@ -10,7 +10,7 @@ struct CustomizationView: View {
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
 
-    enum CTab { case background, cover, slider, theme }
+    enum CTab { case background, cover, slider, theme, font }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -22,6 +22,7 @@ struct CustomizationView: View {
                         pill("Cover",      icon: "photo.on.rectangle.angled", t: .cover)
                         pill("Slider",     icon: "slider.horizontal.3",       t: .slider)
                         pill("Theme",      icon: "paintpalette.fill",         t: .theme)
+                        pill("Font",       icon: "textformat",                t: .font)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
@@ -32,6 +33,7 @@ struct CustomizationView: View {
                     case .cover:      coverTab
                     case .slider:     sliderTab
                     case .theme:      themeTab
+                    case .font:       fontTab
                     }
                 }
                 .padding(.top, 8)
@@ -399,5 +401,87 @@ struct CustomizationView: View {
         }
         .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, 16)
+    }
+
+    // MARK: - Font tab
+
+    private var fontTab: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            sectionHeader("FONT STYLE")
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach(AppFont.allCases, id: \.self) { f in
+                    fontCard(f)
+                }
+            }
+            .padding(.horizontal, 16)
+
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(themeManager.current.primary.opacity(0.6))
+                    Text("Font applies throughout the app: track titles, artist names, menus, and controls.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
+            }
+            .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func fontCard(_ f: AppFont) -> some View {
+        let selected = themeManager.appFont == f
+        let accent   = themeManager.current.primary
+
+        return Button { themeManager.selectFont(f) } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                // Preview text
+                Text(f.preview)
+                    .font(f.font(18, .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Divider().background(Color.white.opacity(0.08))
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(f.label)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(selected ? accent : .white)
+                        Text(fontSubtitle(f))
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    Spacer()
+                    if selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(accent)
+                    }
+                }
+            }
+            .padding(14)
+            .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(selected ? accent : Color.white.opacity(0.06), lineWidth: selected ? 1.5 : 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.15), value: themeManager.appFont)
+    }
+
+    private func fontSubtitle(_ f: AppFont) -> String {
+        switch f {
+        case .system:  return "SF Pro · system default"
+        case .rounded: return "SF Rounded · soft edges"
+        case .serif:   return "New York · editorial"
+        case .mono:    return "SF Mono · pixel / retro"
+        }
     }
 }

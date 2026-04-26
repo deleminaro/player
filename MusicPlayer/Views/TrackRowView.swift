@@ -7,55 +7,54 @@ struct TrackRowView: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             ArtworkThumbnail(url: track.thumbnailArtworkURL)
                 .overlay(alignment: .bottomTrailing) {
                     if track.source == .spotify {
                         Circle()
                             .fill(Color(red: 0.11, green: 0.73, blue: 0.33))
-                            .frame(width: 14, height: 14)
+                            .frame(width: 13, height: 13)
                             .overlay(
                                 Text("S")
-                                    .font(.system(size: 8, weight: .black))
+                                    .font(.system(size: 7, weight: .black))
                                     .foregroundStyle(.black)
                             )
                             .offset(x: 3, y: 3)
                     }
                 }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(track.title.uppercased())
-                    .font(.system(size: 12, weight: .black))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track.title)
+                    .font(themeManager.font(14, .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                Text(track.username.uppercased())
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(themeManager.current.primary)
-                    .kerning(1.5)
+                Text(track.username)
+                    .font(themeManager.font(12))
+                    .foregroundStyle(themeManager.current.primary.opacity(0.8))
                     .lineLimit(1)
             }
 
             Spacer()
 
             if track.source == .spotify && track.previewURL == nil {
-                Text("NO PREVIEW")
-                    .font(.system(size: 8, weight: .bold)).kerning(0.5)
+                Text("preview")
+                    .font(themeManager.font(10))
                     .foregroundStyle(.white.opacity(0.2))
             } else {
                 Text(track.durationFormatted)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(themeManager.font(12))
                     .foregroundStyle(.white.opacity(0.3))
             }
 
             Button(action: onToggleLike) {
                 Image(systemName: isLiked ? "heart.fill" : "heart")
-                    .font(.system(size: 14))
-                    .foregroundStyle(isLiked ? .pink : .white.opacity(0.25))
+                    .font(.system(size: 15))
+                    .foregroundStyle(isLiked ? .pink : .white.opacity(0.2))
             }
             .buttonStyle(.plain)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .padding(.horizontal, 16)
         .contentShape(Rectangle())
     }
 }

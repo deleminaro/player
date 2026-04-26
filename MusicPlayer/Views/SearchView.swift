@@ -460,8 +460,8 @@ struct SearchView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 44)).foregroundStyle(themeManager.current.primary.opacity(0.25))
-                        Text("SEARCH MUSIC")
-                            .font(.system(size: 13, weight: .black)).kerning(2)
+                        Text("Search music")
+                            .font(themeManager.font(13, .semibold))
                             .foregroundStyle(.white.opacity(0.4))
                         Text("Songs, artists, playlists and more.")
                             .font(.system(size: 12)).foregroundStyle(.white.opacity(0.25))
@@ -479,8 +479,8 @@ struct SearchView: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 36)).foregroundStyle(.orange.opacity(0.6))
-            Text("SEARCH FAILED")
-                .font(.system(size: 13, weight: .black)).kerning(2)
+            Text("Search failed")
+                .font(themeManager.font(13, .semibold))
                 .foregroundStyle(.white.opacity(0.4))
             Text(msg).font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.25)).multilineTextAlignment(.center)
@@ -619,23 +619,21 @@ private struct PlaylistRowView: View {
             ArtworkThumbnail(url: playlist.thumbnailArtworkURL)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(playlist.title.uppercased())
-                    .font(.system(size: 12, weight: .black))
+                Text(playlist.title)
+                    .font(themeManager.font(13, .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                Text(playlist.username.uppercased())
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(themeManager.current.primary)
-                    .kerning(1.5)
+                Text(playlist.username)
+                    .font(themeManager.font(11))
+                    .foregroundStyle(themeManager.current.primary.opacity(0.8))
                     .lineLimit(1)
             }
 
             Spacer()
 
-            Text("\(playlist.trackCount) TRACKS")
-                .font(.system(size: 9, weight: .bold))
+            Text("\(playlist.trackCount) tracks")
+                .font(themeManager.font(11))
                 .foregroundStyle(.white.opacity(0.3))
-                .kerning(1)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
@@ -655,15 +653,14 @@ private struct ArtistRowView: View {
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(artist.username.uppercased())
-                    .font(.system(size: 12, weight: .black))
+                Text(artist.username)
+                    .font(themeManager.font(13, .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 if !artist.formattedFollowers.isEmpty {
-                    Text(artist.formattedFollowers.uppercased())
-                        .font(.system(size: 9, weight: .bold))
+                    Text(artist.formattedFollowers)
+                        .font(themeManager.font(11))
                         .foregroundStyle(.white.opacity(0.35))
-                        .kerning(1.5)
                 }
             }
 
@@ -717,15 +714,14 @@ private struct SpotifyArtistRowView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(artist.name.uppercased())
-                    .font(.system(size: 12, weight: .black))
+                Text(artist.name)
+                    .font(themeManager.font(13, .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 if let count = artist.followersCount {
-                    Text(formattedFollowers(count).uppercased())
-                        .font(.system(size: 9, weight: .bold))
+                    Text(formattedFollowers(count))
+                        .font(themeManager.font(11))
                         .foregroundStyle(.white.opacity(0.35))
-                        .kerning(1.5)
                 }
             }
 
@@ -770,17 +766,17 @@ struct SCPlaylistDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.top, 24).padding(.bottom, 16)
 
-                    Text(playlist.title.uppercased())
-                        .font(.system(size: 20, weight: .black))
+                    Text(playlist.title)
+                        .font(themeManager.font(20, .bold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
-                    Text(playlist.username.uppercased())
-                        .font(.system(size: 10, weight: .bold)).kerning(1.5)
+                    Text(playlist.username)
+                        .font(themeManager.font(12))
                         .foregroundStyle(themeManager.current.primary.opacity(0.7))
                         .padding(.top, 4)
-                    Text("\(playlist.trackCount) TRACKS")
-                        .font(.system(size: 9, weight: .bold)).kerning(1)
+                    Text("\(playlist.trackCount) tracks")
+                        .font(themeManager.font(11))
                         .foregroundStyle(.white.opacity(0.35))
                         .padding(.top, 2)
 
@@ -790,8 +786,8 @@ struct SCPlaylistDetailView: View {
                         VStack(spacing: 10) {
                             Image(systemName: "exclamationmark.triangle")
                                 .font(.system(size: 32)).foregroundStyle(.orange.opacity(0.5))
-                            Text("COULDN'T LOAD TRACKS")
-                                .font(.system(size: 12, weight: .black)).kerning(2)
+                            Text("Couldn't load tracks")
+                                .font(themeManager.font(12, .semibold))
                                 .foregroundStyle(.white.opacity(0.4))
                         }
                         .padding(.top, 40)
@@ -805,7 +801,7 @@ struct SCPlaylistDetailView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "play.fill")
-                                    Text("PLAY").font(.system(size: 13, weight: .black)).kerning(1)
+                                    Text("Play").font(themeManager.font(13, .semibold))
                                 }
                                 .foregroundStyle(themeManager.current.onPrimary)
                                 .frame(maxWidth: .infinity).padding(.vertical, 14)
@@ -820,7 +816,7 @@ struct SCPlaylistDetailView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "shuffle")
-                                    Text("SHUFFLE").font(.system(size: 13, weight: .black)).kerning(1)
+                                    Text("Shuffle").font(themeManager.font(13, .semibold))
                                 }
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity).padding(.vertical, 14)

@@ -157,11 +157,11 @@ struct NowPlayingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 5))
 
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("NEXT")
-                            .font(.system(size: 8, weight: .black)).kerning(1)
+                        Text("Next")
+                            .font(themeManager.font(8))
                             .foregroundStyle(.white.opacity(0.5))
                         Text(next.title)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(themeManager.font(11, .semibold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
                     }
@@ -241,17 +241,16 @@ struct NowPlayingView: View {
     private var trackInfo: some View {
         let liked = playerVM.currentTrack.map { playerVM.isLiked($0) } == true
         return HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(playerVM.currentTrack?.title ?? "Not Playing")
-                    .font(.system(size: 18, weight: .black))
+                    .font(themeManager.font(18, .bold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.3), value: playerVM.currentTrack?.id)
-                Text((playerVM.currentTrack?.username ?? "").uppercased())
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(themeManager.current.primary)
-                    .kerning(1.5)
+                Text(playerVM.currentTrack?.username ?? "")
+                    .font(themeManager.font(13))
+                    .foregroundStyle(themeManager.current.primary.opacity(0.85))
                     .lineLimit(1)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.3).delay(0.05), value: playerVM.currentTrack?.id)
@@ -415,8 +414,8 @@ struct NowPlayingView: View {
             Spacer()
             Text(formatTime(max(0, playerVM.duration - playerVM.currentTime)))
         }
-        .font(.system(size: 11, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.45))
+        .font(themeManager.font(11, .medium))
+        .foregroundStyle(.white.opacity(0.4))
         .monospacedDigit()
     }
 
@@ -516,9 +515,9 @@ struct NowPlayingView: View {
                playerVM.currentTrack?.media?.transcodings.contains(where: { $0.format.mimeType.contains("opus") }) == true {
                 VStack(spacing: 2) {
                     Image(systemName: "waveform")
-                        .font(.system(size: 11, weight: .bold))
-                    Text("LOSSLESS")
-                        .font(.system(size: 8, weight: .black)).kerning(1.2)
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("Lossless")
+                        .font(themeManager.font(8, .semibold))
                 }
                 .foregroundStyle(themeManager.current.primary)
                 .padding(.horizontal, 10).padding(.vertical, 7)
@@ -629,11 +628,11 @@ struct AddToPlaylistSheet: View {
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(track.title)
-                                .font(.system(size: 14, weight: .bold))
+                                .font(themeManager.font(14, .semibold))
                                 .foregroundStyle(.white).lineLimit(1)
-                            Text(track.username.uppercased())
-                                .font(.system(size: 10, weight: .semibold)).kerning(1)
-                                .foregroundStyle(themeManager.current.primary).lineLimit(1)
+                            Text(track.username)
+                                .font(themeManager.font(12))
+                                .foregroundStyle(themeManager.current.primary.opacity(0.8)).lineLimit(1)
                         }
                         Spacer()
                     }
@@ -671,8 +670,8 @@ struct AddToPlaylistSheet: View {
                             Image(systemName: "music.note.list")
                                 .font(.system(size: 32))
                                 .foregroundStyle(.white.opacity(0.15))
-                            Text("NO PLAYLISTS YET")
-                                .font(.system(size: 11, weight: .black)).kerning(2)
+                            Text("No playlists yet")
+                                .font(themeManager.font(13))
                                 .foregroundStyle(.white.opacity(0.3))
                         }
                         .padding(.top, 40)
@@ -822,11 +821,11 @@ struct SpeedPickerSheet: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(playerVM.isPitchPreserved ? themeManager.current.primary : .white.opacity(0.4))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("PITCH LOCK")
-                            .font(.system(size: 11, weight: .black)).kerning(1.5)
+                        Text("Pitch lock")
+                            .font(themeManager.font(13, .semibold))
                             .foregroundStyle(.white)
                         Text(playerVM.isPitchPreserved ? "Pitch preserved" : "Natural pitch shift")
-                            .font(.system(size: 10))
+                            .font(themeManager.font(11))
                             .foregroundStyle(.white.opacity(0.4))
                     }
                 }
@@ -857,7 +856,7 @@ struct SpeedPickerSheet: View {
                                 .font(.system(size: 28, weight: .regular))
                                 .foregroundStyle(selected ? .black : .white)
                             Text(mode.label)
-                                .font(.custom("Courier", size: 16)).bold()
+                                .font(themeManager.font(16, .semibold))
                                 .foregroundStyle(selected ? .black : .white)
                         }
                         .frame(maxWidth: .infinity)
@@ -921,7 +920,7 @@ struct SpeedPickerSheet: View {
             .frame(height: 44)
 
             Text(currentSpeed == 1.0 ? "1×" : "\(String(format: "%g", currentSpeed))×")
-                .font(.custom("Courier New", size: 14)).bold()
+                .font(themeManager.font(14, .medium))
                 .foregroundStyle(.white.opacity(0.55))
                 .monospacedDigit()
         }

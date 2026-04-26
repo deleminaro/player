@@ -106,10 +106,10 @@ struct LibraryView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("Favorites")
-                    .font(.custom("Courier New", size: 18)).bold()
+                    .font(themeManager.font(18, .bold))
                     .foregroundStyle(.white)
                 Text("\(playerVM.likedTracks.count) tracks")
-                    .font(.system(size: 12))
+                    .font(themeManager.font(12))
                     .foregroundStyle(.white.opacity(0.75))
             }
             .padding(16)
@@ -139,8 +139,8 @@ struct LibraryView: View {
                     .font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
                     .padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Favorites").font(.custom("Courier New", size: 18)).bold().foregroundStyle(.white)
-                    Text("\(playerVM.likedTracks.count) tracks").font(.system(size: 12)).foregroundStyle(.white.opacity(0.75))
+                    Text("Favorites").font(themeManager.font(18, .bold)).foregroundStyle(.white)
+                    Text("\(playerVM.likedTracks.count) tracks").font(themeManager.font(12)).foregroundStyle(.white.opacity(0.75))
                 }.padding(16)
             }
             .frame(width: 300, height: 110)
@@ -162,10 +162,10 @@ struct LibraryView: View {
                     Circle().fill(Color.white.opacity(0.06)).frame(width: 56, height: 56)
                     Image(systemName: "heart").font(.system(size: 22)).foregroundStyle(.white.opacity(0.25))
                 }
-                Text("VOID DETECTED")
-                    .font(.system(size: 13, weight: .black)).kerning(2).foregroundStyle(.white.opacity(0.5))
-                Text("YOUR COLLECTION IS CURRENTLY EMPTY.\nINITIALIZE BY LIKING TRACKS.")
-                    .font(.system(size: 9, weight: .bold)).kerning(1)
+                Text("Nothing here yet")
+                    .font(themeManager.font(13, .semibold)).foregroundStyle(.white.opacity(0.5))
+                Text("Like tracks to build your collection.")
+                    .font(themeManager.font(11))
                     .foregroundStyle(.white.opacity(0.25)).multilineTextAlignment(.center)
             }
         }
@@ -176,12 +176,12 @@ struct LibraryView: View {
     private var playlistsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("PLAYLISTS")
-                    .font(.system(size: 14, weight: .black)).foregroundStyle(.white)
+                Text("Playlists")
+                    .font(themeManager.font(16, .semibold)).foregroundStyle(.white)
                 Spacer()
                 Button { showCreateSheet = true } label: {
-                    Text("CREATE NEW +")
-                        .font(.system(size: 10, weight: .black)).kerning(1).foregroundStyle(primary)
+                    Text("New +")
+                        .font(themeManager.font(13)).foregroundStyle(primary)
                 }
             }
 
@@ -191,8 +191,8 @@ struct LibraryView: View {
                     .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
                     .frame(height: 80)
                     .overlay(
-                        Text("NO PLAYLISTS YET")
-                            .font(.system(size: 10, weight: .black)).kerning(2)
+                        Text("No playlists yet")
+                            .font(themeManager.font(12))
                             .foregroundStyle(.white.opacity(0.2))
                     )
             } else {
@@ -225,11 +225,11 @@ private struct PlaylistCard: View {
                 .frame(height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
-            Text(playlist.name.uppercased())
-                .font(.system(size: 11, weight: .black)).kerning(1)
+            Text(playlist.name)
+                .font(themeManager.font(12, .semibold))
                 .foregroundStyle(.white).lineLimit(1)
-            Text("\(playlist.tracks.count) TRACKS")
-                .font(.system(size: 9, weight: .bold)).kerning(1)
+            Text("\(playlist.tracks.count) tracks")
+                .font(themeManager.font(11))
                 .foregroundStyle(themeManager.current.primary.opacity(0.7))
         }
     }
@@ -508,10 +508,10 @@ struct LikedTracksView: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text("Favorites")
-                    .font(.custom("Courier New", size: 34)).bold()
+                    .font(themeManager.font(34, .bold))
                     .foregroundStyle(.white)
                 Text("\(playerVM.likedTracks.count) tracks")
-                    .font(.system(size: 15))
+                    .font(themeManager.font(15))
                     .foregroundStyle(.white.opacity(0.8))
             }
             .padding(.horizontal, 20).padding(.bottom, 24)
@@ -611,7 +611,7 @@ struct FavoritesSortSheet: View {
                                 .foregroundStyle(.white)
                                 .frame(width: 26, alignment: .center)
                             Text(sort.rawValue)
-                                .font(.custom("Courier New", size: 17)).bold()
+                                .font(themeManager.font(17, .semibold))
                                 .foregroundStyle(.white)
                             Spacer()
                             if sortOrder == sort {
@@ -659,10 +659,10 @@ struct PlaylistDetailView: View {
                         .padding(.horizontal, 50)
                         .padding(.top, 16).padding(.bottom, 12)
 
-                    Text(currentPlaylist.name.uppercased())
-                        .font(.system(size: 22, weight: .black)).foregroundStyle(.white)
-                    Text("\(currentPlaylist.tracks.count) TRACKS")
-                        .font(.system(size: 10, weight: .bold)).kerning(1.5)
+                    Text(currentPlaylist.name)
+                        .font(themeManager.font(22, .bold)).foregroundStyle(.white)
+                    Text("\(currentPlaylist.tracks.count) tracks")
+                        .font(themeManager.font(12))
                         .foregroundStyle(themeManager.current.primary.opacity(0.7)).padding(.top, 4)
 
                     HStack(spacing: 16) {
@@ -674,7 +674,7 @@ struct PlaylistDetailView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "play.fill")
-                                Text("PLAY").font(.system(size: 13, weight: .black)).kerning(1)
+                                Text("Play").font(themeManager.font(13, .semibold))
                             }
                             .foregroundStyle(themeManager.current.onPrimary)
                             .frame(maxWidth: .infinity).padding(.vertical, 14)
@@ -690,7 +690,7 @@ struct PlaylistDetailView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "shuffle")
-                                Text("SHUFFLE").font(.system(size: 13, weight: .black)).kerning(1)
+                                Text("Shuffle").font(themeManager.font(13, .semibold))
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity).padding(.vertical, 14)
@@ -702,8 +702,8 @@ struct PlaylistDetailView: View {
                     if currentPlaylist.tracks.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "music.note").font(.system(size: 36)).foregroundStyle(themeManager.current.primary.opacity(0.3))
-                            Text("NO TRACKS YET")
-                                .font(.system(size: 13, weight: .black)).kerning(2).foregroundStyle(.white.opacity(0.4))
+                            Text("No tracks yet")
+                                .font(themeManager.font(13, .semibold)).foregroundStyle(.white.opacity(0.4))
                             Text("Add tracks from the Search tab.")
                                 .font(.system(size: 12)).foregroundStyle(.white.opacity(0.25))
                         }
