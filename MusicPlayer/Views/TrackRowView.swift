@@ -49,11 +49,17 @@ struct TrackRowView: View {
             Button(action: onToggleLike) {
                 Image(systemName: isLiked ? "heart.fill" : "heart")
                     .font(.system(size: 15))
-                    .foregroundStyle(isLiked ? .pink : .white.opacity(0.2))
+                    .foregroundStyle(isLiked ? .pink : .white.opacity(0.25))
+                    .scaleEffect(isLiked ? 1.08 : 1.0)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.5), value: isLiked)
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .sensoryFeedback(.impact(.light), trigger: isLiked)
         }
-        .padding(.vertical, 11)
+        .padding(.vertical, 8)
         .padding(.horizontal, 16)
         .contentShape(Rectangle())
     }

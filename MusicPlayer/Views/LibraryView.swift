@@ -344,10 +344,11 @@ struct LikedTracksView: View {
                                 Text("Play").font(.system(size: 16, weight: .bold))
                             }
                             .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity).padding(.vertical, 14)
+                            .frame(maxWidth: .infinity).padding(.vertical, 16)
                             .background(.white, in: RoundedRectangle(cornerRadius: 14))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ScaleButtonStyle(scale: 0.96))
+                        .sensoryFeedback(.impact(.medium), trigger: playerVM.isPlaying)
 
                         Button {
                             guard !displayedTracks.isEmpty else { return }
@@ -356,12 +357,12 @@ struct LikedTracksView: View {
                             playerVM.showingNowPlaying = true
                         } label: {
                             Image(systemName: "shuffle")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(primary)
-                                .frame(width: 50, height: 50)
+                                .frame(width: 54, height: 54)
                                 .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ScaleButtonStyle(scale: 0.92))
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .listRowInsets(EdgeInsets())
@@ -536,13 +537,13 @@ private struct LikedTrackRow: View {
         HStack(spacing: 12) {
             ArtworkThumbnail(url: track.thumbnailArtworkURL)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(themeManager.font(14, .semibold))
                     .foregroundStyle(.white).lineLimit(1)
                 Text(track.username)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.5)).lineLimit(1)
+                    .font(themeManager.font(12))
+                    .foregroundStyle(primary.opacity(0.8)).lineLimit(1)
             }
 
             Spacer()
@@ -553,13 +554,11 @@ private struct LikedTrackRow: View {
             .buttonStyle(.plain)
 
             Text(track.durationFormatted)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(themeManager.font(12))
+                .foregroundStyle(.white.opacity(0.3))
                 .monospacedDigit()
-                .padding(.horizontal, 8).padding(.vertical, 5)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, 16).padding(.vertical, 11)
         .contentShape(Rectangle())
         .sheet(isPresented: $showDownload) {
             DownloadOptionsSheet(track: track)
