@@ -11,6 +11,7 @@ struct NowPlayingView: View {
     @State private var showAddToPlaylist = false
     @State private var isScrubbing  = false
     @State private var hasAppeared  = false
+    @State private var waveProgress: Double = 0
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private var bg:       Color { themeManager.current.background }
@@ -59,10 +60,17 @@ struct NowPlayingView: View {
             .onAppear {
                 hasAppeared = false
                 withAnimation { hasAppeared = true }
+                waveProgress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
             }
             .onChange(of: playerVM.currentTrack?.id) { _, _ in
                 hasAppeared = false
                 withAnimation { hasAppeared = true }
+                waveProgress = 0
+            }
+            .onChange(of: playerVM.currentTime) { _, t in
+                guard !isScrubbing else { return }
+                let p = playerVM.duration > 0 ? t / playerVM.duration : 0
+                withAnimation(.linear(duration: 0.5)) { waveProgress = p }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -276,14 +284,12 @@ struct NowPlayingView: View {
 
     // Waveform I — random-height bars, top-growing (unique per song)
     private var waveform1Progress: some View {
-        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
-        let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+        let bars  = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
         let accent = themeManager.current.primary
 
         return VStack(spacing: 6) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    // Dim background — full width
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.72)
@@ -293,7 +299,6 @@ struct NowPlayingView: View {
                             ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Color.white.opacity(0.22)))
                         }
                     }
-                    // Accent foreground — same full width, masked to progress
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.72)
@@ -304,16 +309,16 @@ struct NowPlayingView: View {
                         }
                     }
                     .mask(alignment: .leading) {
-                        Rectangle()
-                            .frame(width: max(0, geo.size.width * CGFloat(progress)))
-                            .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
+                        Rectangle().frame(width: max(0, geo.size.width * waveProgress))
                     }
                 }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0)
                     .onChanged { v in
                         isScrubbing = true
-                        playerVM.seek(to: max(0, min(1, v.location.x / geo.size.width)) * playerVM.duration)
+                        let p = max(0, min(1, v.location.x / geo.size.width))
+                        waveProgress = p
+                        playerVM.seek(to: p * playerVM.duration)
                     }
                     .onEnded { _ in isScrubbing = false }
                 )
@@ -325,14 +330,12 @@ struct NowPlayingView: View {
 
     // Waveform II — symmetric bars growing from center (unique per song)
     private var waveform2Progress: some View {
-        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
-        let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+        let bars  = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
         let accent = themeManager.current.primary
 
         return VStack(spacing: 6) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    // Dim background — full width
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.65)
@@ -343,7 +346,6 @@ struct NowPlayingView: View {
                             ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Color.white.opacity(0.22)))
                         }
                     }
-                    // Accent foreground — same full width, masked to progress
                     Canvas { ctx, size in
                         let step = size.width / CGFloat(bars.count)
                         let barW = max(2, step * 0.65)
@@ -355,16 +357,16 @@ struct NowPlayingView: View {
                         }
                     }
                     .mask(alignment: .leading) {
-                        Rectangle()
-                            .frame(width: max(0, geo.size.width * CGFloat(progress)))
-                            .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
+                        Rectangle().frame(width: max(0, geo.size.width * waveProgress))
                     }
                 }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0)
                     .onChanged { v in
                         isScrubbing = true
-                        playerVM.seek(to: max(0, min(1, v.location.x / geo.size.width)) * playerVM.duration)
+                        let p = max(0, min(1, v.location.x / geo.size.width))
+                        waveProgress = p
+                        playerVM.seek(to: p * playerVM.duration)
                     }
                     .onEnded { _ in isScrubbing = false }
                 )
@@ -376,7 +378,6 @@ struct NowPlayingView: View {
 
     // Classic — thick capsule, expands on scrub
     private var classicProgress: some View {
-        let progress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
         let trackH: CGFloat = isScrubbing ? 14 : 5
 
         return VStack(spacing: 10) {
@@ -387,8 +388,7 @@ struct NowPlayingView: View {
                         .frame(height: trackH)
                     Capsule()
                         .fill(Color.white)
-                        .frame(width: max(0, geo.size.width * CGFloat(progress)), height: trackH)
-                        .animation(isScrubbing ? .none : .linear(duration: 0.5), value: progress)
+                        .frame(width: max(0, geo.size.width * waveProgress), height: trackH)
                 }
                 .frame(maxHeight: .infinity, alignment: .center)
                 .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isScrubbing)
@@ -397,7 +397,9 @@ struct NowPlayingView: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { v in
                             isScrubbing = true
-                            playerVM.seek(to: max(0, min(1, v.location.x / geo.size.width)) * playerVM.duration)
+                            let p = max(0, min(1, v.location.x / geo.size.width))
+                            waveProgress = p
+                            playerVM.seek(to: p * playerVM.duration)
                         }
                         .onEnded { _ in isScrubbing = false }
                 )
