@@ -54,10 +54,10 @@ struct SpotifyArtistProfileView: View {
         }
         .presentationBackground(bg)
         .task { await loadData() }
-        .alert("ALBUM VIEW", isPresented: $showAlbumAlert, presenting: tappedAlbum) { _ in
+        .alert("Album", isPresented: $showAlbumAlert, presenting: tappedAlbum) { _ in
             Button("OK", role: .cancel) {}
         } message: { album in
-            Text(""\(album.name)" — coming soon.")
+            Text("\(album.name) — coming soon.")
         }
     }
 
