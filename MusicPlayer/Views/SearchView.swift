@@ -680,6 +680,7 @@ private struct ArtistRowView: View {
 
 private struct SpotifyArtistRowView: View {
     let artist: SpotifyArtistResult
+    @EnvironmentObject var themeManager: ThemeManager
 
     private let spotifyGreen = Color(red: 0.11, green: 0.73, blue: 0.33)
 
