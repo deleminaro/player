@@ -58,7 +58,7 @@ struct MiniPlayerView: View {
                     }
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.88))
-                .sensoryFeedback(.impact(.medium), trigger: playerVM.isPlaying)
+                .sensoryFeedback(.impact(weight: .medium), trigger: playerVM.isPlaying)
 
                 // Skip forward
                 Button { playerVM.skipNext() } label: {
@@ -69,7 +69,7 @@ struct MiniPlayerView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.88))
-                .sensoryFeedback(.impact(.light), trigger: playerVM.currentTrack?.id)
+                .sensoryFeedback(.impact(weight: .light), trigger: playerVM.currentTrack?.id)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)

@@ -57,7 +57,7 @@ struct TrackRowView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .sensoryFeedback(.impact(.light), trigger: isLiked)
+            .sensoryFeedback(.impact(weight: .light), trigger: isLiked)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 16)

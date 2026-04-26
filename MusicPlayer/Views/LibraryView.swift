@@ -348,7 +348,7 @@ struct LikedTracksView: View {
                             .background(.white, in: RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(ScaleButtonStyle(scale: 0.96))
-                        .sensoryFeedback(.impact(.medium), trigger: playerVM.isPlaying)
+                        .sensoryFeedback(.impact(weight: .medium), trigger: playerVM.isPlaying)
 
                         Button {
                             guard !displayedTracks.isEmpty else { return }
