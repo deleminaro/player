@@ -144,7 +144,7 @@ struct HomeView: View {
                         .background(accent, in: Capsule())
                     }
                     .buttonStyle(ScaleButtonStyle(scale: 0.93))
-                    .sensoryFeedback(.impact(.medium), trigger: playerVM.currentTrack?.id)
+                    .sensoryFeedback(.impact(weight: .medium), trigger: playerVM.currentTrack?.id)
                     .opacity(featured == nil ? 0.35 : 1)
                     .disabled(featured == nil)
 

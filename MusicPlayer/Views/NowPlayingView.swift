@@ -283,7 +283,7 @@ struct NowPlayingView: View {
                 }
             }
             .buttonStyle(ScaleButtonStyle(scale: 0.85))
-            .sensoryFeedback(.impact(.medium), trigger: liked)
+            .sensoryFeedback(.impact(weight: .medium), trigger: liked)
         }
     }
 
@@ -520,7 +520,7 @@ struct NowPlayingView: View {
                 }
             }
             .buttonStyle(ScaleButtonStyle(scale: 0.93))
-            .sensoryFeedback(.impact(.heavy), trigger: playerVM.isPlaying)
+            .sensoryFeedback(.impact(weight: .heavy), trigger: playerVM.isPlaying)
 
             Spacer()
 
@@ -534,7 +534,7 @@ struct NowPlayingView: View {
                 }
             }
             .buttonStyle(ScaleButtonStyle(scale: 0.88))
-            .sensoryFeedback(.impact(.medium), trigger: playerVM.currentTrack?.id)
+            .sensoryFeedback(.impact(weight: .medium), trigger: playerVM.currentTrack?.id)
 
             Spacer()
 
