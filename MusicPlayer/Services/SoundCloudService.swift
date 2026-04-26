@@ -27,6 +27,30 @@ actor SoundCloudService {
                                  as: SearchResponse<SCArtist>.self).collection
     }
 
+    func fetchUserTracks(userID: Int, limit: Int = 10) async throws -> [Track] {
+        var comps = URLComponents(string: "\(base)/users/\(userID)/tracks")!
+        comps.queryItems = [
+            URLQueryItem(name: "client_id",           value: Constants.soundcloudClientID),
+            URLQueryItem(name: "limit",               value: "\(limit)"),
+            URLQueryItem(name: "linked_partitioning", value: "1"),
+        ]
+        guard let url = comps.url else { throw SCError.invalidURL }
+        let (data, resp) = try await URLSession.shared.data(from: url)
+        try validate(resp)
+        return try JSONDecoder().decode([Track].self, from: data)
+    }
+
+    func fetchUserPlaylists(userID: Int) async throws -> [SCPlaylist] {
+        var comps = URLComponents(string: "\(base)/users/\(userID)/playlists")!
+        comps.queryItems = [
+            URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
+        ]
+        guard let url = comps.url else { throw SCError.invalidURL }
+        let (data, resp) = try await URLSession.shared.data(from: url)
+        try validate(resp)
+        return try JSONDecoder().decode([SCPlaylist].self, from: data)
+    }
+
     func fetchPlaylistTracks(id: Int) async throws -> [Track] {
         var comps = URLComponents(string: "\(base)/playlists/\(id)")!
         comps.queryItems = [URLQueryItem(name: "client_id", value: Constants.soundcloudClientID)]

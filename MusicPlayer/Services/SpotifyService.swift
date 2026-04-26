@@ -48,6 +48,89 @@ final class SpotifyService: NSObject, ObservableObject {
         return decoded.tracks.items.compactMap { track(from: $0) }
     }
 
+    // MARK: - Artist search & profile
+
+    func searchArtists(query: String) async throws -> [SpotifyArtistResult] {
+        let token = try await validToken()
+        var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/search")!
+        comps.queryItems = [
+            .init(name: "q",    value: query),
+            .init(name: "type", value: "artist"),
+            .init(name: "limit", value: "20"),
+        ]
+        var req = URLRequest(url: comps.url!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        do {
+            try checkStatus(resp, data: data)
+        } catch {
+            if let http = resp as? HTTPURLResponse, http.statusCode == 401 || http.statusCode == 403 { logout() }
+            throw error
+        }
+        let decoded = try JSONDecoder().decode(SpotifySearchArtistResponse.self, from: data)
+        return decoded.artists.items.map { artistResult(from: $0) }
+    }
+
+    func fetchArtistTopTracks(artistID: String) async throws -> [Track] {
+        let token = try await validToken()
+        var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/artists/\(artistID)/top-tracks")!
+        comps.queryItems = [.init(name: "market", value: "US")]
+        var req = URLRequest(url: comps.url!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        do {
+            try checkStatus(resp, data: data)
+        } catch {
+            if let http = resp as? HTTPURLResponse, http.statusCode == 401 || http.statusCode == 403 { logout() }
+            throw error
+        }
+        let decoded = try JSONDecoder().decode(SpotifyTopTracksResponse.self, from: data)
+        return decoded.tracks.compactMap { track(from: $0) }
+    }
+
+    func fetchArtistAlbums(artistID: String) async throws -> [SpotifyAlbumResult] {
+        let token = try await validToken()
+        var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/artists/\(artistID)/albums")!
+        comps.queryItems = [
+            .init(name: "limit",          value: "20"),
+            .init(name: "include_groups", value: "album,single"),
+        ]
+        var req = URLRequest(url: comps.url!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        do {
+            try checkStatus(resp, data: data)
+        } catch {
+            if let http = resp as? HTTPURLResponse, http.statusCode == 401 || http.statusCode == 403 { logout() }
+            throw error
+        }
+        let decoded = try JSONDecoder().decode(SpotifyArtistAlbumsResponse.self, from: data)
+        return decoded.items.map { albumResult(from: $0) }
+    }
+
+    // MARK: - Mapping helpers
+
+    private func artistResult(from dto: SpotifyFullArtistDTO) -> SpotifyArtistResult {
+        SpotifyArtistResult(
+            id:             dto.id,
+            name:           dto.name,
+            imageURL:       dto.images?.first(where: { ($0.width ?? 0) >= 300 })?.url ?? dto.images?.first?.url,
+            followersCount: dto.followers?.total,
+            genres:         dto.genres ?? []
+        )
+    }
+
+    private func albumResult(from dto: SpotifyAlbumItemDTO) -> SpotifyAlbumResult {
+        let year = String(dto.releaseDate.prefix(4))
+        return SpotifyAlbumResult(
+            id:        dto.id,
+            name:      dto.name,
+            imageURL:  dto.images.first(where: { ($0.width ?? 0) >= 300 })?.url ?? dto.images.first?.url,
+            releaseYear: year,
+            albumType: dto.albumType
+        )
+    }
+
     // MARK: - PKCE Auth
 
     func startAuth() async throws {
@@ -249,6 +332,24 @@ extension SpotifyService: ASWebAuthenticationPresentationContextProviding {
     }
 }
 
+// MARK: - Public result types
+
+struct SpotifyArtistResult: Identifiable {
+    let id: String
+    let name: String
+    let imageURL: String?
+    let followersCount: Int?
+    let genres: [String]
+}
+
+struct SpotifyAlbumResult: Identifiable {
+    let id: String
+    let name: String
+    let imageURL: String?
+    let releaseYear: String
+    let albumType: String   // "album", "single", "ep"
+}
+
 // MARK: - Response types
 
 private struct PKCETokenResponse: Decodable {
@@ -299,10 +400,58 @@ private struct SpotifyTrackDTO: Decodable {
     }
 }
 
-private struct SpotifyArtistDTO: Decodable { let name: String }
+private struct SpotifyArtistDTO: Decodable { let id: String; let name: String }
 private struct SpotifyAlbumDTO:  Decodable { let images: [SpotifyImageDTO] }
 private struct SpotifyImageDTO:  Decodable { let url: String; let width: Int?; let height: Int? }
 private struct SpotifyExternalURLs: Decodable { let spotify: String }
+
+private struct SpotifySearchArtistResponse: Decodable {
+    let artists: SpotifyArtistPage
+}
+
+private struct SpotifyArtistPage: Decodable {
+    let items: [SpotifyFullArtistDTO]
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        var arr = try c.nestedUnkeyedContainer(forKey: .items)
+        var result: [SpotifyFullArtistDTO] = []
+        while !arr.isAtEnd {
+            if let item = try? arr.decode(SpotifyFullArtistDTO.self) { result.append(item) }
+            else { _ = try? arr.decode(AnyDecodable.self) }
+        }
+        items = result
+    }
+    enum CodingKeys: String, CodingKey { case items }
+}
+
+private struct SpotifyFullArtistDTO: Decodable {
+    let id: String
+    let name: String
+    let images: [SpotifyImageDTO]?
+    let followers: SpotifyFollowersDTO?
+    let genres: [String]?
+}
+
+private struct SpotifyFollowersDTO: Decodable { let total: Int }
+
+private struct SpotifyTopTracksResponse: Decodable { let tracks: [SpotifyTrackDTO] }
+
+private struct SpotifyArtistAlbumsResponse: Decodable {
+    let items: [SpotifyAlbumItemDTO]
+}
+
+private struct SpotifyAlbumItemDTO: Decodable {
+    let id: String
+    let name: String
+    let images: [SpotifyImageDTO]
+    let releaseDate: String
+    let albumType: String
+    enum CodingKeys: String, CodingKey {
+        case id, name, images
+        case releaseDate = "release_date"
+        case albumType   = "album_type"
+    }
+}
 
 private struct SpotifyAPIError: Decodable {
     struct Detail: Decodable { let message: String }

@@ -22,6 +22,7 @@ private enum SearchResultSet {
     case tracks([Track])
     case playlists([SCPlaylist])
     case artists([SCArtist])
+    case spotifyArtists([SpotifyArtistResult])
     case empty
 }
 
@@ -34,7 +35,9 @@ struct SearchView: View {
     @State private var isSearching        = false
     @State private var isLoadingMore      = false
     @State private var addToPlaylistTrack: Track?
-    @State private var selectedPlaylist:  SCPlaylist?
+    @State private var selectedPlaylist:   SCPlaylist?
+    @State private var selectedArtist:     SCArtist?
+    @State private var selectedSpotifyArtist: SpotifyArtistResult?
     @State private var searchError:  String?
     @State private var searchTask:   Task<Void, Never>?
     @State private var filter        = SearchFilter.all
@@ -58,6 +61,9 @@ struct SearchView: View {
 
                 if source == .soundcloud {
                     filterChips
+                        .padding(.bottom, 12)
+                } else if source == .spotify && spotify.isAuthenticated {
+                    spotifyFilterChips
                         .padding(.bottom, 12)
                 }
 
@@ -88,14 +94,24 @@ struct SearchView: View {
         .sheet(item: $selectedPlaylist) { pl in
             SCPlaylistDetailView(playlist: pl).environmentObject(playerVM).environmentObject(themeManager)
         }
+        .sheet(item: $selectedArtist) { artist in
+            SCArtistProfileView(artist: artist).environmentObject(playerVM).environmentObject(themeManager)
+        }
+        .sheet(item: $selectedSpotifyArtist) { artist in
+            SpotifyArtistProfileView(artist: artist).environmentObject(playerVM).environmentObject(themeManager)
+        }
         .onTapGesture { focused = false }
         .onChange(of: filter) { _, _ in
-            guard !currentQuery.isEmpty, source == .soundcloud else { return }
+            guard !currentQuery.isEmpty else { return }
             Task { await performSearch(currentQuery, reset: true) }
         }
-        .onChange(of: source) { _, _ in
+        .onChange(of: source) { _, newSource in
             resultSet = .empty
             searchError = nil
+            // Reset to .tracks when switching to Spotify (playlists/albums not supported)
+            if newSource == .spotify && filter != .tracks && filter != .artists {
+                filter = .tracks
+            }
             guard !currentQuery.isEmpty else { return }
             Task { await performSearch(currentQuery, reset: true) }
         }
@@ -228,6 +244,35 @@ struct SearchView: View {
         .padding(.horizontal, 32)
     }
 
+    // MARK: - Spotify filter chips
+
+    private var spotifyFilterChips: some View {
+        let spotifyFilters: [SearchFilter] = [.tracks, .artists]
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(spotifyFilters, id: \.self) { f in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) { filter = f }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: f.icon)
+                                .font(.system(size: 12, weight: .semibold))
+                            Text(f.rawValue)
+                                .font(.system(size: 13, weight: .bold))
+                        }
+                        .foregroundStyle(filter == f ? .black : .white)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(Capsule().fill(filter == f
+                            ? Color(red: 0.11, green: 0.73, blue: 0.33)
+                            : bgField))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
     // MARK: - Filter chips
 
     private var filterChips: some View {
@@ -271,6 +316,8 @@ struct SearchView: View {
                 playlistList(lists)
             case .artists(let artists):
                 artistList(artists)
+            case .spotifyArtists(let artists):
+                spotifyArtistList(artists)
             case .empty:
                 recentSearchesView
             }
@@ -339,6 +386,24 @@ struct SearchView: View {
                     .listRowBackground(bg)
                     .listRowSeparatorTint(Color.white.opacity(0.06))
                     .onAppear { if artist.id == artists.last?.id { loadMore() } }
+            }
+            if isLoadingMore {
+                HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }
+                    .listRowBackground(bg).listRowSeparatorTint(.clear)
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    // MARK: - Spotify artist list
+
+    private func spotifyArtistList(_ artists: [SpotifyArtistResult]) -> some View {
+        List {
+            ForEach(artists) { artist in
+                SpotifyArtistRowView(artist: artist)
+                    .onTapGesture { selectedSpotifyArtist = artist }
+                    .listRowBackground(bg)
+                    .listRowSeparatorTint(Color.white.opacity(0.06))
             }
             if isLoadingMore {
                 HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }
@@ -435,9 +500,7 @@ struct SearchView: View {
     }
 
     private func tapArtist(_ artist: SCArtist) {
-        query = artist.username
-        filter = .tracks
-        commitSearch()
+        selectedArtist = artist
     }
 
     // MARK: - Search logic
@@ -470,11 +533,20 @@ struct SearchView: View {
             currentQuery = q
 
             if source == .spotify {
-                let tracks = try await SpotifyService.shared.search(query: q, offset: offset)
-                if reset { resultSet = .tracks(tracks) }
-                else if case .tracks(var existing) = resultSet {
-                    existing.append(contentsOf: tracks.filter { t in !existing.contains { $0.id == t.id } })
-                    resultSet = .tracks(existing)
+                if filter == .artists {
+                    let artists = try await SpotifyService.shared.searchArtists(query: q)
+                    if reset { resultSet = .spotifyArtists(artists) }
+                    else if case .spotifyArtists(var existing) = resultSet {
+                        existing.append(contentsOf: artists.filter { a in !existing.contains { $0.id == a.id } })
+                        resultSet = .spotifyArtists(existing)
+                    }
+                } else {
+                    let tracks = try await SpotifyService.shared.search(query: q, offset: offset)
+                    if reset { resultSet = .tracks(tracks) }
+                    else if case .tracks(var existing) = resultSet {
+                        existing.append(contentsOf: tracks.filter { t in !existing.contains { $0.id == t.id } })
+                        resultSet = .tracks(existing)
+                    }
                 }
                 return
             }
@@ -518,10 +590,11 @@ struct SearchView: View {
 
     private var currentResultCount: Int {
         switch resultSet {
-        case .tracks(let t):    return t.count
-        case .playlists(let p): return p.count
-        case .artists(let a):   return a.count
-        case .empty:            return 0
+        case .tracks(let t):          return t.count
+        case .playlists(let p):       return p.count
+        case .artists(let a):         return a.count
+        case .spotifyArtists(let a):  return a.count
+        case .empty:                  return 0
         }
     }
 
@@ -588,6 +661,68 @@ private struct ArtistRowView: View {
                     .lineLimit(1)
                 if !artist.formattedFollowers.isEmpty {
                     Text(artist.formattedFollowers.uppercased())
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.35))
+                        .kerning(1.5)
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.2))
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Spotify artist row
+
+private struct SpotifyArtistRowView: View {
+    let artist: SpotifyArtistResult
+
+    private let spotifyGreen = Color(red: 0.11, green: 0.73, blue: 0.33)
+
+    private func formattedFollowers(_ n: Int) -> String {
+        if n >= 1_000_000 { return String(format: "%.1fM followers", Double(n) / 1_000_000) }
+        if n >= 1_000     { return String(format: "%.0fK followers", Double(n) / 1_000) }
+        return "\(n) followers"
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Green "S" badge as avatar placeholder
+            ZStack {
+                Circle()
+                    .fill(spotifyGreen.opacity(0.15))
+                    .frame(width: 48, height: 48)
+                if let urlStr = artist.imageURL, !urlStr.isEmpty {
+                    AsyncImage(url: URL(string: urlStr)) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Text("S")
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundStyle(spotifyGreen)
+                    }
+                    .frame(width: 48, height: 48)
+                    .clipShape(Circle())
+                } else {
+                    Text("S")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(spotifyGreen)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(artist.name.uppercased())
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                if let count = artist.followersCount {
+                    Text(formattedFollowers(count).uppercased())
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(.white.opacity(0.35))
                         .kerning(1.5)
