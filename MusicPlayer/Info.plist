@@ -63,5 +63,11 @@
         <key>UIApplicationSupportsMultipleScenes</key>
         <false/>
     </dict>
+
+    <!-- Custom fonts -->
+    <key>UIAppFonts</key>
+    <array>
+        <string>Minecraft.ttf</string>
+    </array>
 </dict>
 </plist>
