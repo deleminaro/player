@@ -4,7 +4,10 @@ struct TrackRowView: View {
     let track: Track
     let isLiked: Bool
     let onToggleLike: () -> Void
+    @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
+
+    private var isCurrentTrack: Bool { playerVM.currentTrack?.id == track.id }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -26,7 +29,7 @@ struct TrackRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
                     .font(themeManager.font(14, .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(isCurrentTrack ? themeManager.current.primary : .white)
                     .lineLimit(1)
                 Text(track.username)
                     .font(themeManager.font(12))
@@ -36,7 +39,10 @@ struct TrackRowView: View {
 
             Spacer()
 
-            if track.source == .spotify && track.previewURL == nil {
+            if isCurrentTrack {
+                NowPlayingBarsView(isPlaying: playerVM.isPlaying, color: themeManager.current.primary)
+                    .padding(.trailing, 4)
+            } else if track.source == .spotify && track.previewURL == nil {
                 Text("preview")
                     .font(themeManager.font(10))
                     .foregroundStyle(.white.opacity(0.2))
@@ -62,6 +68,36 @@ struct TrackRowView: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Animated now-playing bars
+
+struct NowPlayingBarsView: View {
+    let isPlaying: Bool
+    let color: Color
+
+    var body: some View {
+        TimelineView(isPlaying ? .animation(minimumInterval: 1.0 / 24) : .animation(paused: true)) { tl in
+            let t = tl.date.timeIntervalSinceReferenceDate
+            HStack(alignment: .bottom, spacing: 2) {
+                bar(height: isPlaying ? wave(t, freq: 3.1, phase: 0.0) : 5)
+                bar(height: isPlaying ? wave(t, freq: 4.7, phase: 1.3) : 5)
+                bar(height: isPlaying ? wave(t, freq: 3.9, phase: 2.5) : 5)
+            }
+        }
+        .frame(width: 14, height: 14)
+    }
+
+    private func wave(_ t: Double, freq: Double, phase: Double) -> CGFloat {
+        let v = (sin(t * freq + phase) + 1) * 0.5
+        return 3 + v * 11
+    }
+
+    private func bar(height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 1.5)
+            .fill(color)
+            .frame(width: 3, height: max(3, height))
     }
 }
 
