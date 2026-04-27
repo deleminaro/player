@@ -937,7 +937,7 @@ struct SpeedPickerSheet: View {
         let speedMin: Float = 0.5
         let speedMax: Float = 2.0
         let progress = Double((currentSpeed - speedMin) / (speedMax - speedMin))
-        let count = 31
+        let count = 30
 
         return VStack(spacing: 10) {
             GeometryReader { geo in
@@ -945,7 +945,7 @@ struct SpeedPickerSheet: View {
                     let step = size.width / CGFloat(count)
                     let barW = max(2, step * 0.48)
                     for i in 0..<count {
-                        let isBig  = i % 4 == 0
+                        let isBig  = i % 5 == 0
                         let h: CGFloat = isBig ? 1.0 : 0.38
                         let filled = Double(i) / Double(count) < progress
                         let barH   = h * size.height
