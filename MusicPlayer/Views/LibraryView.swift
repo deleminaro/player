@@ -571,21 +571,28 @@ private struct LikedTrackRow: View {
 
     @ViewBuilder
     private var downloadIndicator: some View {
-        let cached  = dm.cachedIDs.contains(track.id)
         let offline = dm.offlineIDs.contains(track.id)
-        let icon    = isPlaying && playerVM.isPlaying ? "chart.bar.fill"
-                    : offline  ? "checkmark.circle.fill"
-                    : cached   ? "cylinder.split.1x2"
-                    : "arrow.down.to.line"
-        let color: Color = isPlaying && playerVM.isPlaying ? primary
-                         : offline ? primary.opacity(0.8)
-                         : cached  ? .white.opacity(0.55)
-                         : .white.opacity(0.3)
-        Image(systemName: icon)
-            .font(.system(size: 14, weight: .regular))
-            .foregroundStyle(color)
-            .frame(width: 32, height: 32)
-            .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
+        let cached  = dm.cachedIDs.contains(track.id)
+
+        ZStack {
+            RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.07))
+                .frame(width: 32, height: 32)
+
+            if isPlaying {
+                NowPlayingBarsView(isPlaying: playerVM.isPlaying, color: primary)
+            } else {
+                let icon: String  = offline ? "checkmark.circle.fill"
+                                  : cached  ? "cylinder.split.1x2"
+                                  : "arrow.down.to.line"
+                let color: Color  = offline ? primary.opacity(0.8)
+                                  : cached  ? .white.opacity(0.55)
+                                  : .white.opacity(0.3)
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(color)
+            }
+        }
+        .frame(width: 32, height: 32)
     }
 }
 
