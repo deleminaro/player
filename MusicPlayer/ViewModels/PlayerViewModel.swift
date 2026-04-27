@@ -105,24 +105,24 @@ final class PlayerViewModel: ObservableObject {
                     audio.play(url: localURL)
                     return
                 }
-                // Spotify: play preview URL if available, otherwise fall back to SoundCloud
+                // Spotify: play Spotify preview first, fall back to SoundCloud if unavailable
                 if track.source == .spotify {
                     if let preview = track.previewURL, let url = URL(string: preview) {
                         guard currentTrack?.id == track.id else { return }
                         audio.play(url: url)
-                    } else {
-                        // No preview — search SoundCloud for the same track and play from there
-                        let fallbackResults = try? await sc.search(query: "\(track.title) \(track.username)")
-                        guard currentTrack?.id == track.id else { return }
-                        guard let scTrack = fallbackResults?.first,
-                              let transcoding = scTrack.media?.transcoding(for: currentQuality) else {
-                            if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
-                            return
-                        }
+                        return
+                    }
+                    // No Spotify preview — search SoundCloud for full track
+                    let scResults = try? await sc.search(query: "\(track.title) \(track.username)")
+                    guard currentTrack?.id == track.id else { return }
+                    if let scTrack = scResults?.first,
+                       let transcoding = scTrack.media?.transcoding(for: currentQuality) {
                         let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
                         guard currentTrack?.id == track.id else { return }
                         audio.play(url: url)
+                        return
                     }
+                    if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
                     return
                 }
                 // SoundCloud: resolve transcoding URL

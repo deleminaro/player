@@ -937,18 +937,19 @@ struct SpeedPickerSheet: View {
         let speedMin: Float = 0.5
         let speedMax: Float = 2.0
         let progress = Double((currentSpeed - speedMin) / (speedMax - speedMin))
-        let bars = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+        let count = 30
 
         return VStack(spacing: 10) {
             GeometryReader { geo in
                 Canvas { ctx, size in
-                    let count = CGFloat(bars.count)
-                    let step  = size.width / count
-                    let barW  = max(1.5, step * 0.55)
-                    for (i, h) in bars.enumerated() {
-                        let filled = Double(i) / Double(bars.count) < progress
-                        let barH = h * size.height
-                        let rect = CGRect(
+                    let step = size.width / CGFloat(count)
+                    let barW = max(2, step * 0.48)
+                    for i in 0..<count {
+                        let isBig  = i % 5 == 0
+                        let h: CGFloat = isBig ? 1.0 : 0.38
+                        let filled = Double(i) / Double(count) < progress
+                        let barH   = h * size.height
+                        let rect   = CGRect(
                             x: CGFloat(i) * step + (step - barW) / 2,
                             y: (size.height - barH) / 2,
                             width: barW, height: barH
@@ -961,7 +962,6 @@ struct SpeedPickerSheet: View {
                 .gesture(DragGesture(minimumDistance: 0).onChanged { v in
                     let pct   = max(0.0, min(1.0, v.location.x / geo.size.width))
                     var speed = Float(pct) * (speedMax - speedMin) + speedMin
-                    // Snap to preset if within ±0.04
                     for m in modes where abs(speed - m.speed) < 0.04 { speed = m.speed; break }
                     speed = (speed * 100).rounded() / 100
                     currentSpeed = speed
@@ -974,15 +974,6 @@ struct SpeedPickerSheet: View {
                 .font(themeManager.font(14, .medium))
                 .foregroundStyle(.white.opacity(0.55))
                 .monospacedDigit()
-        }
-    }
-
-    private func waveformHeights(for seed: Int) -> [CGFloat] {
-        var rng = seed &* 1664525 &+ 1013904223
-        return (0..<52).map { _ in
-            rng = rng &* 1664525 &+ 1013904223
-            let v = CGFloat((rng >> 16) & 0xFFFF) / 65535.0
-            return 0.2 + v * 0.8
         }
     }
 }

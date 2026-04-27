@@ -31,9 +31,9 @@ final class SpotifyService: NSObject, ObservableObject {
         comps.queryItems = [
             .init(name: "q",      value: query),
             .init(name: "type",   value: "track"),
-            .init(name: "limit",  value: "20"),
-            .init(name: "offset", value: "\(min(offset, 980))"),
-            .init(name: "market", value: "US"),
+            .init(name: "limit",  value: "10"),
+            .init(name: "offset", value: "\(min(offset, 990))"),
+            .init(name: "market", value: "AU"),
         ]
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -57,9 +57,10 @@ final class SpotifyService: NSObject, ObservableObject {
         let token = try await validToken()
         var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/search")!
         comps.queryItems = [
-            .init(name: "q",    value: query),
-            .init(name: "type", value: "artist"),
-            .init(name: "limit", value: "20"),
+            .init(name: "q",      value: query),
+            .init(name: "type",   value: "artist"),
+            .init(name: "limit",  value: "10"),
+            .init(name: "market", value: "AU"),
         ]
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -77,16 +78,15 @@ final class SpotifyService: NSObject, ObservableObject {
     func fetchArtistTopTracks(artistID: String) async throws -> [Track] {
         let token = try await validToken()
         var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/artists/\(artistID)/top-tracks")!
-        comps.queryItems = [.init(name: "market", value: "US")]
+        comps.queryItems = [.init(name: "market", value: "AU")]
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (data, resp) = try await URLSession.shared.data(for: req)
-        do {
-            try checkStatus(resp, data: data)
-        } catch {
-            if let http = resp as? HTTPURLResponse, http.statusCode == 401 || http.statusCode == 403 { logout() }
-            throw error
-        }
+        guard let http = resp as? HTTPURLResponse else { return [] }
+        // Endpoint removed in Dev Mode (403/404) — return empty gracefully
+        if http.statusCode == 403 || http.statusCode == 404 { return [] }
+        if http.statusCode == 401 { logout(); throw SpotifyError.notAuthenticated }
+        try checkStatus(resp, data: data)
         let decoded = try JSONDecoder().decode(SpotifyTopTracksResponse.self, from: data)
         return decoded.tracks.compactMap { track(from: $0) }
     }
@@ -95,8 +95,9 @@ final class SpotifyService: NSObject, ObservableObject {
         let token = try await validToken()
         var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/artists/\(artistID)/albums")!
         comps.queryItems = [
-            .init(name: "limit",          value: "20"),
-            .init(name: "include_groups", value: "album,single"),
+            .init(name: "limit",          value: "50"),
+            .init(name: "include_groups", value: "album,single,appears_on"),
+            .init(name: "market",         value: "AU"),
         ]
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -148,7 +149,7 @@ final class SpotifyService: NSObject, ObservableObject {
             .init(name: "redirect_uri",           value: redirectURI),
             .init(name: "code_challenge_method",  value: "S256"),
             .init(name: "code_challenge",         value: challenge),
-            .init(name: "scope",                  value: "user-read-private")
+            .init(name: "scope", value: "streaming user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing")
         ]
         guard let authURL = comps.url else { throw SpotifyError.authFailed }
 
