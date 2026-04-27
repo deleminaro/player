@@ -156,6 +156,16 @@ enum AppFont: String, CaseIterable {
 
     var preview: String { "The quick fox" }
 
+    var fontDesign: Font.Design {
+        switch self {
+        case .system:    return .default
+        case .rounded:   return .rounded
+        case .serif:     return .serif
+        case .mono:      return .monospaced
+        case .minecraft: return .monospaced
+        }
+    }
+
     private static let minecraftFontName = "Minecraft"
 
     func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {

@@ -38,6 +38,7 @@ struct ContentView: View {
             }
             .ignoresSafeArea()
         }
+        .fontDesign(themeManager.appFont.fontDesign)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: playerVM.currentTrack != nil)
         .sheet(isPresented: $playerVM.showingNowPlaying) {
             NowPlayingView()
