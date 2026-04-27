@@ -8,6 +8,16 @@ struct QueueView: View {
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
 
+    private var currentIndex: Int? {
+        guard let id = playerVM.currentTrack?.id else { return nil }
+        return playerVM.queue.firstIndex { $0.track.id == id }
+    }
+
+    private var upcomingItems: ArraySlice<QueueItem> {
+        guard let idx = currentIndex, idx + 1 < playerVM.queue.count else { return [] }
+        return playerVM.queue[(idx + 1)...]
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -15,16 +25,67 @@ struct QueueView: View {
                     emptyState
                 } else {
                     List {
-                        ForEach(playerVM.queue) { item in
-                            TrackRowView(track: item.track,
-                                        isLiked: playerVM.isLiked(item.track),
-                                        onToggleLike: { playerVM.toggleLike(item.track) })
-                                .onTapGesture { playerVM.play(item.track) }
-                                .listRowBackground(bg)
-                                .listRowSeparatorTint(Color.white.opacity(0.06))
+                        // Now Playing
+                        if let current = playerVM.currentTrack {
+                            Section {
+                                TrackRowView(
+                                    track: current,
+                                    isLiked: playerVM.isLiked(current),
+                                    onToggleLike: { playerVM.toggleLike(current) }
+                                )
+                                .listRowBackground(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(themeManager.current.primary.opacity(0.08))
+                                        .padding(.horizontal, 8)
+                                )
+                                .listRowSeparator(.hidden)
+                            } header: {
+                                Text("Now Playing")
+                                    .font(themeManager.font(11, .semibold))
+                                    .foregroundStyle(themeManager.current.primary)
+                                    .textCase(nil)
+                            }
                         }
-                        .onDelete(perform: playerVM.removeFromQueue)
-                        .onMove(perform: playerVM.moveInQueue)
+
+                        // Next Up
+                        if !upcomingItems.isEmpty {
+                            Section {
+                                ForEach(upcomingItems) { item in
+                                    TrackRowView(
+                                        track: item.track,
+                                        isLiked: playerVM.isLiked(item.track),
+                                        onToggleLike: { playerVM.toggleLike(item.track) }
+                                    )
+                                    .onTapGesture { playerVM.play(item.track) }
+                                    .listRowBackground(bg)
+                                    .listRowSeparatorTint(Color.white.opacity(0.06))
+                                }
+                                .onDelete { offsets in
+                                    let base = (currentIndex ?? -1) + 1
+                                    playerVM.removeFromQueue(at: IndexSet(offsets.map { $0 + base }))
+                                }
+                                .onMove { source, dest in
+                                    let base = (currentIndex ?? -1) + 1
+                                    let shifted = IndexSet(source.map { $0 + base })
+                                    playerVM.moveInQueue(from: shifted, to: dest + base)
+                                }
+                            } header: {
+                                Text("Next Up")
+                                    .font(themeManager.font(11, .semibold))
+                                    .foregroundStyle(.white.opacity(0.4))
+                                    .textCase(nil)
+                            }
+                        } else if playerVM.currentTrack != nil {
+                            Section {
+                                Text("Nothing queued after this track.")
+                                    .font(themeManager.font(13))
+                                    .foregroundStyle(.white.opacity(0.3))
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 20)
+                                    .listRowBackground(bg)
+                                    .listRowSeparator(.hidden)
+                            }
+                        }
                     }
                     .listStyle(.plain)
                     .background(bg.ignoresSafeArea())
