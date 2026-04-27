@@ -105,19 +105,19 @@ final class PlayerViewModel: ObservableObject {
                     audio.play(url: localURL)
                     return
                 }
-                // Spotify: try SoundCloud for full track first, 30s preview as last resort
+                // Spotify: play Spotify preview first, fall back to SoundCloud if unavailable
                 if track.source == .spotify {
+                    if let preview = track.previewURL, let url = URL(string: preview) {
+                        guard currentTrack?.id == track.id else { return }
+                        audio.play(url: url)
+                        return
+                    }
+                    // No Spotify preview — search SoundCloud for full track
                     let scResults = try? await sc.search(query: "\(track.title) \(track.username)")
                     guard currentTrack?.id == track.id else { return }
                     if let scTrack = scResults?.first,
                        let transcoding = scTrack.media?.transcoding(for: currentQuality) {
                         let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
-                        guard currentTrack?.id == track.id else { return }
-                        audio.play(url: url)
-                        return
-                    }
-                    // SoundCloud didn't find it — fall back to 30s Spotify preview
-                    if let preview = track.previewURL, let url = URL(string: preview) {
                         guard currentTrack?.id == track.id else { return }
                         audio.play(url: url)
                         return
