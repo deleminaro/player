@@ -29,8 +29,11 @@ final class SpotifyService: NSObject, ObservableObject {
         let token = try await validToken()
         var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/search")!
         comps.queryItems = [
-            .init(name: "q",    value: query),
-            .init(name: "type", value: "track")
+            .init(name: "q",      value: query),
+            .init(name: "type",   value: "track"),
+            .init(name: "limit",  value: "20"),
+            .init(name: "offset", value: "\(min(offset, 980))"),
+            .init(name: "market", value: "US"),
         ]
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
