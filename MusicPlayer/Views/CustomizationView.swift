@@ -486,3 +486,119 @@ struct CustomizationView: View {
         }
     }
 }
+
+// MARK: - Slider type card
+
+private struct SliderTypeCard: View {
+    let type: SliderType
+    let isSelected: Bool
+    let accent: Color
+    let bgCard: Color
+
+    var body: some View {
+        VStack(spacing: 10) {
+            // Preview
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.white.opacity(0.05))
+                    .frame(height: 44)
+                sliderPreview
+                    .padding(.horizontal, 10)
+            }
+
+            Text(type.label)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(isSelected ? accent : .white.opacity(0.55))
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isSelected ? accent : Color.white.opacity(0.07), lineWidth: isSelected ? 1.5 : 0.5)
+        )
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
+    }
+
+    @ViewBuilder private var sliderPreview: some View {
+        switch type {
+        case .classic:
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.12)).frame(height: 4)
+                    Capsule().fill(accent).frame(width: geo.size.width * 0.6, height: 4)
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 14, height: 14)
+                        .offset(x: geo.size.width * 0.6 - 7)
+                }
+                .frame(maxHeight: .infinity)
+            }
+            .frame(height: 20)
+        case .waveform1:
+            HStack(spacing: 2) {
+                ForEach(0..<18, id: \.self) { i in
+                    let heights: [CGFloat] = [4,6,10,7,12,8,14,10,6,9,13,7,11,8,5,9,12,6]
+                    let h = heights[i % heights.count]
+                    let filled = i < 11
+                    Capsule()
+                        .fill(filled ? accent : Color.white.opacity(0.15))
+                        .frame(width: 3, height: h)
+                }
+            }
+        case .waveform2:
+            HStack(spacing: 2) {
+                ForEach(0..<18, id: \.self) { i in
+                    let heights: [CGFloat] = [8,12,6,14,10,16,8,12,6,10,14,8,16,10,6,12,8,14]
+                    let h = heights[i % heights.count]
+                    let filled = i < 11
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(filled ? accent : Color.white.opacity(0.15))
+                        .frame(width: 3, height: h)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Theme card
+
+private struct ThemeCard: View {
+    let theme: AppTheme
+    let isSelected: Bool
+    let bgCard: Color
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Swatch row
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(theme.background)
+                    .frame(height: 48)
+                HStack(spacing: 6) {
+                    ForEach(Array(theme.swatches.prefix(3).enumerated()), id: \.0) { _, c in
+                        Circle().fill(c).frame(width: 18, height: 18)
+                    }
+                    Spacer()
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(theme.primary)
+                    }
+                }
+                .padding(.horizontal, 10)
+            }
+
+            Text(theme.name)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(isSelected ? theme.primary : .white.opacity(0.55))
+        }
+        .padding(10)
+        .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isSelected ? theme.primary : Color.white.opacity(0.07), lineWidth: isSelected ? 1.5 : 0.5)
+        )
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
+    }
+}
