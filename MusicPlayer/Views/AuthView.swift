@@ -1,47 +1,20 @@
 import SwiftUI
-
-// MARK: - Auth manager
-
-final class AuthManager: ObservableObject {
-    @AppStorage("mp_is_logged_in") var isLoggedIn: Bool = false
-    @AppStorage("mp_user_name")    var userName:   String = ""
-    @AppStorage("mp_user_email")   var userEmail:  String = ""
-    private let kPassword = "mp_user_password"
-
-    func signUp(name: String, email: String, password: String) -> Bool {
-        guard !name.trimmingCharacters(in: .whitespaces).isEmpty,
-              password.count >= 4 else { return false }
-        userName  = name.trimmingCharacters(in: .whitespaces)
-        userEmail = email.trimmingCharacters(in: .whitespaces)
-        UserDefaults.standard.set(password, forKey: kPassword)
-        isLoggedIn = true
-        return true
-    }
-
-    func login(nameOrEmail: String, password: String) -> Bool {
-        let storedPW   = UserDefaults.standard.string(forKey: kPassword) ?? ""
-        let query      = nameOrEmail.trimmingCharacters(in: .whitespaces).lowercased()
-        let matchName  = userName.lowercased() == query
-        let matchEmail = userEmail.lowercased() == query
-        guard (matchName || matchEmail) && password == storedPW else { return false }
-        isLoggedIn = true
-        return true
-    }
-
-    func logOut() { isLoggedIn = false }
-}
+import AuthenticationServices
 
 // MARK: - Welcome screen
 
 struct WelcomeView: View {
+    @EnvironmentObject var firebaseManager: FirebaseManager
+
     @State private var showLogin  = false
     @State private var showSignUp = false
+    @State private var errorMsg   = ""
+    @State private var nonce      = FirebaseManager.randomNonceString()
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            // Subtle radial glow
             RadialGradient(
                 colors: [Color.white.opacity(0.06), Color.clear],
                 center: .top, startRadius: 0, endRadius: 420
@@ -75,6 +48,8 @@ struct WelcomeView: View {
                 Spacer()
 
                 VStack(spacing: 12) {
+
+                    // Email sign up
                     Button { showSignUp = true } label: {
                         Text("Create Account")
                             .font(.system(size: 16, weight: .bold))
@@ -85,6 +60,7 @@ struct WelcomeView: View {
                     }
                     .buttonStyle(ScaleButtonStyle(scale: 0.96))
 
+                    // Email login
                     Button { showLogin = true } label: {
                         Text("Log In")
                             .font(.system(size: 16, weight: .semibold))
@@ -98,32 +74,130 @@ struct WelcomeView: View {
                             )
                     }
                     .buttonStyle(ScaleButtonStyle(scale: 0.96))
+
+                    // Divider
+                    HStack {
+                        Rectangle().fill(Color.white.opacity(0.15)).frame(height: 1)
+                        Text("or")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.35))
+                            .padding(.horizontal, 10)
+                        Rectangle().fill(Color.white.opacity(0.15)).frame(height: 1)
+                    }
+                    .padding(.vertical, 2)
+
+                    // Sign in with Apple
+                    SignInWithAppleButton(.signIn) { request in
+                        nonce = FirebaseManager.randomNonceString()
+                        request.requestedScopes = [.fullName, .email]
+                        request.nonce = FirebaseManager.sha256(nonce)
+                    } onCompletion: { result in
+                        switch result {
+                        case .success(let auth):
+                            guard let cred = auth.credential as? ASAuthorizationAppleIDCredential else { return }
+                            let capturedNonce = nonce
+                            Task {
+                                do {
+                                    try await firebaseManager.signInWithApple(credential: cred, nonce: capturedNonce)
+                                } catch {
+                                    errorMsg = error.localizedDescription
+                                }
+                            }
+                        case .failure(let err):
+                            let code = (err as NSError).code
+                            if code != ASAuthorizationError.canceled.rawValue {
+                                errorMsg = err.localizedDescription
+                            }
+                        }
+                    }
+                    .signInWithAppleButtonStyle(.white)
+                    .frame(height: 54)
+                    .cornerRadius(16)
+
+                    // Sign in with Google
+                    Button {
+                        Task {
+                            do {
+                                try await firebaseManager.signInWithGoogle()
+                            } catch {
+                                errorMsg = error.localizedDescription
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            GoogleBadge()
+                            Text("Continue with Google")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.black)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 17)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.96))
+
+                    if !errorMsg.isEmpty {
+                        Text(errorMsg)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.red.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 4)
+                    }
                 }
                 .padding(.horizontal, 28)
                 .padding(.bottom, 52)
             }
         }
         .preferredColorScheme(.dark)
-        .fullScreenCover(isPresented: $showSignUp) { SignUpView() }
-        .fullScreenCover(isPresented: $showLogin)  { LoginView()  }
+        .fullScreenCover(isPresented: $showSignUp) {
+            SignUpView().environmentObject(firebaseManager)
+        }
+        .fullScreenCover(isPresented: $showLogin) {
+            LoginView().environmentObject(firebaseManager)
+        }
+    }
+}
+
+// MARK: - Google badge (coloured G circle)
+
+private struct GoogleBadge: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.98, green: 0.26, blue: 0.21),
+                            Color(red: 0.13, green: 0.59, blue: 0.95)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 24, height: 24)
+            Text("G")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+        }
     }
 }
 
 // MARK: - Sign up
 
 struct SignUpView: View {
-    @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var firebaseManager: FirebaseManager
     @Environment(\.dismiss) var dismiss
 
-    @State private var name            = ""
-    @State private var email           = ""
-    @State private var password        = ""
-    @State private var confirmPassword = ""
-    @State private var errorMessage    = ""
-    @State private var showPassword    = false
+    @State private var username         = ""
+    @State private var email            = ""
+    @State private var password         = ""
+    @State private var confirmPassword  = ""
+    @State private var errorMessage     = ""
+    @State private var showPassword     = false
+    @State private var isLoading        = false
 
     @FocusState private var focused: Field?
-    private enum Field { case name, email, password, confirm }
+    private enum Field { case username, email, password, confirm }
 
     var body: some View {
         ZStack {
@@ -159,10 +233,10 @@ struct SignUpView: View {
 
                 // Fields
                 VStack(spacing: 14) {
-                    authField("Display Name", text: $name, icon: "person",
-                              field: .name, focused: $focused)
+                    authField("Username", text: $username, icon: "at",
+                              field: .username, focused: $focused)
 
-                    authField("Email (optional)", text: $email, icon: "envelope",
+                    authField("Email", text: $email, icon: "envelope",
                               field: .email, focused: $focused, keyboard: .emailAddress)
 
                     authFieldSecure("Password", text: $password, icon: "lock",
@@ -184,14 +258,22 @@ struct SignUpView: View {
                 Spacer()
 
                 Button(action: attemptSignUp) {
-                    Text("Create Account")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 17)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    if isLoading {
+                        ProgressView().tint(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 17)
+                            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    } else {
+                        Text("Create Account")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 17)
+                            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    }
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.96))
+                .disabled(isLoading)
                 .padding(.horizontal, 28)
                 .padding(.bottom, 48)
             }
@@ -200,13 +282,21 @@ struct SignUpView: View {
     }
 
     private func attemptSignUp() {
-        guard password == confirmPassword else { errorMessage = "Passwords don't match."; return }
-        guard password.count >= 4         else { errorMessage = "Password must be at least 4 characters."; return }
-        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { errorMessage = "Please enter a display name."; return }
-        if authManager.signUp(name: name, email: email, password: password) {
-            dismiss()
-        } else {
-            errorMessage = "Sign up failed. Please try again."
+        guard password == confirmPassword  else { errorMessage = "Passwords don't match."; return }
+        guard password.count >= 6          else { errorMessage = "Password must be at least 6 characters."; return }
+        guard !username.trimmingCharacters(in: .whitespaces).isEmpty else { errorMessage = "Please enter a username."; return }
+        guard email.contains("@")          else { errorMessage = "Please enter a valid email."; return }
+
+        isLoading = true
+        errorMessage = ""
+        Task {
+            do {
+                try await firebaseManager.signUp(username: username, email: email, password: password)
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isLoading = false
         }
     }
 }
@@ -214,13 +304,14 @@ struct SignUpView: View {
 // MARK: - Log in
 
 struct LoginView: View {
-    @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var firebaseManager: FirebaseManager
     @Environment(\.dismiss) var dismiss
 
     @State private var nameOrEmail  = ""
     @State private var password     = ""
     @State private var errorMessage = ""
     @State private var showPassword = false
+    @State private var isLoading    = false
 
     @FocusState private var focused: Field?
     private enum Field { case nameOrEmail, password }
@@ -256,7 +347,7 @@ struct LoginView: View {
                 .padding(.horizontal, 28).padding(.bottom, 36)
 
                 VStack(spacing: 14) {
-                    authField("Name or Email", text: $nameOrEmail, icon: "person",
+                    authField("Username or Email", text: $nameOrEmail, icon: "person",
                               field: .nameOrEmail, focused: $focused, keyboard: .emailAddress)
 
                     authFieldSecure("Password", text: $password, icon: "lock",
@@ -275,14 +366,22 @@ struct LoginView: View {
                 Spacer()
 
                 Button(action: attemptLogin) {
-                    Text("Log In")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 17)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    if isLoading {
+                        ProgressView().tint(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 17)
+                            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    } else {
+                        Text("Log In")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 17)
+                            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    }
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.96))
+                .disabled(isLoading)
                 .padding(.horizontal, 28)
                 .padding(.bottom, 48)
             }
@@ -291,11 +390,17 @@ struct LoginView: View {
     }
 
     private func attemptLogin() {
-        guard authManager.login(nameOrEmail: nameOrEmail, password: password) else {
-            errorMessage = "Incorrect name or password."
-            return
+        isLoading = true
+        errorMessage = ""
+        Task {
+            do {
+                try await firebaseManager.login(usernameOrEmail: nameOrEmail, password: password)
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isLoading = false
         }
-        dismiss()
     }
 }
 
