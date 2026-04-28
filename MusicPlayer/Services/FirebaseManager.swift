@@ -2,8 +2,6 @@ import Foundation
 import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
-import AuthenticationServices
-import CryptoKit
 import GoogleSignIn
 import UIKit
 import SwiftUI
@@ -91,34 +89,6 @@ final class FirebaseManager: ObservableObject {
             email = e
         }
         try await auth.signIn(withEmail: email, password: password)
-    }
-
-    // MARK: - Sign in with Apple
-
-    func signInWithApple(credential: ASAuthorizationAppleIDCredential, nonce: String) async throws {
-        guard let appleIDToken = credential.identityToken,
-              let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-            throw PError.invalidCredential
-        }
-        let firebaseCredential = OAuthProvider.appleCredential(
-            withIDToken: idTokenString,
-            rawNonce: nonce,
-            fullName: credential.fullName
-        )
-        let result = try await auth.signIn(with: firebaseCredential)
-        let uid = result.user.uid
-        let docRef = db.collection("users").document(uid).collection("profile").document("info")
-        if (try? await docRef.getDocument())?.exists != true {
-            let givenName  = credential.fullName?.givenName  ?? ""
-            let familyName = credential.fullName?.familyName ?? ""
-            let display    = [givenName, familyName].filter { !$0.isEmpty }.joined(separator: " ")
-            let profile: [String: Any] = [
-                "username":    uid,
-                "displayName": display.isEmpty ? "Apple User" : display,
-                "email":       result.user.email ?? credential.email ?? ""
-            ]
-            try await docRef.setData(profile)
-        }
     }
 
     // MARK: - Sign in with Google
@@ -222,21 +192,6 @@ final class FirebaseManager: ObservableObject {
             playlists = arr
         }
         return (liked, playlists)
-    }
-
-    // MARK: - Apple nonce helpers
-
-    static func randomNonceString(length: Int = 32) -> String {
-        precondition(length > 0)
-        var randomBytes = [UInt8](repeating: 0, count: length)
-        _ = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
-        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
-        return String(randomBytes.map { charset[Int($0) % charset.count] })
-    }
-
-    static func sha256(_ input: String) -> String {
-        let hashed = SHA256.hash(data: Data(input.utf8))
-        return hashed.compactMap { String(format: "%02x", $0) }.joined()
     }
 
     // MARK: - Private

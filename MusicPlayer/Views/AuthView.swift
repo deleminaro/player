@@ -1,5 +1,4 @@
 import SwiftUI
-import AuthenticationServices
 
 // MARK: - Welcome screen
 
@@ -9,7 +8,6 @@ struct WelcomeView: View {
     @State private var showLogin  = false
     @State private var showSignUp = false
     @State private var errorMsg   = ""
-    @State private var nonce      = FirebaseManager.randomNonceString()
 
     var body: some View {
         ZStack {
@@ -85,34 +83,6 @@ struct WelcomeView: View {
                         Rectangle().fill(Color.white.opacity(0.15)).frame(height: 1)
                     }
                     .padding(.vertical, 2)
-
-                    // Sign in with Apple
-                    SignInWithAppleButton(.signIn) { request in
-                        nonce = FirebaseManager.randomNonceString()
-                        request.requestedScopes = [.fullName, .email]
-                        request.nonce = FirebaseManager.sha256(nonce)
-                    } onCompletion: { result in
-                        switch result {
-                        case .success(let auth):
-                            guard let cred = auth.credential as? ASAuthorizationAppleIDCredential else { return }
-                            let capturedNonce = nonce
-                            Task {
-                                do {
-                                    try await firebaseManager.signInWithApple(credential: cred, nonce: capturedNonce)
-                                } catch {
-                                    errorMsg = error.localizedDescription
-                                }
-                            }
-                        case .failure(let err):
-                            let code = (err as NSError).code
-                            if code != ASAuthorizationError.canceled.rawValue {
-                                errorMsg = err.localizedDescription
-                            }
-                        }
-                    }
-                    .signInWithAppleButtonStyle(.white)
-                    .frame(height: 54)
-                    .cornerRadius(16)
 
                     // Sign in with Google
                     Button {
