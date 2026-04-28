@@ -1,7 +1,9 @@
 import SwiftUI
+import PhotosUI
 
 struct SettingsView: View {
-    @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var themeManager:   ThemeManager
+    @EnvironmentObject var firebaseManager: FirebaseManager
 
     @AppStorage("mp_audio_quality")    private var audioQuality:      AudioQuality = .lossless
     @AppStorage("mp_caching_mode")     private var cachingMode:       CachingMode  = .memory
@@ -10,17 +12,97 @@ struct SettingsView: View {
     @AppStorage("mp_cache_listened")   private var cacheListened:     Bool         = true
     @AppStorage("mp_cache_playlists")  private var cachePlaylists:    Bool         = false
 
-    @State private var showQualitySheet = false
-    @State private var showCachingSheet = false
+    @State private var showQualitySheet  = false
+    @State private var showCachingSheet  = false
+    @State private var showLogoutConfirm = false
+    @State private var showNameEdit      = false
+    @State private var editingName       = ""
+    @State private var avatarItem: PhotosPickerItem?
 
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
-    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
+
+                    // ACCOUNT (shown when logged in)
+                    if let user = firebaseManager.currentUser {
+                        settingSection(title: "ACCOUNT") {
+                            HStack(spacing: 16) {
+                                // Avatar
+                                PhotosPicker(selection: $avatarItem, matching: .images) {
+                                    ZStack {
+                                        if let img = user.avatarImage {
+                                            Image(uiImage: img)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 56, height: 56)
+                                                .clipShape(Circle())
+                                        } else {
+                                            Circle()
+                                                .fill(themeManager.current.primary.opacity(0.15))
+                                                .frame(width: 56, height: 56)
+                                            Image(systemName: "person.fill")
+                                                .font(.system(size: 22))
+                                                .foregroundStyle(themeManager.current.primary)
+                                        }
+                                        // Edit badge
+                                        Image(systemName: "pencil.circle.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundStyle(.white)
+                                            .background(Circle().fill(Color.black.opacity(0.5)).padding(-1))
+                                            .offset(x: 18, y: 18)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+
+                                // Name & username
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Button {
+                                        editingName = user.displayName
+                                        showNameEdit = true
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Text(user.displayName.isEmpty ? "Set name" : user.displayName)
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                            Image(systemName: "pencil")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.white.opacity(0.4))
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Text("@\(user.username)")
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(.white.opacity(0.4))
+
+                                    if !user.email.isEmpty {
+                                        Text(user.email)
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.white.opacity(0.3))
+                                    }
+                                }
+
+                                Spacer()
+                            }
+                        }
+
+                        // Log out button
+                        Button { showLogoutConfirm = true } label: {
+                            Text("Log Out")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color.red.opacity(0.85), in: RoundedRectangle(cornerRadius: 16))
+                        }
+                        .buttonStyle(ScaleButtonStyle(scale: 0.96))
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                    }
 
                     // GENERAL
                     settingSection(title: "GENERAL") {
@@ -57,7 +139,6 @@ struct SettingsView: View {
                     // ADDITIONAL
                     settingSection(title: "ADDITIONAL") {
                         VStack(spacing: 0) {
-                            // Audio quality
                             Button { showQualitySheet = true } label: {
                                 HStack(spacing: 14) {
                                     VStack(alignment: .leading, spacing: 3) {
@@ -76,7 +157,6 @@ struct SettingsView: View {
 
                             Divider().background(Color.white.opacity(0.07)).padding(.vertical, 14)
 
-                            // Caching
                             Button { showCachingSheet = true } label: {
                                 HStack(spacing: 14) {
                                     VStack(alignment: .leading, spacing: 3) {
@@ -131,6 +211,7 @@ struct SettingsView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .preferredColorScheme(.dark)
         }
+        // Sheets
         .sheet(isPresented: $showQualitySheet) {
             AudioQualitySheet(selected: $audioQuality)
                 .environmentObject(themeManager)
@@ -144,6 +225,35 @@ struct SettingsView: View {
                 .presentationDetents([.medium])
                 .presentationBackground(bgCard)
                 .presentationCornerRadius(28)
+        }
+        // Logout confirmation
+        .confirmationDialog("Sign Out", isPresented: $showLogoutConfirm, titleVisibility: .visible) {
+            Button("Sign Out", role: .destructive) { firebaseManager.logOut() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out?")
+        }
+        // Edit display name
+        .alert("Display Name", isPresented: $showNameEdit) {
+            TextField("Name", text: $editingName)
+                .autocorrectionDisabled()
+            Button("Save") {
+                let trimmed = editingName.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { return }
+                Task { try? await firebaseManager.updateDisplayName(trimmed) }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        // Avatar photo picker
+        .onChange(of: avatarItem) { _, newItem in
+            guard let item = newItem else { return }
+            Task {
+                if let data  = try? await item.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    try? await firebaseManager.updateAvatar(image)
+                }
+                avatarItem = nil
+            }
         }
     }
 
@@ -263,12 +373,9 @@ private struct CachingSheet: View {
             Capsule().fill(Color.white.opacity(0.25)).frame(width: 36, height: 4)
                 .padding(.top, 12).padding(.bottom, 16)
 
-            // Mode options
             ForEach(CachingMode.allCases, id: \.rawValue) { m in
                 let on = mode == m
-                Button {
-                    mode = m
-                } label: {
+                Button { mode = m } label: {
                     HStack(spacing: 16) {
                         ZStack {
                             Circle()
@@ -298,134 +405,24 @@ private struct CachingSheet: View {
                 .buttonStyle(.plain)
             }
 
-            // Cache-target grid (shown when not Off)
-            if mode != .off {
-                Divider().background(Color.white.opacity(0.07)).padding(.horizontal, 20).padding(.vertical, 14)
+            Divider().background(Color.white.opacity(0.07)).padding(.horizontal, 20).padding(.vertical, 8)
 
-                HStack(spacing: 12) {
-                    cacheTargetCard("Listened", subtitle: "Auto-cache tracks you play",
-                                    icon: "play.fill", on: $cacheListened)
-                    cacheTargetCard("Playlists", subtitle: "Auto-cache tracks added to playlists",
-                                    icon: "music.note.list", on: $cachePlaylists)
-                }
-                .padding(.horizontal, 16)
-            }
+            settingToggle("Cache listened tracks", value: $cacheListened)
+            settingToggle("Cache playlist tracks", value: $cachePlaylists)
 
             Spacer()
         }
         .preferredColorScheme(.dark)
     }
 
-    private func cacheTargetCard(_ title: String, subtitle: String, icon: String, on: Binding<Bool>) -> some View {
-        Button { on.wrappedValue.toggle() } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 22, weight: .light))
-                    .foregroundStyle(.white.opacity(0.7))
-                Text(title)
-                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                Text(subtitle)
-                    .font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(on.wrappedValue ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
-            )
+    private func settingToggle(_ title: String, value: Binding<Bool>) -> some View {
+        HStack {
+            Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+            Spacer()
+            Toggle("", isOn: value)
+                .toggleStyle(SwitchToggleStyle(tint: themeManager.current.primary))
+                .labelsHidden()
         }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Slider type card
-
-struct SliderTypeCard: View {
-    let type: SliderType
-    let isSelected: Bool
-    let accent: Color
-    let bgCard: Color
-
-    var body: some View {
-        VStack(spacing: 12) {
-            sliderPreview.frame(height: 32)
-            Text(type.label)
-                .font(.custom("Courier", size: 11)).bold()
-                .foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.8)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 14)
-        .frame(maxWidth: .infinity)
-        .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(isSelected ? accent : Color.clear, lineWidth: 2))
-    }
-
-    @ViewBuilder
-    private var sliderPreview: some View {
-        let fill = 0.38
-        switch type {
-        case .waveform1:
-            Canvas { ctx, size in
-                var rng = 54321 &* 1664525 &+ 1013904223
-                let bars: [CGFloat] = (0..<28).map { _ in
-                    rng = rng &* 1664525 &+ 1013904223
-                    return 0.2 + CGFloat((rng >> 16) & 0xFFFF) / 65535.0 * 0.8
-                }
-                let step = size.width / CGFloat(bars.count); let barW = max(1.5, step * 0.72)
-                for (i, h) in bars.enumerated() {
-                    let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: (size.height-h*size.height)/2, width: barW, height: h*size.height)
-                    ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Double(i)/Double(bars.count) < fill ? accent : Color.white.opacity(0.22)))
-                }
-            }
-        case .waveform2:
-            Canvas { ctx, size in
-                var rng = 54321 &* 1664525 &+ 1013904223
-                let bars: [CGFloat] = (0..<28).map { _ in rng = rng &* 1664525 &+ 1013904223; return 0.2 + CGFloat((rng >> 16) & 0xFFFF) / 65535.0 * 0.8 }
-                let step = size.width / CGFloat(bars.count); let barW = max(1.5, step * 0.65); let cy = size.height / 2
-                for (i, h) in bars.enumerated() {
-                    let halfH = h * cy * 0.9
-                    let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: cy-halfH, width: barW, height: halfH*2)
-                    ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Double(i)/Double(bars.count) < fill ? accent : Color.white.opacity(0.22)))
-                }
-            }
-        case .classic:
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.15)).frame(height: 5)
-                    Capsule().fill(accent).frame(width: geo.size.width * fill, height: 5)
-                }.frame(maxHeight: .infinity, alignment: .center)
-            }
-        }
-    }
-}
-
-// MARK: - Theme card
-
-struct ThemeCard: View {
-    let theme: AppTheme
-    let isSelected: Bool
-    let bgCard: Color
-
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: 16).fill(bgCard)
-            if isSelected { RoundedRectangle(cornerRadius: 16).stroke(.white, lineWidth: 2) }
-            VStack {
-                HStack(alignment: .top) {
-                    HStack(spacing: 5) {
-                        ForEach(theme.swatches.indices, id: \.self) { i in
-                            RoundedRectangle(cornerRadius: 6).fill(theme.swatches[i]).frame(width: 22, height: 22)
-                        }
-                    }
-                    Spacer()
-                    if isSelected { Circle().fill(.white).frame(width: 14, height: 14) }
-                }.padding(12)
-                Spacer()
-            }
-            Text(theme.name).font(.custom("Courier", size: 12)).bold().foregroundStyle(.white)
-                .padding(.horizontal, 10).padding(.bottom, 10)
-        }
-        .aspectRatio(1, contentMode: .fit)
+        .padding(.horizontal, 20).padding(.vertical, 10)
     }
 }

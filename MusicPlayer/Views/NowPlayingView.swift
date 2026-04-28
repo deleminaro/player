@@ -12,6 +12,7 @@ struct NowPlayingView: View {
     @State private var isScrubbing  = false
     @State private var hasAppeared  = false
     @State private var waveProgress: Double = 0
+    @State private var dragOffset: CGFloat  = 0
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private var bg:       Color { themeManager.current.background }
@@ -23,9 +24,8 @@ struct NowPlayingView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
 
-            // Cover artwork
+            // Cover artwork — fills available space, no artificial height cap
             coverArtwork
-                .frame(maxHeight: 300)
                 .padding(.horizontal, 28)
                 .padding(.top, 8)
                 .id(playerVM.currentTrack?.id)
@@ -54,6 +54,23 @@ struct NowPlayingView: View {
                     .opacity(hasAppeared ? 1 : 0)
                     .offset(y: hasAppeared ? 0 : 20)
                     .animation(.spring(response: 0.55, dampingFraction: 0.82).delay(0.28), value: hasAppeared)
+
+                // Bottom-left dismiss arrow
+                HStack {
+                    Button { playerVM.showingNowPlaying = false } label: {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.1))
+                                .frame(width: 38, height: 38)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.55))
+                        }
+                    }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.88))
+                    Spacer()
+                }
+                .padding(.top, 12)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 28)
@@ -73,6 +90,25 @@ struct NowPlayingView: View {
                 withAnimation(.linear(duration: 0.5)) { waveProgress = p }
             }
         }
+        .offset(y: max(0, dragOffset))
+        .opacity(Double(1 - dragOffset / 500))
+        .gesture(
+            DragGesture(minimumDistance: 20)
+                .onChanged { v in
+                    guard v.translation.height > 0,
+                          abs(v.translation.height) > abs(v.translation.width) else { return }
+                    dragOffset = v.translation.height
+                }
+                .onEnded { v in
+                    if v.translation.height > 110 || v.predictedEndTranslation.height > 260 {
+                        playerVM.showingNowPlaying = false
+                    } else {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.75)) {
+                            dragOffset = 0
+                        }
+                    }
+                }
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             // Full-bleed background — always fills entire sheet behind safe areas
@@ -99,7 +135,6 @@ struct NowPlayingView: View {
             .ignoresSafeArea()
         }
         .preferredColorScheme(.dark)
-        .presentationBackground(bg)
         .sheet(isPresented: $showLyrics) {
             if let t = playerVM.currentTrack { LyricsView(track: t).environmentObject(themeManager) }
         }

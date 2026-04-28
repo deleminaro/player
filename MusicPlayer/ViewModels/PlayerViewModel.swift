@@ -265,6 +265,13 @@ final class PlayerViewModel: ObservableObject {
         }
         saveLiked()
         updateNowPlayingLikedState(track)
+        Task { await FirebaseManager.shared.syncLikedTracks(likedTracks) }
+    }
+
+    func loadFromFirebase() async {
+        let data = await FirebaseManager.shared.loadUserData()
+        if !data.liked.isEmpty     { likedTracks = data.liked;     saveLiked() }
+        if !data.playlists.isEmpty { playlists   = data.playlists; savePlaylists() }
     }
 
     private func updateNowPlayingLikedState(_ track: Track) {
@@ -427,6 +434,7 @@ final class PlayerViewModel: ObservableObject {
         if let data = try? JSONEncoder().encode(playlists) {
             UserDefaults.standard.set(data, forKey: kPlaylists)
         }
+        Task { await FirebaseManager.shared.syncPlaylists(playlists) }
     }
 
     private func saveLiked() {

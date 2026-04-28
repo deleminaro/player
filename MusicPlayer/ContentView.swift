@@ -40,13 +40,10 @@ struct ContentView: View {
         }
         .fontDesign(themeManager.appFont.fontDesign)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: playerVM.currentTrack != nil)
-        .sheet(isPresented: $playerVM.showingNowPlaying) {
+        .fullScreenCover(isPresented: $playerVM.showingNowPlaying) {
             NowPlayingView()
                 .environmentObject(playerVM)
                 .environmentObject(themeManager)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(24)
         }
     }
 }
