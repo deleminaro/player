@@ -526,7 +526,7 @@ struct SearchView: View {
     }
 
     private func performSearch(_ q: String, reset: Bool) async {
-        isSearching = true
+        if reset { isSearching = true }
         defer { isSearching = false }
         do {
             let offset = reset ? 0 : currentResultCount
