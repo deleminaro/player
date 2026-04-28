@@ -95,8 +95,8 @@ final class SpotifyService: NSObject, ObservableObject {
         let token = try await validToken()
         var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/artists/\(artistID)/albums")!
         comps.queryItems = [
-            .init(name: "limit",          value: "50"),
-            .init(name: "include_groups", value: "album,single,appears_on"),
+            .init(name: "limit",          value: "20"),
+            .init(name: "include_groups", value: "album,single"),
             .init(name: "market",         value: "AU"),
         ]
         var req = URLRequest(url: comps.url!)
