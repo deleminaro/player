@@ -154,12 +154,21 @@ final class FirebaseManager: ObservableObject {
     // MARK: - Sync data
 
     func syncLikedTracks(_ tracks: [Track]) async {
-        guard let uid = auth.currentUser?.uid,
-              let data = try? JSONEncoder().encode(tracks),
-              let str  = String(data: data, encoding: .utf8) else { return }
-        try? await db.collection("users").document(uid)
-            .collection("data").document("liked")
-            .setData(["tracks": str])
+        guard let uid = auth.currentUser?.uid else {
+            print("[Firebase] syncLikedTracks: no current user"); return
+        }
+        guard let data = try? JSONEncoder().encode(tracks),
+              let str  = String(data: data, encoding: .utf8) else {
+            print("[Firebase] syncLikedTracks: encode failed"); return
+        }
+        do {
+            try await db.collection("users").document(uid)
+                .collection("data").document("liked")
+                .setData(["tracks": str])
+            print("[Firebase] syncLikedTracks: synced \(tracks.count) tracks")
+        } catch {
+            print("[Firebase] syncLikedTracks error: \(error)")
+        }
     }
 
     func syncPlaylists(_ playlists: [LocalPlaylist]) async {
