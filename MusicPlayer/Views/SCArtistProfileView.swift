@@ -12,6 +12,9 @@ struct SCArtistProfileView: View {
     @State private var isLoading: Bool         = true
     @State private var loadError: String?      = nil
     @State private var activeTab: ArtistTab    = .tracks
+    @State private var selectedPlaylist: SCPlaylist? = nil
+    @State private var playlistTracks: [Track]       = []
+    @State private var loadingPlaylist               = false
 
     private enum ArtistTab { case tracks, playlists }
 
@@ -47,8 +50,17 @@ struct SCArtistProfileView: View {
             .preferredColorScheme(.dark)
         }
         .presentationBackground(bg)
-        .task {
-            await loadData()
+        .task { await loadData() }
+        .sheet(item: $selectedPlaylist) { pl in
+            SCPlaylistTracksView(
+                playlist: pl,
+                tracks: playlistTracks
+            )
+            .environmentObject(playerVM)
+            .environmentObject(themeManager)
+            .presentationBackground(bg)
+            .presentationDetents([.large])
+            .presentationCornerRadius(28)
         }
     }
 
@@ -216,13 +228,33 @@ struct SCArtistProfileView: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.2))
+            if loadingPlaylist && selectedPlaylist?.id == pl.id {
+                ProgressView().tint(.white)
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.2))
+            }
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
         .contentShape(Rectangle())
+        .onTapGesture { openPlaylist(pl) }
+    }
+
+    private func openPlaylist(_ pl: SCPlaylist) {
+        guard !loadingPlaylist else { return }
+        selectedPlaylist = pl
+        loadingPlaylist = true
+        Task {
+            do {
+                let fetched = try await SoundCloudService.shared.fetchPlaylistTracks(id: pl.id)
+                playlistTracks = fetched
+                loadingPlaylist = false
+            } catch {
+                loadingPlaylist = false
+            }
+        }
     }
 
     private func emptyLabel(_ text: String) -> some View {
@@ -273,5 +305,83 @@ struct SCArtistProfileView: View {
         if n >= 1_000_000 { return String(format: "%.1fM followers", Double(n) / 1_000_000) }
         if n >= 1_000     { return String(format: "%.0fK followers", Double(n) / 1_000) }
         return "\(n) followers"
+    }
+}
+
+// MARK: - Playlist tracks sheet
+
+struct SCPlaylistTracksView: View {
+    @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) private var dismiss
+
+    let playlist: SCPlaylist
+    let tracks: [Track]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                LazyVStack(spacing: 0) {
+                    if tracks.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "music.note.list")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.white.opacity(0.2))
+                            Text("NO TRACKS")
+                                .font(.system(size: 11, weight: .bold)).kerning(1.5)
+                                .foregroundStyle(.white.opacity(0.25))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 60)
+                    } else {
+                        ForEach(tracks) { track in
+                            TrackRowView(
+                                track: track,
+                                isLiked: playerVM.isLiked(track),
+                                onToggleLike: { playerVM.toggleLike(track) }
+                            )
+                            .onTapGesture {
+                                playerVM.playFromList(tracks, startingWith: track)
+                                playerVM.showingNowPlaying = true
+                                dismiss()
+                            }
+                            Divider()
+                                .background(Color.white.opacity(0.06))
+                                .padding(.leading, 76)
+                        }
+                    }
+                }
+                .padding(.bottom, 100)
+            }
+            .background(themeManager.current.background.ignoresSafeArea())
+            .navigationTitle(playlist.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                if !tracks.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            playerVM.playFromList(tracks, startingWith: tracks[0])
+                            playerVM.showingNowPlaying = true
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "play.fill")
+                                Text("Play All")
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(themeManager.current.primary)
+                        }
+                    }
+                }
+            }
+            .preferredColorScheme(.dark)
+        }
     }
 }
