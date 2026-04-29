@@ -112,7 +112,24 @@ struct NowPlayingView: View {
                 }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(bg.ignoresSafeArea())
+        .background {
+            ZStack {
+                bg
+                if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
+                    AsyncImage(url: url) { img in
+                        img.resizable().scaledToFill()
+                    } placeholder: { Color.clear }
+                        .id(playerVM.currentTrack?.id)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.6), value: playerVM.currentTrack?.id)
+                }
+                LinearGradient(
+                    colors: [.black.opacity(0.15), .black.opacity(0.35), .black.opacity(0.65), .black.opacity(0.88)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
+            .ignoresSafeArea()
+        }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showLyrics) {
             if let t = playerVM.currentTrack { LyricsView(track: t).environmentObject(themeManager) }
