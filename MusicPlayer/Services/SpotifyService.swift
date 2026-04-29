@@ -76,7 +76,7 @@ final class SpotifyService: NSObject, ObservableObject {
             comps.queryItems = [
                 .init(name: "q",      value: query),
                 .init(name: "type",   value: "track"),
-                .init(name: "limit",  value: "20"),
+                .init(name: "limit",  value: "10"),
                 .init(name: "offset", value: "\(min(offset, 990))"),
                 .init(name: "market", value: "AU"),
             ]
@@ -97,7 +97,7 @@ final class SpotifyService: NSObject, ObservableObject {
             comps.queryItems = [
                 .init(name: "q",      value: query),
                 .init(name: "type",   value: "artist"),
-                .init(name: "limit",  value: "20"),
+                .init(name: "limit",  value: "10"),
                 .init(name: "offset", value: "\(min(offset, 990))"),
                 .init(name: "market", value: "AU"),
             ]
@@ -118,7 +118,7 @@ final class SpotifyService: NSObject, ObservableObject {
             comps.queryItems = [
                 .init(name: "q",      value: query),
                 .init(name: "type",   value: "album"),
-                .init(name: "limit",  value: "20"),
+                .init(name: "limit",  value: "10"),
                 .init(name: "offset", value: "\(min(offset, 990))"),
                 .init(name: "market", value: "AU"),
             ]
