@@ -4,18 +4,8 @@ actor GeniusService {
     static let shared = GeniusService()
 
     /// Returns the Genius web-page URL for the best-matching song, or nil if nothing found.
-    /// Uses the backend proxy when configured; falls back to direct API call otherwise.
     func searchLyricsURL(title: String, artist: String) async throws -> URL? {
         let q = "\(cleanTitle(title)) \(artist.trimmingCharacters(in: .whitespaces))"
-
-        // Use backend proxy if available (preferred — token stays server-side)
-        if !Constants.backendAPIKey.isEmpty {
-            let hits = try await BackendClient.shared.geniusSearch(query: q)
-            guard let first = hits.first else { return nil }
-            return URL(string: first.url)
-        }
-
-        // Direct fallback — requires GeniusToken in xcconfig / Info.plist
         return try await directSearch(q: q)
     }
 
