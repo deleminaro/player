@@ -1,10 +1,4 @@
-// Config.xcconfig — committed to git
-// Imports the gitignored Secrets file.
-// Keys here are non-sensitive (URLs, feature flags).
-
-#include "Secrets.xcconfig"
-
+// Config.xcconfig
 SOUNDCLOUD_BASE_URL = https://api-v2.soundcloud.com
 SPOTIFY_BASE_URL    = https://api.spotify.com/v1
 SPOTIFY_TOKEN_URL   = https://accounts.spotify.com/api/token
-BACKEND_BASE_URL    = https://api.yourbackend.com
