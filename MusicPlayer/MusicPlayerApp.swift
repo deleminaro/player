@@ -26,6 +26,11 @@ struct MusicPlayerApp: App {
                 }
             }
             .animation(.easeInOut(duration: 0.35), value: firebase.isLoggedIn)
+            .onOpenURL { url in
+                if url.scheme == "postor" {
+                    SpotifyRemoteService.shared.handleCallback(url: url)
+                }
+            }
         }
     }
 }

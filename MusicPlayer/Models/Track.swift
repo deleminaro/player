@@ -18,10 +18,12 @@ struct Track: Identifiable, Hashable {
     let media: Media?
     let source: TrackSource
     let previewURL: String?    // Spotify 30s MP3 preview
+    let spotifyURI: String?
 
     init(id: Int, title: String, username: String, artworkURL: String?,
          duration: Int, permalinkURL: String, media: Media?,
-         source: TrackSource = .soundcloud, previewURL: String? = nil) {
+         source: TrackSource = .soundcloud, previewURL: String? = nil,
+         spotifyURI: String? = nil) {
         self.id           = id
         self.title        = title
         self.username     = username
@@ -31,6 +33,7 @@ struct Track: Identifiable, Hashable {
         self.media        = media
         self.source       = source
         self.previewURL   = previewURL
+        self.spotifyURI   = spotifyURI
     }
 
     var durationFormatted: String {
@@ -103,7 +106,7 @@ struct Track: Identifiable, Hashable {
 
 extension Track: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, title, media, source, previewURL
+        case id, title, media, source, previewURL, spotifyURI
         case artworkURL   = "artwork_url"
         case duration
         case permalinkURL = "permalink_url"
@@ -124,6 +127,7 @@ extension Track: Codable {
         media        = try c.decodeIfPresent(Media.self, forKey: .media)
         source       = (try? c.decode(TrackSource.self, forKey: .source)) ?? .soundcloud
         previewURL   = try? c.decodeIfPresent(String.self, forKey: .previewURL)
+        spotifyURI   = try? c.decodeIfPresent(String.self, forKey: .spotifyURI)
 
         let u  = try c.nestedContainer(keyedBy: UserKeys.self, forKey: .user)
         username = try u.decode(String.self, forKey: .username)
@@ -139,6 +143,7 @@ extension Track: Codable {
         try c.encodeIfPresent(media, forKey: .media)
         try c.encode(source,       forKey: .source)
         try c.encodeIfPresent(previewURL, forKey: .previewURL)
+        try c.encodeIfPresent(spotifyURI, forKey: .spotifyURI)
 
         var u = c.nestedContainer(keyedBy: UserKeys.self, forKey: .user)
         try u.encode(username, forKey: .username)

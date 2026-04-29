@@ -15,6 +15,8 @@ final class SpotifyService: NSObject, ObservableObject {
 
     @Published var isAuthenticated = false
 
+    var currentAccessToken: String? { accessToken }
+
     // MARK: - Tokens (Keychain-backed, expiry in UserDefaults)
 
     private var accessToken:  String?
@@ -405,7 +407,8 @@ final class SpotifyService: NSObject, ObservableObject {
             permalinkURL: dto.externalUrls?.spotify ?? "https://open.spotify.com",
             media:        nil,
             source:       .spotify,
-            previewURL:   dto.previewUrl
+            previewURL:   dto.previewUrl,
+            spotifyURI:   dto.uri
         )
     }
 
@@ -482,6 +485,7 @@ private struct AnyDecodable: Decodable {}
 
 private struct SpotifyTrackDTO: Decodable {
     let id:           String
+    let uri:          String
     let name:         String
     let durationMs:   Int
     let previewUrl:   String?
@@ -489,7 +493,7 @@ private struct SpotifyTrackDTO: Decodable {
     let album:        SpotifyAlbumDTO?
     let externalUrls: SpotifyExternalURLs?
     enum CodingKeys: String, CodingKey {
-        case id, name, artists, album
+        case id, name, artists, album, uri
         case durationMs   = "duration_ms"
         case previewUrl   = "preview_url"
         case externalUrls = "external_urls"
