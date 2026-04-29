@@ -23,6 +23,7 @@ private enum SearchResultSet {
     case playlists([SCPlaylist])
     case artists([SCArtist])
     case spotifyArtists([SpotifyArtistResult])
+    case spotifyAlbums([SpotifyAlbumResult])
     case empty
 }
 
@@ -108,8 +109,8 @@ struct SearchView: View {
         .onChange(of: source) { _, newSource in
             resultSet = .empty
             searchError = nil
-            // Reset to .tracks when switching to Spotify (playlists/albums not supported)
-            if newSource == .spotify && filter != .tracks && filter != .artists {
+            // Reset to .tracks when switching to Spotify (SoundCloud-only filters not available)
+            if newSource == .spotify && filter != .tracks && filter != .artists && filter != .albums {
                 filter = .tracks
             }
             guard !currentQuery.isEmpty else { return }
@@ -247,7 +248,7 @@ struct SearchView: View {
     // MARK: - Spotify filter chips
 
     private var spotifyFilterChips: some View {
-        let spotifyFilters: [SearchFilter] = [.tracks, .artists]
+        let spotifyFilters: [SearchFilter] = [.tracks, .artists, .albums]
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
                 ForEach(spotifyFilters, id: \.self) { f in
@@ -318,6 +319,8 @@ struct SearchView: View {
                 artistList(artists)
             case .spotifyArtists(let artists):
                 spotifyArtistList(artists)
+            case .spotifyAlbums(let albums):
+                spotifyAlbumList(albums)
             case .empty:
                 recentSearchesView
             }
@@ -404,6 +407,25 @@ struct SearchView: View {
                     .onTapGesture { selectedSpotifyArtist = artist }
                     .listRowBackground(bg)
                     .listRowSeparatorTint(Color.white.opacity(0.06))
+                    .onAppear { if artist.id == artists.last?.id { loadMore() } }
+            }
+            if isLoadingMore {
+                HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }
+                    .listRowBackground(bg).listRowSeparatorTint(.clear)
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    // MARK: - Spotify album list
+
+    private func spotifyAlbumList(_ albums: [SpotifyAlbumResult]) -> some View {
+        List {
+            ForEach(albums) { album in
+                SpotifyAlbumRowView(album: album)
+                    .listRowBackground(bg)
+                    .listRowSeparatorTint(Color.white.opacity(0.06))
+                    .onAppear { if album.id == albums.last?.id { loadMore() } }
             }
             if isLoadingMore {
                 HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }
@@ -533,14 +555,22 @@ struct SearchView: View {
             currentQuery = q
 
             if source == .spotify {
-                if filter == .artists {
-                    let artists = try await SpotifyService.shared.searchArtists(query: q)
+                switch filter {
+                case .artists:
+                    let artists = try await SpotifyService.shared.searchArtists(query: q, offset: offset)
                     if reset { resultSet = .spotifyArtists(artists) }
                     else if case .spotifyArtists(var existing) = resultSet {
                         existing.append(contentsOf: artists.filter { a in !existing.contains { $0.id == a.id } })
                         resultSet = .spotifyArtists(existing)
                     }
-                } else {
+                case .albums:
+                    let albums = try await SpotifyService.shared.searchAlbums(query: q, offset: offset)
+                    if reset { resultSet = .spotifyAlbums(albums) }
+                    else if case .spotifyAlbums(var existing) = resultSet {
+                        existing.append(contentsOf: albums.filter { a in !existing.contains { $0.id == a.id } })
+                        resultSet = .spotifyAlbums(existing)
+                    }
+                default:
                     let tracks = try await SpotifyService.shared.search(query: q, offset: offset)
                     if reset { resultSet = .tracks(tracks) }
                     else if case .tracks(var existing) = resultSet {
@@ -594,6 +624,7 @@ struct SearchView: View {
         case .playlists(let p):       return p.count
         case .artists(let a):         return a.count
         case .spotifyArtists(let a):  return a.count
+        case .spotifyAlbums(let a):   return a.count
         case .empty:                  return 0
         }
     }
@@ -731,6 +762,72 @@ private struct SpotifyArtistRowView: View {
             Image(systemName: "chevron.right")
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.2))
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Spotify album row
+
+private struct SpotifyAlbumRowView: View {
+    let album: SpotifyAlbumResult
+    @EnvironmentObject var themeManager: ThemeManager
+
+    private let spotifyGreen = Color(red: 0.11, green: 0.73, blue: 0.33)
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(spotifyGreen.opacity(0.12))
+                    .frame(width: 48, height: 48)
+                if let urlStr = album.imageURL, !urlStr.isEmpty, let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Image(systemName: "opticaldisc")
+                            .font(.system(size: 18))
+                            .foregroundStyle(spotifyGreen.opacity(0.6))
+                    }
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                } else {
+                    Image(systemName: "opticaldisc")
+                        .font(.system(size: 18))
+                        .foregroundStyle(spotifyGreen.opacity(0.6))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(album.name)
+                    .font(themeManager.font(13, .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    if let artist = album.artistName {
+                        Text(artist)
+                            .font(themeManager.font(11))
+                            .foregroundStyle(spotifyGreen.opacity(0.85))
+                            .lineLimit(1)
+                        Text("·")
+                            .font(themeManager.font(11))
+                            .foregroundStyle(.white.opacity(0.2))
+                    }
+                    Text(album.releaseYear)
+                        .font(themeManager.font(11))
+                        .foregroundStyle(.white.opacity(0.35))
+                    Text("·")
+                        .font(themeManager.font(11))
+                        .foregroundStyle(.white.opacity(0.2))
+                    Text(album.albumType.capitalized)
+                        .font(themeManager.font(11))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+            }
+
+            Spacer()
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
