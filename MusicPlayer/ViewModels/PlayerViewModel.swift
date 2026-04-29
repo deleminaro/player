@@ -43,6 +43,9 @@ final class PlayerViewModel: ObservableObject {
     private let kSearches   = "mp_recent_searches"
     private let kPlaylists  = "mp_playlists"
     private let kQuality    = "mp_audio_quality"
+    private let kSpeed      = "mp_playback_speed"
+    private let kEQGains    = "mp_eq_gains"
+    private let kPitch      = "mp_pitch_preserved"
 
     // MARK: - Init
 
@@ -153,15 +156,18 @@ final class PlayerViewModel: ObservableObject {
         playbackSpeed = rate
         audio.setSpeed(rate)
         updateNowPlayingPlaybackState()
+        UserDefaults.standard.set(Double(rate), forKey: kSpeed)
     }
 
     func togglePitchPreservation() {
         isPitchPreserved.toggle()
         audio.setPitchPreserved(isPitchPreserved)
+        UserDefaults.standard.set(isPitchPreserved, forKey: kPitch)
     }
 
     func setEQGain(_ gain: Float, band: Int) {
         audio.setEQGain(gain, band: band)
+        UserDefaults.standard.set(audio.eqGains.map { Double($0) }, forKey: kEQGains)
     }
 
     // MARK: - Queue navigation
@@ -414,6 +420,26 @@ final class PlayerViewModel: ObservableObject {
         if let data = d.data(forKey: kPlaylists),
            let pls = try? JSONDecoder().decode([LocalPlaylist].self, from: data) {
             playlists = pls
+        }
+
+        // Restore playback speed
+        let savedSpeed = Float(d.double(forKey: kSpeed))
+        if savedSpeed > 0 {
+            playbackSpeed = savedSpeed
+            audio.setSpeed(savedSpeed)
+        }
+
+        // Restore EQ gains (stored as [Double] for plist compatibility)
+        if let gains = d.array(forKey: kEQGains) as? [Double] {
+            for (i, g) in gains.enumerated() where i < 5 {
+                audio.setEQGain(Float(g), band: i)
+            }
+        }
+
+        // Restore pitch preservation toggle
+        if d.object(forKey: kPitch) != nil {
+            isPitchPreserved = d.bool(forKey: kPitch)
+            audio.setPitchPreserved(isPitchPreserved)
         }
     }
 
