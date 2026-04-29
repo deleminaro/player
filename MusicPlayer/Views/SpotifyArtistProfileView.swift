@@ -337,14 +337,10 @@ struct SpotifyArtistProfileView: View {
     private func loadData() async {
         isLoading = true
         loadError = nil
-        do {
-            async let t = SpotifyService.shared.fetchArtistTopTracks(artistID: artist.id)
-            async let a = SpotifyService.shared.fetchArtistAlbums(artistID: artist.id)
-            topTracks = try await t
-            albums    = try await a
-        } catch {
-            loadError = error.localizedDescription
-        }
+        async let t = SpotifyService.shared.fetchArtistTopTracks(artistID: artist.id)
+        async let a = SpotifyService.shared.fetchArtistAlbums(artistID: artist.id)
+        topTracks = (try? await t) ?? []
+        albums    = (try? await a) ?? []
         isLoading = false
     }
 

@@ -61,7 +61,7 @@ final class SpotifyService: NSObject, ObservableObject {
             try await Task.sleep(nanoseconds: UInt64(min(wait, 30) * 1_000_000_000))
             return try await perform(request, attempt: attempt + 1)
         }
-        if http.statusCode == 401 || http.statusCode == 403 { logout(); throw SpotifyError.notAuthenticated }
+        if http.statusCode == 401 || http.statusCode == 403 { throw SpotifyError.notAuthenticated }
         try checkStatus(resp, data: data)
         return data
     }
@@ -141,10 +141,7 @@ final class SpotifyService: NSObject, ObservableObject {
             comps.queryItems = [.init(name: "market", value: "AU")]
             do {
                 data = try await perform(URLRequest(url: comps.url!))
-            } catch SpotifyError.notAuthenticated {
-                throw SpotifyError.notAuthenticated
             } catch {
-                // Endpoint may be restricted in Dev Mode — return empty gracefully
                 return []
             }
             store(data, key: key, ttl: profileTTL)
@@ -167,7 +164,11 @@ final class SpotifyService: NSObject, ObservableObject {
                 .init(name: "include_groups", value: "album,single"),
                 .init(name: "market",         value: "AU"),
             ]
-            data = try await perform(URLRequest(url: comps.url!))
+            do {
+                data = try await perform(URLRequest(url: comps.url!))
+            } catch {
+                return []
+            }
             store(data, key: key, ttl: profileTTL)
         }
         return try JSONDecoder().decode(SpotifyArtistAlbumsResponse.self, from: data)
