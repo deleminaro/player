@@ -1,5 +1,4 @@
 import SwiftUI
-import PhotosUI
 
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
@@ -10,7 +9,6 @@ struct NowPlayingView: View {
     @State private var showEQ            = false
     @State private var showSpeed         = false
     @State private var showAddToPlaylist = false
-    @State private var coverPickerItem: PhotosPickerItem?
     @State private var isScrubbing  = false
     @State private var hasAppeared  = false
     @State private var waveProgress: Double = 0
@@ -253,58 +251,34 @@ struct NowPlayingView: View {
     }
 
     private var albumArtSquare: some View {
-        // Read @MainActor properties before any closure to satisfy Swift 6 concurrency
         let track = playerVM.currentTrack
         let customImg: UIImage? = track.map { playerVM.customArtwork(for: $0.id) } ?? nil
         let artworkURLStr: String? = track?.highResArtworkURL ?? track?.artworkURL
 
-        return PhotosPicker(selection: $coverPickerItem, matching: .images) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.08))
-                if let img = customImg {
-                    Image(uiImage: img)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else if let urlStr = artworkURLStr, let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { img in
-                        img.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 48, weight: .ultraLight))
-                            .foregroundStyle(.white.opacity(0.2))
-                    }
-                } else {
+        return ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.08))
+            if let img = customImg {
+                Image(uiImage: img)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else if let urlStr = artworkURLStr, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { img in
+                    img.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
                     Image(systemName: "music.note")
                         .font(.system(size: 48, weight: .ultraLight))
                         .foregroundStyle(.white.opacity(0.2))
                 }
-            }
-            .aspectRatio(1, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
-            .overlay(alignment: .bottomTrailing) {
-                ZStack {
-                    Circle()
-                        .fill(.black.opacity(0.5))
-                        .frame(width: 34, height: 34)
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.85))
-                }
-                .padding(10)
+            } else {
+                Image(systemName: "music.note")
+                    .font(.system(size: 48, weight: .ultraLight))
+                    .foregroundStyle(.white.opacity(0.2))
             }
         }
-        .buttonStyle(.plain)
-        .onChange(of: coverPickerItem) { _, item in
-            guard let item, let id = playerVM.currentTrack?.id else { return }
-            Task {
-                guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data) else { return }
-                playerVM.setCustomArtwork(image, for: id)
-                coverPickerItem = nil
-            }
-        }
+        .aspectRatio(1, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
     }
 
     // MARK: - Track info
