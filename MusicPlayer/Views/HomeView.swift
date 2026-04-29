@@ -104,25 +104,28 @@ struct HomeView: View {
                     bgCard
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             LinearGradient(
-                colors: [.clear, .black.opacity(0.75)],
+                colors: [.clear, .black.opacity(0.55), .black.opacity(0.82)],
                 startPoint: .top, endPoint: .bottom
             )
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 if let t = featured {
                     Text(t.title)
-                        .font(themeManager.font(20, .bold))
+                        .font(themeManager.font(17, .bold))
                         .foregroundStyle(.white)
-                        .lineLimit(2)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     Text(t.username)
-                        .font(themeManager.font(13))
+                        .font(themeManager.font(12))
                         .foregroundStyle(.white.opacity(0.6))
                         .lineLimit(1)
+                        .truncationMode(.tail)
                 } else {
                     Text("Your music,\neverywhere.")
-                        .font(themeManager.font(22, .bold))
+                        .font(themeManager.font(20, .bold))
                         .foregroundStyle(.white)
                 }
 
@@ -140,7 +143,7 @@ struct HomeView: View {
                                 .font(themeManager.font(14, .semibold))
                         }
                         .foregroundStyle(themeManager.current.onPrimary)
-                        .padding(.horizontal, 22).padding(.vertical, 11)
+                        .padding(.horizontal, 20).padding(.vertical, 10)
                         .background(accent, in: Capsule())
                     }
                     .buttonStyle(ScaleButtonStyle(scale: 0.93))
@@ -152,13 +155,13 @@ struct HomeView: View {
                         Text("Archive")
                             .font(themeManager.font(14))
                             .foregroundStyle(.white.opacity(0.65))
-                            .padding(.horizontal, 22).padding(.vertical, 11)
+                            .padding(.horizontal, 20).padding(.vertical, 10)
                             .background(Color.white.opacity(0.12), in: Capsule())
                     }
                     .buttonStyle(ScaleButtonStyle(scale: 0.93))
                 }
             }
-            .padding(18)
+            .padding(16)
         }
         .frame(height: 210)
         .clipShape(RoundedRectangle(cornerRadius: 18))
@@ -242,12 +245,15 @@ private struct QuickAccessCard: View {
                 Text(title)
                     .font(themeManager.font(13, .semibold))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Text("\(trackCount) tracks")
                     .font(themeManager.font(11))
                     .foregroundStyle(.white.opacity(0.4))
+                    .lineLimit(1)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             // Explicit play affordance
             ZStack {
