@@ -11,11 +11,11 @@ enum Constants {
 
     // MARK: - Bundle-loaded keys (set via xcconfig → Info.plist)
 
-    static let spotifyClientID:  String = bundleString("SpotifyClientID")
+    static let spotifyClientID:    String = bundleString("SpotifyClientID")
     static let soundcloudClientID: String = bundleString("SoundCloudClientID")
+    static let geniusToken:        String = bundleString("GeniusToken")
 
-    // The key this app uses to authenticate with *our own* backend.
-    // The backend holds Genius tokens, SoundCloud client_id, etc.
+    // Key this app uses to authenticate with the POSTOR backend proxy.
     static let backendAPIKey: String = bundleString("BackendAPIKey")
 
     // MARK: - URLs (non-sensitive, committed in Config.xcconfig)

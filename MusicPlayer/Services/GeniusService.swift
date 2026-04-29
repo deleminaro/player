@@ -4,12 +4,37 @@ actor GeniusService {
     static let shared = GeniusService()
 
     /// Returns the Genius web-page URL for the best-matching song, or nil if nothing found.
-    /// Calls the backend proxy — the Genius Bearer token never lives on device.
+    /// Uses the backend proxy when configured; falls back to direct API call otherwise.
     func searchLyricsURL(title: String, artist: String) async throws -> URL? {
         let q = "\(cleanTitle(title)) \(artist.trimmingCharacters(in: .whitespaces))"
-        let hits = try await BackendClient.shared.geniusSearch(query: q)
-        guard let first = hits.first else { return nil }
-        return URL(string: first.url)
+
+        // Use backend proxy if available (preferred — token stays server-side)
+        if !Constants.backendAPIKey.isEmpty {
+            let hits = try await BackendClient.shared.geniusSearch(query: q)
+            guard let first = hits.first else { return nil }
+            return URL(string: first.url)
+        }
+
+        // Direct fallback — requires GeniusToken in xcconfig / Info.plist
+        return try await directSearch(q: q)
+    }
+
+    private func directSearch(q: String) async throws -> URL? {
+        guard !Constants.geniusToken.isEmpty else { return nil }
+        var comps = URLComponents(string: "https://api.genius.com/search")!
+        comps.queryItems = [.init(name: "q", value: q)]
+        guard let url = comps.url else { return nil }
+        var req = URLRequest(url: url)
+        req.setValue("Bearer \(Constants.geniusToken)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            return nil
+        }
+        struct R: Decodable {
+            struct Response: Decodable { struct Hit: Decodable { struct Result: Decodable { let url: String }; let result: Result }; let hits: [Hit] }; let response: Response
+        }
+        let decoded = try JSONDecoder().decode(R.self, from: data)
+        return decoded.response.hits.first.flatMap { URL(string: $0.result.url) }
     }
 
     // MARK: - Title cleaning
