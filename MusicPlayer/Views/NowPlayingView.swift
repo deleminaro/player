@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
@@ -9,6 +10,7 @@ struct NowPlayingView: View {
     @State private var showEQ            = false
     @State private var showSpeed         = false
     @State private var showAddToPlaylist = false
+    @State private var coverPickerItem: PhotosPickerItem?
     @State private var isScrubbing  = false
     @State private var hasAppeared  = false
     @State private var waveProgress: Double = 0
@@ -119,6 +121,13 @@ struct NowPlayingView: View {
                     Image(uiImage: wallpaper)
                         .resizable()
                         .scaledToFill()
+                } else if let customBg = playerVM.currentTrack.flatMap({ playerVM.customArtwork(for: $0.id) }) {
+                    Image(uiImage: customBg)
+                        .resizable()
+                        .scaledToFill()
+                        .id(playerVM.currentTrack?.id)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.6), value: playerVM.currentTrack?.id)
                 } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
                     AsyncImage(url: url) { img in
                         img.resizable().scaledToFill()
@@ -250,27 +259,56 @@ struct NowPlayingView: View {
     }
 
     private var albumArtSquare: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.08))
-            if let urlStr = playerVM.currentTrack?.highResArtworkURL ?? playerVM.currentTrack?.artworkURL,
-               let url = URL(string: urlStr) {
-                AsyncImage(url: url) { img in
-                    img.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
+        let customImg = playerVM.currentTrack.flatMap { playerVM.customArtwork(for: $0.id) }
+
+        return PhotosPicker(selection: $coverPickerItem, matching: .images) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white.opacity(0.08))
+                if let img = customImg {
+                    Image(uiImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else if let urlStr = playerVM.currentTrack?.highResArtworkURL ?? playerVM.currentTrack?.artworkURL,
+                          let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 48, weight: .ultraLight))
+                            .foregroundStyle(.white.opacity(0.2))
+                    }
+                } else {
                     Image(systemName: "music.note")
                         .font(.system(size: 48, weight: .ultraLight))
                         .foregroundStyle(.white.opacity(0.2))
                 }
-            } else {
-                Image(systemName: "music.note")
-                    .font(.system(size: 48, weight: .ultraLight))
-                    .foregroundStyle(.white.opacity(0.2))
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
+            .overlay(alignment: .bottomTrailing) {
+                ZStack {
+                    Circle()
+                        .fill(.black.opacity(0.5))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                .padding(10)
             }
         }
-        .aspectRatio(1, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
+        .buttonStyle(.plain)
+        .onChange(of: coverPickerItem) { _, item in
+            guard let item, let id = playerVM.currentTrack?.id else { return }
+            Task {
+                guard let data = try? await item.loadTransferable(type: Data.self),
+                      let image = UIImage(data: data) else { return }
+                playerVM.setCustomArtwork(image, for: id)
+                coverPickerItem = nil
+            }
+        }
     }
 
     // MARK: - Track info

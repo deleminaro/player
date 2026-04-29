@@ -3,14 +3,13 @@ import PhotosUI
 
 struct CustomizationView: View {
     @EnvironmentObject var themeManager: ThemeManager
-    @State private var tab: CTab = .background
-    @State private var photoItem: PhotosPickerItem?
+    @State private var tab: CTab = .cover
     @State private var coverPhotoItem: PhotosPickerItem?
 
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
 
-    enum CTab { case background, cover, slider, theme, font }
+    enum CTab { case cover, slider, theme, font }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -18,7 +17,6 @@ struct CustomizationView: View {
                 // Filter pills
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        pill("Background", icon: "photo.fill",                t: .background)
                         pill("Cover",      icon: "photo.on.rectangle.angled", t: .cover)
                         pill("Slider",     icon: "slider.horizontal.3",       t: .slider)
                         pill("Theme",      icon: "paintpalette.fill",         t: .theme)
@@ -29,7 +27,6 @@ struct CustomizationView: View {
 
                 Group {
                     switch tab {
-                    case .background: backgroundTab
                     case .cover:      coverTab
                     case .slider:     sliderTab
                     case .theme:      themeTab
@@ -46,13 +43,6 @@ struct CustomizationView: View {
         .toolbarBackground(bg, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .preferredColorScheme(.dark)
-        .onChange(of: photoItem) { _, item in
-            Task {
-                guard let data = try? await item?.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data) else { return }
-                themeManager.saveCustomWallpaper(image)
-            }
-        }
         .onChange(of: coverPhotoItem) { _, item in
             Task {
                 guard let data = try? await item?.loadTransferable(type: Data.self),
@@ -77,103 +67,6 @@ struct CustomizationView: View {
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.18), value: tab)
-    }
-
-    // MARK: - Background tab
-
-    private var backgroundTab: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            sectionHeader("BACKGROUND SOURCE")
-
-            HStack(spacing: 14) {
-                // Music cover
-                let coverOn = themeManager.backgroundStyle == .musicCover
-                Button { themeManager.selectBackground(.musicCover) } label: {
-                    sourceCard(
-                        label: "Music Cover",
-                        selected: coverOn,
-                        accent: themeManager.current.primary
-                    ) {
-                        ZStack {
-                            LinearGradient(colors: [Color(white: 0.28), Color(white: 0.06)],
-                                           startPoint: .top, endPoint: .bottom)
-                            VStack(spacing: 6) {
-                                Image(systemName: "music.note")
-                                    .font(.system(size: 26, weight: .light))
-                                    .foregroundStyle(.white.opacity(0.35))
-                                Text("Album Art")
-                                    .font(.system(size: 9, weight: .bold)).kerning(1)
-                                    .foregroundStyle(.white.opacity(0.25))
-                            }
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-
-                // Custom photo
-                let photoOn = themeManager.backgroundStyle == .customPhoto
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    sourceCard(
-                        label: "Custom Photo",
-                        selected: photoOn,
-                        accent: themeManager.current.primary
-                    ) {
-                        if let img = themeManager.customWallpaper {
-                            Image(uiImage: img)
-                                .resizable().aspectRatio(contentMode: .fill)
-                        } else {
-                            ZStack {
-                                Color(white: 0.14)
-                                VStack(spacing: 6) {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 22, weight: .light))
-                                        .foregroundStyle(.white.opacity(0.35))
-                                    Text("Add Photo")
-                                        .font(.system(size: 9, weight: .bold)).kerning(1)
-                                        .foregroundStyle(.white.opacity(0.25))
-                                }
-                            }
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 16)
-
-            // Library
-            sectionHeader("LIBRARY")
-
-            if let img = themeManager.customWallpaper {
-                HStack(spacing: 14) {
-                    Image(uiImage: img)
-                        .resizable().aspectRatio(1, contentMode: .fill)
-                        .frame(width: 72, height: 72)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Custom Wallpaper")
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
-                        Text("Tap to replace")
-                            .font(.system(size: 11)).foregroundStyle(.white.opacity(0.35))
-                    }
-                    Spacer()
-
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 16)).foregroundStyle(.white.opacity(0.45))
-                    }
-                }
-                .padding(16)
-                .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal, 16)
-            } else {
-                emptyCard(icon: "photo.on.rectangle", title: "Library", subtitle: "No items")
-            }
-
-            // Presets
-            sectionHeader("PRESETS")
-            emptyCard(icon: "cube", title: "Presets", subtitle: "No saved presets")
-        }
     }
 
     // MARK: - Cover tab

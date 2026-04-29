@@ -309,6 +309,38 @@ final class PlayerViewModel: ObservableObject {
         saveRecent()
     }
 
+    // MARK: - Per-track custom artwork
+
+    private func customArtworkURL(for trackID: Int) -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent("custom_artwork_\(trackID).jpg")
+    }
+
+    func customArtwork(for trackID: Int) -> UIImage? {
+        guard let data = try? Data(contentsOf: customArtworkURL(for: trackID)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    func setCustomArtwork(_ image: UIImage, for trackID: Int) {
+        if let data = image.jpegData(compressionQuality: 0.85) {
+            try? data.write(to: customArtworkURL(for: trackID))
+        }
+        objectWillChange.send()
+        guard currentTrack?.id == trackID else { return }
+        let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+        var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        info[MPMediaItemPropertyArtwork] = artwork
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    func removeCustomArtwork(for trackID: Int) {
+        try? FileManager.default.removeItem(at: customArtworkURL(for: trackID))
+        objectWillChange.send()
+        if currentTrack?.id == trackID, let track = currentTrack {
+            updateNowPlayingInfo(track: track)
+        }
+    }
+
     // MARK: - MPNowPlayingInfoCenter
 
     private func setupRemoteCommands() {
@@ -361,18 +393,26 @@ final class PlayerViewModel: ObservableObject {
         ]
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
 
-        // Fetch artwork in background
-        if let urlStr = track.highResArtworkURL ?? track.artworkURL,
-           let url = URL(string: urlStr) {
-            Task.detached {
-                guard let (data, _) = try? await URLSession.shared.data(from: url),
-                      let image = UIImage(data: data) else { return }
-                let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-                await MainActor.run {
-                    var updated = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? info
-                    updated[MPMediaItemPropertyArtwork] = artwork
-                    MPNowPlayingInfoCenter.default().nowPlayingInfo = updated
-                }
+        // Fetch artwork in background — custom per-track artwork takes priority
+        let trackID = track.id
+        let artworkURLStr = track.highResArtworkURL ?? track.artworkURL
+        Task.detached { [trackID, artworkURLStr] in
+            var image: UIImage?
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let customPath = docs.appendingPathComponent("custom_artwork_\(trackID).jpg")
+            if let data = try? Data(contentsOf: customPath) {
+                image = UIImage(data: data)
+            } else if let urlStr = artworkURLStr,
+                      let url = URL(string: urlStr),
+                      let (data, _) = try? await URLSession.shared.data(from: url) {
+                image = UIImage(data: data)
+            }
+            guard let img = image else { return }
+            let artwork = MPMediaItemArtwork(boundsSize: img.size) { _ in img }
+            await MainActor.run {
+                var updated = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? info
+                updated[MPMediaItemPropertyArtwork] = artwork
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = updated
             }
         }
     }
