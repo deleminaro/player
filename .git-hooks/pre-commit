@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Blocks commits containing patterns that look like secrets.
+# Install: cp .git-hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+RED='\033[0;31m'; NC='\033[0m'
+
+PATTERNS=(
+  # Generic high-entropy strings that look like tokens
+  'Bearer [A-Za-z0-9_\-\.]{20,}'
+  # Hardcoded variable names for known services
+  'clientSecret\s*=\s*"[^"]+'
+  'client_secret\s*=\s*"[^"]+'
+  'GENIUS_TOKEN\s*=\s*"[^"]+'
+  'soundcloudClientID\s*=\s*"[^"]+'
+  # Spotify client secret pattern (32-char hex)
+  'spotifyClientSecret\s*=\s*"[a-f0-9]{32}'
+)
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+for FILE in $STAGED; do
+  [[ "$FILE" == *.swift || "$FILE" == *.xcconfig || "$FILE" == *.plist || "$FILE" == *.js || "$FILE" == *.ts ]] || continue
+  CONTENT=$(git show ":$FILE" 2>/dev/null)
+  for PATTERN in "${PATTERNS[@]}"; do
+    if echo "$CONTENT" | grep -qE "$PATTERN"; then
+      echo -e "${RED}[BLOCKED] Possible secret detected in $FILE${NC}"
+      echo "  Pattern: $PATTERN"
+      echo "  Use Secrets.xcconfig (gitignored) or a backend proxy instead."
+      exit 1
+    fi
+  done
+done
+
+exit 0

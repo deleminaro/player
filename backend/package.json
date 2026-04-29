@@ -1,0 +1,17 @@
+{
+  "name": "postor-backend",
+  "version": "1.0.0",
+  "description": "API proxy for POSTOR — keeps secrets server-side",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "helmet": "^7.1.0",
+    "node-fetch": "^2.7.0"
+  }
+}
