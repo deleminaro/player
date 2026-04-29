@@ -253,7 +253,10 @@ struct NowPlayingView: View {
     }
 
     private var albumArtSquare: some View {
-        let customImg = playerVM.currentTrack.flatMap { playerVM.customArtwork(for: $0.id) }
+        // Read @MainActor properties before any closure to satisfy Swift 6 concurrency
+        let track = playerVM.currentTrack
+        let customImg: UIImage? = track.map { playerVM.customArtwork(for: $0.id) } ?? nil
+        let artworkURLStr: String? = track?.highResArtworkURL ?? track?.artworkURL
 
         return PhotosPicker(selection: $coverPickerItem, matching: .images) {
             ZStack {
@@ -263,8 +266,7 @@ struct NowPlayingView: View {
                     Image(uiImage: img)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                } else if let urlStr = playerVM.currentTrack?.highResArtworkURL ?? playerVM.currentTrack?.artworkURL,
-                          let url = URL(string: urlStr) {
+                } else if let urlStr = artworkURLStr, let url = URL(string: urlStr) {
                     AsyncImage(url: url) { img in
                         img.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
