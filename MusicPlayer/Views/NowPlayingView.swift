@@ -55,22 +55,6 @@ struct NowPlayingView: View {
                     .offset(y: hasAppeared ? 0 : 20)
                     .animation(.spring(response: 0.55, dampingFraction: 0.82).delay(0.28), value: hasAppeared)
 
-                // Bottom-left dismiss arrow
-                HStack {
-                    Button { playerVM.showingNowPlaying = false } label: {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.1))
-                                .frame(width: 38, height: 38)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.55))
-                        }
-                    }
-                    .buttonStyle(ScaleButtonStyle(scale: 0.88))
-                    Spacer()
-                }
-                .padding(.top, 12)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 28)
