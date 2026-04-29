@@ -114,19 +114,26 @@ struct NowPlayingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             ZStack {
-                bg
-                if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
+                Color.black
+                if let customBg = playerVM.currentTrack.flatMap({ playerVM.customArtwork(for: $0.id) }) {
+                    Image(uiImage: customBg)
+                        .resizable()
+                        .scaledToFill()
+                        .blur(radius: 40, opaque: true)
+                        .id(playerVM.currentTrack?.id)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.6), value: playerVM.currentTrack?.id)
+                } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
                     AsyncImage(url: url) { img in
-                        img.resizable().scaledToFill()
+                        img.resizable()
+                            .scaledToFill()
+                            .blur(radius: 40, opaque: true)
                     } placeholder: { Color.clear }
                         .id(playerVM.currentTrack?.id)
                         .transition(.opacity)
                         .animation(.easeInOut(duration: 0.6), value: playerVM.currentTrack?.id)
                 }
-                LinearGradient(
-                    colors: [.black.opacity(0.15), .black.opacity(0.35), .black.opacity(0.65), .black.opacity(0.88)],
-                    startPoint: .top, endPoint: .bottom
-                )
+                Color.black.opacity(0.45)
             }
             .ignoresSafeArea()
         }
