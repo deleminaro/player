@@ -39,6 +39,7 @@ struct SearchView: View {
     @State private var selectedPlaylist:   SCPlaylist?
     @State private var selectedArtist:     SCArtist?
     @State private var selectedSpotifyArtist: SpotifyArtistResult?
+    @State private var selectedSpotifyAlbum:  SpotifyAlbumResult?
     @State private var searchError:  String?
     @State private var searchTask:   Task<Void, Never>?
     @State private var filter        = SearchFilter.all
@@ -100,6 +101,9 @@ struct SearchView: View {
         }
         .sheet(item: $selectedSpotifyArtist) { artist in
             SpotifyArtistProfileView(artist: artist).environmentObject(playerVM).environmentObject(themeManager)
+        }
+        .sheet(item: $selectedSpotifyAlbum) { album in
+            SpotifyAlbumDetailView(album: album).environmentObject(playerVM).environmentObject(themeManager)
         }
         .onTapGesture { focused = false }
         .onChange(of: filter) { _, _ in
@@ -426,6 +430,7 @@ struct SearchView: View {
                     .listRowBackground(bg)
                     .listRowSeparatorTint(Color.white.opacity(0.06))
                     .onAppear { if album.id == albums.last?.id { loadMore() } }
+                    .onTapGesture { selectedSpotifyAlbum = album }
             }
             if isLoadingMore {
                 HStack { Spacer(); ProgressView().tint(themeManager.current.primary); Spacer() }

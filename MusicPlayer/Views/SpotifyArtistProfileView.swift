@@ -12,8 +12,7 @@ struct SpotifyArtistProfileView: View {
     @State private var isLoading:  Bool                 = true
     @State private var loadError:  String?              = nil
     @State private var activeTab:  SpotifyArtistTab     = .topTracks
-    @State private var showAlbumAlert: Bool             = false
-    @State private var tappedAlbum: SpotifyAlbumResult?
+    @State private var selectedAlbum: SpotifyAlbumResult?
 
     private enum SpotifyArtistTab { case topTracks, albums }
 
@@ -54,10 +53,10 @@ struct SpotifyArtistProfileView: View {
         }
         .presentationBackground(bg)
         .task { await loadData() }
-        .alert("Album", isPresented: $showAlbumAlert, presenting: tappedAlbum) { _ in
-            Button("OK", role: .cancel) {}
-        } message: { album in
-            Text("\(album.name) — coming soon.")
+        .sheet(item: $selectedAlbum) { album in
+            SpotifyAlbumDetailView(album: album)
+                .environmentObject(playerVM)
+                .environmentObject(themeManager)
         }
     }
 
@@ -258,8 +257,7 @@ struct SpotifyArtistProfileView: View {
 
     private func albumCell(_ album: SpotifyAlbumResult) -> some View {
         Button {
-            tappedAlbum = album
-            showAlbumAlert = true
+            selectedAlbum = album
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 ZStack {

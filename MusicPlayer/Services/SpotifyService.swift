@@ -140,7 +140,7 @@ final class SpotifyService: NSObject, ObservableObject {
             data = hit
         } else {
             var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/artists/\(artistID)/top-tracks")!
-            comps.queryItems = [.init(name: "market", value: "AU")]
+            comps.queryItems = [.init(name: "market", value: "from_token")]
             do {
                 data = try await perform(URLRequest(url: comps.url!))
             } catch {
@@ -164,7 +164,7 @@ final class SpotifyService: NSObject, ObservableObject {
             comps.queryItems = [
                 .init(name: "limit",          value: "20"),
                 .init(name: "include_groups", value: "album,single"),
-                .init(name: "market",         value: "AU"),
+                .init(name: "market",         value: "from_token"),
             ]
             do {
                 data = try await perform(URLRequest(url: comps.url!))
@@ -175,6 +175,45 @@ final class SpotifyService: NSObject, ObservableObject {
         }
         return try JSONDecoder().decode(SpotifyArtistAlbumsResponse.self, from: data)
             .items.map { albumResult(from: $0) }
+    }
+
+    // MARK: - Album: Tracks
+
+    func fetchAlbumTracks(album: SpotifyAlbumResult) async throws -> [Track] {
+        let key = "albumTracks:\(album.id)"
+        let data: Data
+        if let hit = cached(key) {
+            data = hit
+        } else {
+            var comps = URLComponents(string: "\(Constants.Spotify.baseURL)/albums/\(album.id)/tracks")!
+            comps.queryItems = [
+                .init(name: "limit",  value: "50"),
+                .init(name: "market", value: "from_token"),
+            ]
+            do {
+                data = try await perform(URLRequest(url: comps.url!))
+            } catch {
+                return []
+            }
+            store(data, key: key, ttl: profileTTL)
+        }
+        return try JSONDecoder().decode(SpotifyAlbumTracksResponse.self, from: data)
+            .items.map { simplifiedTrack(from: $0, album: album) }
+    }
+
+    private func simplifiedTrack(from dto: SpotifySimplifiedTrackDTO, album: SpotifyAlbumResult) -> Track {
+        Track(
+            id:           stableID(from: dto.id),
+            title:        dto.name,
+            username:     dto.artists.first?.name ?? album.artistName ?? "Unknown",
+            artworkURL:   album.imageURL,
+            duration:     dto.durationMs,
+            permalinkURL: "https://open.spotify.com/track/\(dto.id)",
+            media:        nil,
+            source:       .spotify,
+            previewURL:   dto.previewUrl,
+            spotifyURI:   dto.uri
+        )
     }
 
     // MARK: - Mapping helpers
@@ -537,6 +576,24 @@ private struct SpotifyFollowersDTO: Decodable { let total: Int }
 private struct SpotifyTopTracksResponse: Decodable { let tracks: [SpotifyTrackDTO] }
 
 private struct SpotifyArtistAlbumsResponse: Decodable { let items: [SpotifyAlbumItemDTO] }
+
+private struct SpotifyAlbumTracksResponse: Decodable { let items: [SpotifySimplifiedTrackDTO] }
+
+private struct SpotifySimplifiedTrackDTO: Decodable {
+    let id:         String
+    let uri:        String
+    let name:       String
+    let durationMs: Int
+    let previewUrl: String?
+    let artists:    [SpotifyArtistDTO]
+    let trackNumber: Int
+    enum CodingKeys: String, CodingKey {
+        case id, uri, name, artists
+        case durationMs  = "duration_ms"
+        case previewUrl  = "preview_url"
+        case trackNumber = "track_number"
+    }
+}
 
 // Shared DTO for artist albums + album search results
 private struct SpotifyAlbumItemDTO: Decodable {
