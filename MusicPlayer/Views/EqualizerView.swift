@@ -45,7 +45,7 @@ struct EqualizerView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "info.circle")
                         .font(.system(size: 13))
-                    Text("EQ does not apply to Spotify Premium tracks — audio is rendered by the Spotify app.")
+                    Text("EQ and speed do not apply to Spotify Premium tracks — audio is rendered by the Spotify app.")
                         .font(.system(size: 11))
                         .fixedSize(horizontal: false, vertical: true)
                 }

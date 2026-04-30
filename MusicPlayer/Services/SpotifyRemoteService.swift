@@ -78,22 +78,6 @@ final class SpotifyRemoteService: NSObject, ObservableObject {
         onTimeUpdate?(positionSec)
     }
 
-    /// Maps a playback rate to the closest Spotify podcast speed step and applies it.
-    /// (SPTAppRemotePlayerAPI exposes speed control only via setPodcastPlaybackSpeed;
-    ///  it affects music tracks as well on most Spotify app versions.)
-    func setSpeed(_ rate: Float) {
-        guard appRemote.isConnected else { return }
-        let speed: SPTAppRemotePodcastPlaybackSpeed
-        switch rate {
-        case ..<0.63:  speed = .half            // ≈ 0.5×
-        case ..<0.88:  speed = .threeQuarters   // ≈ 0.75×
-        case ..<1.38:  speed = .one             // ≈ 1.0× (covers 1.0, 1.15, 1.25)
-        case ..<1.75:  speed = .oneAndAHalf     // ≈ 1.5×
-        default:       speed = .double          // ≈ 2.0×
-        }
-        appRemote.playerAPI?.setPodcastPlaybackSpeed(speed, callback: nil)
-    }
-
     func stop() {
         stopPositionTimer()
         if appRemote.isConnected {
