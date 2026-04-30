@@ -196,7 +196,13 @@ final class PlayerViewModel: ObservableObject {
 
     func setSpeed(_ rate: Float) {
         playbackSpeed = rate
-        audio.setSpeed(rate)
+        if currentTrack?.source == .spotify,
+           currentTrack?.spotifyURI != nil,
+           SpotifyService.shared.currentAccessToken != nil {
+            SpotifyRemoteService.shared.setSpeed(rate)
+        } else {
+            audio.setSpeed(rate)
+        }
         updateNowPlayingPlaybackState()
         UserDefaults.standard.set(Double(rate), forKey: kSpeed)
     }

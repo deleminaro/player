@@ -19,6 +19,12 @@ struct EqualizerView: View {
         ("SLOWED",  [ 3,  2,  0, -2, -3]),
     ]
 
+    private var isSpotifyPremium: Bool {
+        playerVM.currentTrack?.source == .spotify &&
+        playerVM.currentTrack?.spotifyURI != nil &&
+        SpotifyService.shared.currentAccessToken != nil
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -34,6 +40,20 @@ struct EqualizerView: View {
                 }
             }
             .padding(.horizontal, 24).padding(.top, 24)
+
+            if isSpotifyPremium {
+                HStack(spacing: 10) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13))
+                    Text("EQ does not apply to Spotify Premium tracks — audio is rendered by the Spotify app.")
+                        .font(.system(size: 11))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .foregroundStyle(Color(red: 0.11, green: 0.73, blue: 0.33).opacity(0.9))
+                .padding(.horizontal, 20).padding(.vertical, 10)
+                .background(Color(red: 0.11, green: 0.73, blue: 0.33).opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 24).padding(.top, 16)
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
