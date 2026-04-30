@@ -42,6 +42,8 @@
 		AA181020AA181020AA181020 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100020AA100020AA100020 /* AuthView.swift */; };
 		AA181021AA181021AA181021 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100021AA100021AA100021 /* FirebaseManager.swift */; };
 		AA18102FAA18102FAA18102F /* Minecraft.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA10002FAA10002FAA10002F /* Minecraft.ttf */; };
+		AA181022AA181022AA181022 /* SpotifyRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100022AA100022AA100022 /* SpotifyRemoteService.swift */; };
+		AA181023AA181023AA181023 /* SpotifyAlbumDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -77,6 +79,8 @@
 		AA100020AA100020AA100020 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		AA100021AA100021AA100021 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		AA10002FAA10002FAA10002F /* Minecraft.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Minecraft.ttf; sourceTree = "<group>"; };
+		AA100022AA100022AA100022 /* SpotifyRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyRemoteService.swift; sourceTree = "<group>"; };
+		AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAlbumDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +142,7 @@
 				AA100007AA100007AA100007 /* GeniusService.swift */,
 				AA10001AAA10001AAA10001A /* DownloadManager.swift */,
 				AA10001CAA10001CAA10001C /* SpotifyService.swift */,
+				AA100022AA100022AA100022 /* SpotifyRemoteService.swift */,
 				AA100021AA100021AA100021 /* FirebaseManager.swift */,
 			);
 			path = Services;
@@ -168,6 +173,7 @@
 				AA10001BAA10001BAA10001B /* CustomizationView.swift */,
 				AA10001DAA10001DAA10001D /* SCArtistProfileView.swift */,
 				AA10001EAA10001EAA10001E /* SpotifyArtistProfileView.swift */,
+				AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */,
 				AA100020AA100020AA100020 /* AuthView.swift */,
 			);
 			path = Views;
@@ -282,6 +288,8 @@
 				AA18101BAA18101BAA18101B /* CustomizationView.swift in Sources */,
 				AA18101DAA18101DAA18101D /* SCArtistProfileView.swift in Sources */,
 				AA18101EAA18101EAA18101E /* SpotifyArtistProfileView.swift in Sources */,
+				AA181022AA181022AA181022 /* SpotifyRemoteService.swift in Sources */,
+				AA181023AA181023AA181023 /* SpotifyAlbumDetailView.swift in Sources */,
 				AA181020AA181020AA181020 /* AuthView.swift in Sources */,
 				AA181021AA181021AA181021 /* FirebaseManager.swift in Sources */,
 			);
