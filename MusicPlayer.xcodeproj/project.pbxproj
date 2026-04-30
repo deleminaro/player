@@ -12,6 +12,7 @@
 		04A6082B2FA08BCD0006D97E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 04A6082A2FA08BCD0006D97E /* FirebaseAuth */; };
 		04A6082D2FA08BCD0006D97E /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 04A6082C2FA08BCD0006D97E /* FirebaseFirestore */; };
 		04A6082F2FA08C1E0006D97E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 04A6082E2FA08C1E0006D97E /* GoogleService-Info.plist */; };
+		04BC68972FA410C9007599A9 /* SpotifyiOS in Frameworks */ = {isa = PBXBuildFile; productRef = 04BC68962FA410C9007599A9 /* SpotifyiOS */; };
 		AA181001AA181001AA181001 /* MusicPlayerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100001AA100001AA100001 /* MusicPlayerApp.swift */; };
 		AA181002AA181002AA181002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100002AA100002AA100002 /* ContentView.swift */; };
 		AA181003AA181003AA181003 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100003AA100003AA100003 /* Constants.swift */; };
@@ -85,6 +86,7 @@
 			files = (
 				04A608262FA08BA00006D97E /* GoogleSignIn in Frameworks */,
 				04A6082D2FA08BCD0006D97E /* FirebaseFirestore in Frameworks */,
+				04BC68972FA410C9007599A9 /* SpotifyiOS in Frameworks */,
 				04A6082B2FA08BCD0006D97E /* FirebaseAuth in Frameworks */,
 				04A608282FA08BA00006D97E /* GoogleSignInSwift in Frameworks */,
 			);
@@ -226,6 +228,7 @@
 			packageReferences = (
 				04A608242FA08BA00006D97E /* XCRemoteSwiftPackageReference "GoogleSignIn-ios" */,
 				04A608292FA08BCD0006D97E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				04BC68952FA410C9007599A9 /* XCRemoteSwiftPackageReference "ios-sdk" */,
 			);
 			productRefGroup = AA300009AA300009AA300009 /* Products */;
 			projectDirPath = "";
@@ -498,6 +501,14 @@
 				minimumVersion = 12.12.1;
 			};
 		};
+		04BC68952FA410C9007599A9 /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/spotify/ios-sdk";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -520,6 +531,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 04A608292FA08BCD0006D97E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		04BC68962FA410C9007599A9 /* SpotifyiOS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 04BC68952FA410C9007599A9 /* XCRemoteSwiftPackageReference "ios-sdk" */;
+			productName = SpotifyiOS;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
