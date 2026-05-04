@@ -145,9 +145,14 @@ final class PlayerViewModel: ObservableObject {
                     audio.play(url: localURL)
                     return
                 }
-                // Spotify source — use preview URL directly (App Remote requires
-                // Spotify Premium + installed app; preview is more reliable for all users)
+                // Spotify source — try App Remote first (opens Spotify for full track),
+                // fall back to preview URL or SoundCloud search if unavailable
                 if track.source == .spotify {
+                    if let uri = track.spotifyURI,
+                       let token = SpotifyService.shared.currentAccessToken {
+                        SpotifyRemoteService.shared.play(uri: uri, accessToken: token)
+                        return
+                    }
                     if let preview = track.previewURL, let url = URL(string: preview) {
                         guard currentTrack?.id == track.id else { return }
                         audio.play(url: url)
@@ -182,8 +187,7 @@ final class PlayerViewModel: ObservableObject {
     }
 
     func togglePlayPause() {
-        if currentTrack?.source == .spotify, currentTrack?.spotifyURI != nil,
-           SpotifyService.shared.currentAccessToken != nil {
+        if currentTrack?.source == .spotify, SpotifyRemoteService.shared.isConnected {
             isPlaying ? SpotifyRemoteService.shared.pause() : SpotifyRemoteService.shared.resume()
         } else {
             isPlaying ? audio.pause() : audio.resume()
@@ -191,8 +195,7 @@ final class PlayerViewModel: ObservableObject {
     }
 
     func seek(to seconds: Double) {
-        if currentTrack?.source == .spotify, currentTrack?.spotifyURI != nil,
-           SpotifyService.shared.currentAccessToken != nil {
+        if currentTrack?.source == .spotify, SpotifyRemoteService.shared.isConnected {
             SpotifyRemoteService.shared.seek(to: seconds)
         } else {
             audio.seek(to: seconds)

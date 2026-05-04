@@ -45,19 +45,18 @@ final class SpotifyRemoteService: NSObject, ObservableObject {
 
     /// Play a full Spotify track. accessToken must be the PKCE user access token.
     func play(uri: String, accessToken: String) {
-        pendingURI = uri
         appRemote.connectionParameters.accessToken = accessToken
         if appRemote.isConnected {
             appRemote.playerAPI?.play(uri, callback: nil)
+        } else if UIApplication.shared.canOpenURL(URL(string: "spotify:")!) {
+            // authorizeAndPlayURI opens Spotify, starts the track, then Spotify
+            // redirects to postor://spotify-callback — handleCallback() will connect
+            // App Remote so we can control playback. Don't queue pendingURI since
+            // Spotify is already playing the track before the callback fires.
             pendingURI = nil
+            appRemote.authorizeAndPlayURI(uri)
         } else {
-            // If Spotify app is installed, connect and play via App Remote
-            if UIApplication.shared.canOpenURL(URL(string: "spotify:")!) {
-                appRemote.connect()
-            } else {
-                // Spotify not installed — trigger preview URL fallback
-                onConnectionFailed?()
-            }
+            onConnectionFailed?()
         }
     }
 
