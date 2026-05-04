@@ -101,6 +101,18 @@ final class PlayerViewModel: ObservableObject {
             if playing, let track = self.currentTrack { self.updateNowPlayingInfo(track: track) }
             self.updateNowPlayingPlaybackState()
         }
+        remote.onConnectionFailed = { [weak self] in
+            guard let self, self.currentTrack?.source == .spotify else { return }
+            let track = self.currentTrack
+            Task { @MainActor [weak self] in
+                guard let self, self.currentTrack?.id == track?.id else { return }
+                if let preview = track?.previewURL, let url = URL(string: preview) {
+                    self.audio.play(url: url)
+                } else {
+                    self.playerState = .idle
+                }
+            }
+        }
         remote.onTimeUpdate = { [weak self] t in
             guard let self, self.currentTrack?.source == .spotify else { return }
             self.currentTime = t

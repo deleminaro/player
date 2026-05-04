@@ -14,10 +14,11 @@ final class SpotifyRemoteService: NSObject, ObservableObject {
 
     // MARK: - Callbacks (set by PlayerViewModel)
 
-    var onPlayStateChange: ((Bool) -> Void)?
-    var onTimeUpdate:      ((Double) -> Void)?
-    var onDurationReady:   ((Double) -> Void)?
-    var onTrackEnd:        (() -> Void)?
+    var onPlayStateChange:  ((Bool) -> Void)?
+    var onTimeUpdate:       ((Double) -> Void)?
+    var onDurationReady:    ((Double) -> Void)?
+    var onTrackEnd:         (() -> Void)?
+    var onConnectionFailed: (() -> Void)?
 
     // MARK: - Internal state
 
@@ -142,7 +143,7 @@ extension SpotifyRemoteService: SPTAppRemoteDelegate {
         Task { @MainActor in
             print("[SpotifyRemote] Connection failed: \(error?.localizedDescription ?? "unknown")")
             self.stopPositionTimer()
-            self.onPlayStateChange?(false)
+            self.onConnectionFailed?()
         }
     }
 

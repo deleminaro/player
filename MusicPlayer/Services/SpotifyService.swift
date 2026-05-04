@@ -253,7 +253,7 @@ final class SpotifyService: NSObject, ObservableObject {
             .init(name: "redirect_uri",          value: redirectURI),
             .init(name: "code_challenge_method", value: "S256"),
             .init(name: "code_challenge",        value: challenge),
-            .init(name: "scope", value: "streaming user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing")
+            .init(name: "scope", value: "app-remote-control streaming user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing")
         ]
         guard let authURL = comps.url else { throw SpotifyError.authFailed }
 
