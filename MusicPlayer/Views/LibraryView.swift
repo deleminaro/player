@@ -583,7 +583,8 @@ private struct LikedTrackRow: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
     @StateObject private var dm = DownloadManager.shared
-    @State private var showDownload = false
+    @State private var showDownload      = false
+    @State private var showAddToPlaylist = false
 
     private var primary: Color { themeManager.current.primary }
     private var isPlaying: Bool { playerVM.currentTrack?.id == track.id }
@@ -605,12 +606,50 @@ private struct LikedTrackRow: View {
         }
         .padding(.horizontal, 16).padding(.vertical, 11)
         .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                playerVM.play(track)
+                playerVM.showingNowPlaying = true
+            } label: {
+                Label("Play Now", systemImage: "play.fill")
+            }
+            Button {
+                playerVM.addToQueue(track)
+            } label: {
+                Label("Add to Queue", systemImage: "text.badge.plus")
+            }
+            Button {
+                showAddToPlaylist = true
+            } label: {
+                Label("Add to Playlist", systemImage: "music.note.list")
+            }
+            Button {
+                showDownload = true
+            } label: {
+                Label("Download", systemImage: "arrow.down.to.line")
+            }
+            Divider()
+            Button(role: .destructive) {
+                playerVM.toggleLike(track)
+            } label: {
+                Label("Remove from Favorites", systemImage: "heart.slash")
+            }
+        }
         .sheet(isPresented: $showDownload) {
             DownloadOptionsSheet(track: track)
                 .environmentObject(themeManager)
                 .presentationDetents([.fraction(0.55)])
                 .presentationBackground(themeManager.current.background)
                 .presentationCornerRadius(28)
+        }
+        .sheet(isPresented: $showAddToPlaylist) {
+            AddToPlaylistSheet(track: track)
+                .environmentObject(playerVM)
+                .environmentObject(themeManager)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Color(red: 0.07, green: 0.07, blue: 0.07))
+                .presentationCornerRadius(24)
         }
     }
 
@@ -629,6 +668,141 @@ private struct LikedTrackRow: View {
             }
         }
         .frame(width: 32, height: 32)
+    }
+}
+
+// MARK: - Add to playlist sheet
+
+struct AddToPlaylistSheet: View {
+    let track: Track
+    @EnvironmentObject var playerVM: PlayerViewModel
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) private var dismiss
+    @State private var showCreate = false
+    @State private var newName    = ""
+
+    private var accent: Color { themeManager.current.primary }
+    private var card:   Color { themeManager.current.card }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Color.white.opacity(0.25))
+                .frame(width: 36, height: 4)
+                .padding(.top, 12).padding(.bottom, 18)
+
+            Text("ADD TO PLAYLIST")
+                .font(.system(size: 10, weight: .black)).kerning(2)
+                .foregroundStyle(.white.opacity(0.35))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20).padding(.bottom, 14)
+
+            Button {
+                showCreate = true
+            } label: {
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10).fill(accent.opacity(0.15))
+                            .frame(width: 48, height: 48)
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(accent)
+                    }
+                    Text("New Playlist")
+                        .font(themeManager.font(15, .semibold))
+                        .foregroundStyle(accent)
+                    Spacer()
+                }
+                .padding(.horizontal, 20).padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+
+            if !playerVM.playlists.isEmpty {
+                Divider()
+                    .background(Color.white.opacity(0.07))
+                    .padding(.horizontal, 20).padding(.vertical, 10)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(playerVM.playlists) { pl in
+                            let alreadyIn = pl.tracks.contains(where: { $0.id == track.id })
+                            Button {
+                                guard !alreadyIn else { return }
+                                playerVM.addTrackToPlaylist(track, playlistID: pl.id)
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 14) {
+                                    playlistThumb(pl)
+                                        .frame(width: 48, height: 48)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(pl.name)
+                                            .font(themeManager.font(15, .semibold))
+                                            .foregroundStyle(alreadyIn ? .white.opacity(0.35) : .white)
+                                            .lineLimit(1)
+                                        Text("\(pl.tracks.count) track\(pl.tracks.count == 1 ? "" : "s")")
+                                            .font(themeManager.font(12))
+                                            .foregroundStyle(.white.opacity(0.3))
+                                    }
+                                    Spacer()
+                                    if alreadyIn {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(accent)
+                                    }
+                                }
+                                .padding(.horizontal, 20).padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(alreadyIn)
+
+                            if pl.id != playerVM.playlists.last?.id {
+                                Divider()
+                                    .background(Color.white.opacity(0.06))
+                                    .padding(.leading, 82)
+                            }
+                        }
+                    }
+                }
+            } else {
+                Spacer()
+                Text("No playlists yet")
+                    .font(themeManager.font(14))
+                    .foregroundStyle(.white.opacity(0.25))
+                Spacer()
+            }
+        }
+        .preferredColorScheme(.dark)
+        .alert("New Playlist", isPresented: $showCreate) {
+            TextField("Name", text: $newName)
+            Button("Create") {
+                let name = newName.trimmingCharacters(in: .whitespaces)
+                if !name.isEmpty {
+                    let pl = playerVM.createPlaylist(name: name)
+                    playerVM.addTrackToPlaylist(track, playlistID: pl.id)
+                    dismiss()
+                }
+                newName = ""
+            }
+            Button("Cancel", role: .cancel) { newName = "" }
+        }
+    }
+
+    @ViewBuilder
+    private func playlistThumb(_ pl: LocalPlaylist) -> some View {
+        let urls = pl.tracks.prefix(1).compactMap { $0.thumbnailArtworkURL }
+        if let urlStr = urls.first {
+            AsyncImage(url: URL(string: urlStr)) { img in
+                img.resizable().aspectRatio(contentMode: .fill)
+            } placeholder: { card }
+        } else {
+            card.overlay(
+                Image(systemName: "music.note.list")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white.opacity(0.2))
+            )
+        }
     }
 }
 
