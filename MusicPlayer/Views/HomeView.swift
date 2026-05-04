@@ -113,16 +113,14 @@ struct HomeView: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 22))
 
-            // Animated bars — right half of card
+            // Animated bars — full card
             AnimatedWaveBars(
-                barCount:          22,
-                maxHeightFraction: 0.80,
-                baseOpacity:       0.07,
+                barCount:          48,
+                maxHeightFraction: 0.90,
+                baseOpacity:       0.055,
                 accentColor:       .white
             )
-            .frame(width: 160)
             .clipShape(RoundedRectangle(cornerRadius: 22))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
             .allowsHitTesting(false)
 
             // Text + buttons
