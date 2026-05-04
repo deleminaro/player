@@ -185,7 +185,7 @@ enum AppFont: String, CaseIterable {
 
 final class ThemeManager: ObservableObject {
     @Published private(set) var current:         AppTheme       = .dark
-    @Published private(set) var sliderType:      SliderType     = .waveform1
+    @Published private(set) var sliderType:      SliderType     = .waveform2
     @Published private(set) var backgroundStyle: BackgroundStyle = .musicCover
     @Published private(set) var coverStyle:      CoverStyle     = .albumArt
     @Published private(set) var appFont:         AppFont        = .system
