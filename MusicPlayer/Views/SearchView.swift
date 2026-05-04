@@ -61,9 +61,6 @@ struct SearchView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 12).padding(.bottom, 10)
 
-                sourceTabs
-                    .padding(.bottom, 2)
-
                 if source == .soundcloud {
                     filterChips
                         .padding(.bottom, 12)
@@ -92,6 +89,57 @@ struct SearchView: View {
                         .font(.system(size: 12, weight: .black))
                         .kerning(2.5)
                         .foregroundStyle(.white)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { source = .soundcloud }
+                        } label: {
+                            Label("SoundCloud", systemImage: "waveform")
+                        }
+                        if spotify.isAuthenticated {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) { source = .spotify }
+                            } label: {
+                                Label("Spotify", systemImage: "music.note")
+                            }
+                        } else {
+                            Button {
+                                Task {
+                                    spotifyAuthError = nil
+                                    do {
+                                        try await SpotifyService.shared.startAuth()
+                                        withAnimation(.easeInOut(duration: 0.2)) { source = .spotify }
+                                        if !currentQuery.isEmpty {
+                                            await performSearch(currentQuery, reset: true)
+                                        }
+                                    } catch SpotifyError.authCancelled {
+                                    } catch {
+                                        spotifyAuthError = error.localizedDescription
+                                    }
+                                }
+                            } label: {
+                                Label("Connect Spotify", systemImage: "link")
+                            }
+                        }
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(source == .spotify
+                                    ? Color(red: 0.11, green: 0.73, blue: 0.33)
+                                    : Color(red: 1.0, green: 0.34, blue: 0.0))
+                                .frame(width: 30, height: 30)
+                            if source == .spotify {
+                                Text("S")
+                                    .font(.system(size: 13, weight: .black))
+                                    .foregroundStyle(.black)
+                            } else {
+                                Image(systemName: "waveform")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -157,53 +205,6 @@ struct SearchView: View {
         }
         .padding(.horizontal, 16).padding(.vertical, 13)
         .background(bgField, in: Capsule())
-    }
-
-    // MARK: - Source tabs
-
-    private var sourceTabs: some View {
-        HStack(spacing: 8) {
-            sourceTabPill(
-                label: "SoundCloud",
-                icon: "waveform",
-                selectedColor: Color(red: 1.0, green: 0.34, blue: 0.0),
-                isSelected: source == .soundcloud
-            ) {
-                guard source != .soundcloud else { return }
-                withAnimation(.easeInOut(duration: 0.2)) { source = .soundcloud }
-            }
-            sourceTabPill(
-                label: "Spotify",
-                icon: nil,
-                selectedColor: Color(red: 0.11, green: 0.73, blue: 0.33),
-                isSelected: source == .spotify
-            ) {
-                guard source != .spotify else { return }
-                withAnimation(.easeInOut(duration: 0.2)) { source = .spotify }
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 16)
-    }
-
-    private func sourceTabPill(label: String, icon: String?, selectedColor: Color, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 11, weight: .bold))
-                } else {
-                    Text("S")
-                        .font(.system(size: 12, weight: .black))
-                }
-                Text(label)
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(isSelected ? (label == "Spotify" ? .black : .white) : .white.opacity(0.5))
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(isSelected ? selectedColor : bgField, in: Capsule())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Spotify connect prompt
