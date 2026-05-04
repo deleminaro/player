@@ -145,12 +145,17 @@ final class PlayerViewModel: ObservableObject {
                     audio.play(url: localURL)
                     return
                 }
-                // Spotify source — try App Remote first (opens Spotify for full track),
-                // fall back to preview URL or SoundCloud search if unavailable
+                // Spotify source — search SoundCloud for the full track (in-app,
+                // no Spotify app required). Falls back to preview URL if not found.
                 if track.source == .spotify {
-                    if let uri = track.spotifyURI,
-                       let token = SpotifyService.shared.currentAccessToken {
-                        SpotifyRemoteService.shared.play(uri: uri, accessToken: token)
+                    let q = "\(Self.cleanSpotifyTitle(track.title)) \(track.username)"
+                    if let scResults = try? await sc.search(query: q),
+                       let scTrack = scResults.first,
+                       let transcoding = scTrack.media?.transcoding(for: currentQuality) {
+                        guard currentTrack?.id == track.id else { return }
+                        let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
+                        guard currentTrack?.id == track.id else { return }
+                        audio.play(url: url)
                         return
                     }
                     if let preview = track.previewURL, let url = URL(string: preview) {
@@ -158,17 +163,7 @@ final class PlayerViewModel: ObservableObject {
                         audio.play(url: url)
                         return
                     }
-                    // No preview and no URI — search SoundCloud for full track
-                    let scResults = try? await sc.search(query: "\(track.title) \(track.username)")
-                    guard currentTrack?.id == track.id else { return }
-                    if let scTrack = scResults?.first,
-                       let transcoding = scTrack.media?.transcoding(for: currentQuality) {
-                        let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
-                        guard currentTrack?.id == track.id else { return }
-                        audio.play(url: url)
-                        return
-                    }
-                    if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
+                    if currentTrack?.id == track.id { playerState = .idle }
                     return
                 }
                 // SoundCloud: resolve transcoding URL
@@ -187,19 +182,11 @@ final class PlayerViewModel: ObservableObject {
     }
 
     func togglePlayPause() {
-        if currentTrack?.source == .spotify, SpotifyRemoteService.shared.isConnected {
-            isPlaying ? SpotifyRemoteService.shared.pause() : SpotifyRemoteService.shared.resume()
-        } else {
-            isPlaying ? audio.pause() : audio.resume()
-        }
+        isPlaying ? audio.pause() : audio.resume()
     }
 
     func seek(to seconds: Double) {
-        if currentTrack?.source == .spotify, SpotifyRemoteService.shared.isConnected {
-            SpotifyRemoteService.shared.seek(to: seconds)
-        } else {
-            audio.seek(to: seconds)
-        }
+        audio.seek(to: seconds)
         updateNowPlayingElapsed(seconds)
     }
 
@@ -562,5 +549,21 @@ final class PlayerViewModel: ObservableObject {
 
     private func saveSearches() {
         UserDefaults.standard.set(recentSearches, forKey: kSearches)
+    }
+
+    // MARK: - Helpers
+
+    // Strips feat/ft/prod parentheticals from Spotify titles before SoundCloud search.
+    private static func cleanSpotifyTitle(_ raw: String) -> String {
+        var s = raw
+        let patterns = [
+            #"\s*[\(\[](?:feat\.?|ft\.?|with|prod\.?(?:\s+by)?)[^\)\]]*[\)\]]"#,
+            #"\s*[\(\[][^\)\]]*\b(?:remix|edit|version|mix|remaster(?:ed)?)\b[^\)\]]*[\)\]]"#
+        ]
+        for p in patterns {
+            s = s.replacingOccurrences(of: p, with: "",
+                options: [.regularExpression, .caseInsensitive])
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
