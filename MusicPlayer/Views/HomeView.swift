@@ -136,16 +136,17 @@ struct HomeView: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 22))
 
-            // Decorative static bars top-right
-            HStack(alignment: .center, spacing: 3) {
-                ForEach([12, 30, 18, 46, 22, 38, 14, 42, 20, 34, 10, 28, 44, 16, 36, 24], id: \.self) { h in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(.white.opacity(0.11))
-                        .frame(width: 3, height: CGFloat(h))
-                }
-            }
-            .padding(.trailing, 22).padding(.top, 22)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            // Animated bars — right half of card
+            AnimatedWaveBars(
+                barCount:          22,
+                maxHeightFraction: 0.80,
+                baseOpacity:       0.07,
+                accentColor:       .white
+            )
+            .frame(width: 160)
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+            .allowsHitTesting(false)
 
             // Text + buttons
             VStack(alignment: .leading, spacing: 8) {
