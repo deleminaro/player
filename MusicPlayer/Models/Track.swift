@@ -163,7 +163,7 @@ struct QueueItem: Identifiable {
 
 // MARK: - Local Playlist (user-created, stored on device)
 
-struct LocalPlaylist: Identifiable, Codable {
+struct LocalPlaylist: Identifiable, Codable, Hashable {
     let id: UUID
     var name: String
     var tracks: [Track]
