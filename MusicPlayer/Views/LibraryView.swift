@@ -40,6 +40,9 @@ struct LibraryView: View {
     @State private var showCreateSheet  = false
     @State private var newPlaylistName  = ""
     @State private var selectedPlaylist: LocalPlaylist?
+    @State private var renameTarget:    LocalPlaylist? = nil
+    @State private var renameText       = ""
+    @State private var deleteTarget:    LocalPlaylist? = nil
 
     private var bg:     Color { themeManager.current.background }
     private var card:   Color { themeManager.current.card }
@@ -94,6 +97,34 @@ struct LibraryView: View {
                 newPlaylistName = ""
             }
             Button("Cancel", role: .cancel) { newPlaylistName = "" }
+        }
+        .alert("Rename Playlist", isPresented: Binding(
+            get: { renameTarget != nil },
+            set: { if !$0 { renameTarget = nil } }
+        )) {
+            TextField("Name", text: $renameText)
+            Button("Rename") {
+                let name = renameText.trimmingCharacters(in: .whitespaces)
+                if !name.isEmpty, let pl = renameTarget {
+                    playerVM.renamePlaylist(pl.id, to: name)
+                }
+                renameTarget = nil
+            }
+            Button("Cancel", role: .cancel) { renameTarget = nil }
+        } message: {
+            if let pl = renameTarget { Text(pl.name) }
+        }
+        .alert("Delete \"\(deleteTarget?.name ?? "")\"?", isPresented: Binding(
+            get: { deleteTarget != nil },
+            set: { if !$0 { deleteTarget = nil } }
+        )) {
+            Button("Delete", role: .destructive) {
+                if let pl = deleteTarget { playerVM.deletePlaylist(pl.id) }
+                deleteTarget = nil
+            }
+            Button("Cancel", role: .cancel) { deleteTarget = nil }
+        } message: {
+            Text("This will remove the playlist. Tracks won't be deleted.")
         }
     }
 
@@ -259,6 +290,19 @@ struct LibraryView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                renameText = pl.name
+                renameTarget = pl
+            } label: {
+                Label("Rename", systemImage: "pencil")
+            }
+            Button(role: .destructive) {
+                deleteTarget = pl
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 
     @ViewBuilder
