@@ -11,6 +11,8 @@ struct ContentView: View {
                     .tabItem { Label("Home", systemImage: "house.fill") }
                 SearchView()
                     .tabItem { Label("Search", systemImage: "magnifyingglass") }
+                WaveView()
+                    .tabItem { Label("Wave", systemImage: "waveform") }
                 LibraryView()
                     .tabItem { Label("Library", systemImage: "building.columns.fill") }
                 SettingsView()

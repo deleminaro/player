@@ -44,6 +44,8 @@
 		AA18102FAA18102FAA18102F /* Minecraft.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA10002FAA10002FAA10002F /* Minecraft.ttf */; };
 		AA181022AA181022AA181022 /* SpotifyRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100022AA100022AA100022 /* SpotifyRemoteService.swift */; };
 		AA181023AA181023AA181023 /* SpotifyAlbumDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */; };
+		AA181024AA181024AA181024 /* WaveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100024AA100024AA100024 /* WaveService.swift */; };
+		AA181025AA181025AA181025 /* WaveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100025AA100025AA100025 /* WaveView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,6 +83,8 @@
 		AA10002FAA10002FAA10002F /* Minecraft.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Minecraft.ttf; sourceTree = "<group>"; };
 		AA100022AA100022AA100022 /* SpotifyRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyRemoteService.swift; sourceTree = "<group>"; };
 		AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAlbumDetailView.swift; sourceTree = "<group>"; };
+		AA100024AA100024AA100024 /* WaveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveService.swift; sourceTree = "<group>"; };
+		AA100025AA100025AA100025 /* WaveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +148,7 @@
 				AA10001CAA10001CAA10001C /* SpotifyService.swift */,
 				AA100022AA100022AA100022 /* SpotifyRemoteService.swift */,
 				AA100021AA100021AA100021 /* FirebaseManager.swift */,
+				AA100024AA100024AA100024 /* WaveService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -174,6 +179,7 @@
 				AA10001DAA10001DAA10001D /* SCArtistProfileView.swift */,
 				AA10001EAA10001EAA10001E /* SpotifyArtistProfileView.swift */,
 				AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */,
+				AA100025AA100025AA100025 /* WaveView.swift */,
 				AA100020AA100020AA100020 /* AuthView.swift */,
 			);
 			path = Views;
@@ -290,6 +296,8 @@
 				AA18101EAA18101EAA18101E /* SpotifyArtistProfileView.swift in Sources */,
 				AA181022AA181022AA181022 /* SpotifyRemoteService.swift in Sources */,
 				AA181023AA181023AA181023 /* SpotifyAlbumDetailView.swift in Sources */,
+				AA181024AA181024AA181024 /* WaveService.swift in Sources */,
+				AA181025AA181025AA181025 /* WaveView.swift in Sources */,
 				AA181020AA181020AA181020 /* AuthView.swift in Sources */,
 				AA181021AA181021AA181021 /* FirebaseManager.swift in Sources */,
 			);
