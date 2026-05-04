@@ -5,6 +5,7 @@ struct CustomizationView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var tab: CTab = .cover
     @State private var coverPhotoItem: PhotosPickerItem?
+    @AppStorage("mp_wave_anim") private var waveAnimEnabled = true
 
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
@@ -226,6 +227,43 @@ struct CustomizationView: View {
                 }
             }
             .padding(.horizontal, 16)
+
+            sectionHeader("EFFECTS")
+
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12).fill(bgCard)
+                    AnimatedWaveBars(
+                        barCount: 18, maxHeightFraction: 1.0,
+                        baseOpacity: 0.25,
+                        accentColor: themeManager.current.primary
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    if !waveAnimEnabled {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.black.opacity(0.55))
+                        Image(systemName: "pause.circle")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                .frame(width: 64, height: 48)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Animated Wave Background")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text("Home & Now Playing · 20 fps GPU · small battery impact")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                Spacer(minLength: 0)
+                Toggle("", isOn: $waveAnimEnabled)
+                    .labelsHidden()
+                    .tint(themeManager.current.primary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
         }
     }
 

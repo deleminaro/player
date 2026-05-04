@@ -189,34 +189,55 @@ struct WaveView: View {
 
 // MARK: - Animated wave bars
 
-struct WaveHeaderBars: View {
-    @EnvironmentObject var themeManager: ThemeManager
+// Shared by HomeView, NowPlayingView, and WaveView.
+// Uses Canvas (single GPU draw call per frame) at 20 fps — much lower
+// CPU/power than ForEach + individual shape views at 30 fps.
+struct AnimatedWaveBars: View {
+    var barCount:          Int     = 36
+    var maxHeightFraction: CGFloat = 0.50
+    var baseOpacity:       Double  = 0.07
+    var accentColor:       Color
+
+    @AppStorage("mp_wave_anim") private var enabled = true
+    @Environment(\.scenePhase) private var phase
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30)) { tl in
-            let t = tl.date.timeIntervalSinceReferenceDate
-            HStack(alignment: .center, spacing: 3) {
-                ForEach(0..<36, id: \.self) { i in
-                    let h = barHeight(t: t, i: i)
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(barColor(i: i))
-                        .frame(width: 3, height: h)
+        if enabled {
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { tl in
+                let t  = phase == .active ? tl.date.timeIntervalSinceReferenceDate : 0
+                Canvas { ctx, size in
+                    let bw   = size.width / CGFloat(barCount)
+                    let maxH = size.height * maxHeightFraction
+                    for i in 0..<barCount {
+                        let fi  = Double(i)
+                        let v   = (sin(t * 2.2 + fi * 0.38)
+                                 + sin(t * 3.5 + fi * 0.55)
+                                 + sin(fi * 0.7)) / 3.0
+                        let h   = maxH * CGFloat(0.10 + (v + 1) / 2.0 * 0.90)
+                        let opc = baseOpacity + fi / Double(barCount) * baseOpacity
+                        let rect = CGRect(x: CGFloat(i) * bw,
+                                          y: size.height - h,
+                                          width: max(bw - 2, 1),
+                                          height: h)
+                        ctx.fill(Path(roundedRect: rect, cornerRadius: 2),
+                                 with: .color(accentColor.opacity(opc)))
+                    }
                 }
             }
         }
     }
+}
 
-    private func barHeight(t: Double, i: Int) -> CGFloat {
-        let w1 = sin(t * 2.2 + Double(i) * 0.38)
-        let w2 = sin(t * 3.5 + Double(i) * 0.55)
-        let w3 = sin(Double(i) * 0.7)
-        let v  = (w1 + w2 + w3) / 3.0
-        return CGFloat(10 + (v + 1) / 2.0 * 62)
-    }
+// Used in WaveView header — thin bar strip, not full-screen
+struct WaveHeaderBars: View {
+    @EnvironmentObject var themeManager: ThemeManager
 
-    private func barColor(i: Int) -> Color {
-        let phase   = Double(i) / 36.0
-        let opacity = 0.2 + phase * 0.6
-        return themeManager.current.primary.opacity(opacity)
+    var body: some View {
+        AnimatedWaveBars(
+            barCount:          36,
+            maxHeightFraction: 1.0,
+            baseOpacity:       0.20,
+            accentColor:       themeManager.current.primary
+        )
     }
 }

@@ -9,10 +9,12 @@ struct NowPlayingView: View {
     @State private var showEQ            = false
     @State private var showSpeed         = false
     @State private var showAddToPlaylist = false
-    @State private var isScrubbing  = false
-    @State private var hasAppeared  = false
+    @State private var isScrubbing       = false
+    @State private var hasAppeared       = false
     @State private var waveProgress: Double = 0
     @State private var dragOffset: CGFloat  = 0
+    @State private var showWavePowerAlert   = false
+    @AppStorage("mp_wave_anim") private var waveAnimEnabled = true
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private var bg:       Color { themeManager.current.background }
@@ -116,8 +118,22 @@ struct NowPlayingView: View {
                     colors: [.black.opacity(0.15), .black.opacity(0.35), .black.opacity(0.65), .black.opacity(0.88)],
                     startPoint: .top, endPoint: .bottom
                 )
+                // Animated wave — tappable to show power info
+                AnimatedWaveBars(
+                    barCount:          40,
+                    maxHeightFraction: 0.38,
+                    baseOpacity:       0.06,
+                    accentColor:       themeManager.current.primary
+                )
+                .onTapGesture { showWavePowerAlert = true }
             }
             .ignoresSafeArea()
+        }
+        .alert("Animated Wave", isPresented: $showWavePowerAlert) {
+            Button("Keep On") {}
+            Button("Turn Off", role: .destructive) { waveAnimEnabled = false }
+        } message: {
+            Text("The wave animation runs at 20 fps using the GPU. It has a small but continuous battery impact. You can toggle it in Customization → Effects.")
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showLyrics) {
