@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 @MainActor
@@ -33,39 +34,43 @@ final class DownloadManager: ObservableObject {
     }
 
     func localCacheURL(for trackID: Int) -> URL? {
-        let u = cacheDir.appendingPathComponent("\(trackID).mp3")
-        return FileManager.default.fileExists(atPath: u.path) ? u : nil
+        for ext in ["mp3", "m4a"] {
+            let u = cacheDir.appendingPathComponent("\(trackID).\(ext)")
+            if isValidAudioFile(at: u) { return u }
+        }
+        return nil
     }
 
     func localOfflineURL(for trackID: Int) -> URL? {
-        let u = offlineDir.appendingPathComponent("\(trackID).mp3")
-        return FileManager.default.fileExists(atPath: u.path) ? u : nil
+        for ext in ["mp3", "m4a"] {
+            let u = offlineDir.appendingPathComponent("\(trackID).\(ext)")
+            if isValidAudioFile(at: u) { return u }
+        }
+        return nil
     }
 
-    // MARK: - Save to cache
+    // MARK: - Save to cache (Caches dir — OS may evict)
 
     func saveToCache(track: Track, streamURL: URL) async {
         guard !cachedIDs.contains(track.id), !downloading.contains(track.id) else { return }
         downloading.insert(track.id)
-        let dest = cacheDir.appendingPathComponent("\(track.id).mp3")
-        if await rawDownload(from: streamURL, to: dest) {
+        defer { downloading.remove(track.id) }
+        if await store(from: streamURL, trackID: track.id, in: cacheDir) {
             cachedIDs.insert(track.id)
             UserDefaults.standard.set(Array(cachedIDs), forKey: kCached)
         }
-        downloading.remove(track.id)
     }
 
-    // MARK: - Download offline
+    // MARK: - Download offline (Documents dir — persists)
 
     func downloadOffline(track: Track, streamURL: URL) async {
         guard !offlineIDs.contains(track.id), !downloading.contains(track.id) else { return }
         downloading.insert(track.id)
-        let dest = offlineDir.appendingPathComponent("\(track.id).mp3")
-        if await rawDownload(from: streamURL, to: dest) {
+        defer { downloading.remove(track.id) }
+        if await store(from: streamURL, trackID: track.id, in: offlineDir) {
             offlineIDs.insert(track.id)
             UserDefaults.standard.set(Array(offlineIDs), forKey: kOffline)
         }
-        downloading.remove(track.id)
     }
 
     // MARK: - Prepare export (Save to folder)
@@ -74,16 +79,44 @@ final class DownloadManager: ObservableObject {
         let safe = track.title
             .components(separatedBy: CharacterSet(charactersIn: "/:*?\"<>|\\"))
             .joined(separator: "_")
-        let dest = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).mp3")
-        return await rawDownload(from: streamURL, to: dest) ? dest : nil
+        let ext  = isHLSURL(streamURL) ? "m4a" : "mp3"
+        let dest = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).\(ext)")
+        return await fetch(from: streamURL, to: dest) ? dest : nil
     }
 
-    // MARK: - Internal
+    // MARK: - Core
 
-    @discardableResult
-    private func rawDownload(from url: URL, to dest: URL) async -> Bool {
-        if FileManager.default.fileExists(atPath: dest.path) { return true }
-        return await withCheckedContinuation { cont in
+    private func store(from url: URL, trackID: Int, in dir: URL) async -> Bool {
+        let ext  = isHLSURL(url) ? "m4a" : "mp3"
+        let dest = dir.appendingPathComponent("\(trackID).\(ext)")
+        return await fetch(from: url, to: dest)
+    }
+
+    private func fetch(from url: URL, to dest: URL) async -> Bool {
+        if isValidAudioFile(at: dest) { return true }
+        try? FileManager.default.removeItem(at: dest)
+        return isHLSURL(url) ? await exportHLS(from: url, to: dest)
+                              : await directDownload(from: url, to: dest)
+    }
+
+    // MARK: - Helpers
+
+    private func isHLSURL(_ url: URL) -> Bool {
+        let s = url.absoluteString
+        return url.pathExtension.lowercased() == "m3u8"
+            || s.contains(".m3u8")
+            || (url.host?.contains("hls") == true && !s.contains("progressive"))
+    }
+
+    /// Guards against saving an M3U8 manifest (a few KB) as "cached audio".
+    private func isValidAudioFile(at url: URL) -> Bool {
+        guard FileManager.default.fileExists(atPath: url.path) else { return false }
+        let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
+        return size > 50_000
+    }
+
+    private func directDownload(from url: URL, to dest: URL) async -> Bool {
+        await withCheckedContinuation { cont in
             URLSession.shared.downloadTask(with: url) { local, _, err in
                 guard let local, err == nil else { cont.resume(returning: false); return }
                 do {
@@ -97,10 +130,29 @@ final class DownloadManager: ObservableObject {
         }
     }
 
+    /// Exports an HLS stream (or any AVAsset) to a local .m4a file.
+    private func exportHLS(from url: URL, to dest: URL) async -> Bool {
+        let asset = AVURLAsset(url: url)
+        guard let session = AVAssetExportSession(asset: asset,
+                                                 presetName: AVAssetExportPresetAppleM4A) else {
+            return false
+        }
+        session.outputURL      = dest
+        session.outputFileType = .m4a
+        return await withCheckedContinuation { cont in
+            session.exportAsynchronously {
+                cont.resume(returning: session.status == .completed)
+            }
+        }
+    }
+
+    // MARK: - Persistence
+
     private func loadPersistedIDs() {
         let cached  = Set(UserDefaults.standard.array(forKey: kCached)  as? [Int] ?? [])
         let offline = Set(UserDefaults.standard.array(forKey: kOffline) as? [Int] ?? [])
-        cachedIDs  = cached.filter  { FileManager.default.fileExists(atPath: cacheDir.appendingPathComponent("\($0).mp3").path) }
-        offlineIDs = offline.filter { FileManager.default.fileExists(atPath: offlineDir.appendingPathComponent("\($0).mp3").path) }
+        // Only keep IDs where a valid audio file actually exists on disk
+        cachedIDs  = cached.filter  { localCacheURL(for: $0) != nil }
+        offlineIDs = offline.filter { localOfflineURL(for: $0) != nil }
     }
 }
