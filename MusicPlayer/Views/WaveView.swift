@@ -198,13 +198,11 @@ struct AnimatedWaveBars: View {
     var baseOpacity:       Double  = 0.07
     var accentColor:       Color
 
-    @AppStorage("mp_wave_anim") private var enabled = true
     @Environment(\.scenePhase) private var phase
 
     var body: some View {
-        if enabled {
-            TimelineView(.animation(minimumInterval: 1.0 / 20)) { tl in
-                let t  = phase == .active ? tl.date.timeIntervalSinceReferenceDate : 0
+        TimelineView(.animation(minimumInterval: 1.0 / 20)) { tl in
+            let t = phase == .active ? tl.date.timeIntervalSinceReferenceDate : 0
                 Canvas { ctx, size in
                     let bw   = size.width / CGFloat(barCount)
                     let maxH = size.height * maxHeightFraction

@@ -27,11 +27,7 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                bg.ignoresSafeArea()
-                waveBackground
-
-                ScrollView(showsIndicators: false) {
+            ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 28) {
                         greetingHeader
                             .padding(.horizontal, 20)
@@ -50,8 +46,8 @@ struct HomeView: View {
                         }
                     }
                     .padding(.bottom, 120)
-                }
             }
+            .background(bg.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -74,26 +70,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Animated wave background
-
-    private var waveBackground: some View {
-        ZStack {
-            AnimatedWaveBars(
-                barCount:          50,
-                maxHeightFraction: 0.52,
-                baseOpacity:       0.055,
-                accentColor:       accent
-            )
-            LinearGradient(
-                colors: [bg, bg.opacity(0.75), bg.opacity(0.2), .clear],
-                startPoint: .top, endPoint: .bottom
-            )
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-    }
-
-    // MARK: - Greeting
+// MARK: - Greeting
 
     private var greetingHeader: some View {
         VStack(alignment: .leading, spacing: 3) {
