@@ -347,60 +347,13 @@ struct NowPlayingView: View {
     @ViewBuilder
     private var waveformProgress: some View {
         switch themeManager.sliderType {
-        case .waveform1: waveform1Progress
         case .waveform2: waveform2Progress
         case .classic:   classicProgress
         case .glimmer:   glimmerProgress
         }
     }
 
-    // Waveform I — random-height bars, top-growing (unique per song)
-    private var waveform1Progress: some View {
-        let bars  = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
-        let accent = themeManager.current.primary
-
-        return VStack(spacing: 6) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Canvas { ctx, size in
-                        let step = size.width / CGFloat(bars.count)
-                        let barW = max(2, step * 0.72)
-                        for (i, h) in bars.enumerated() {
-                            let barH = h * size.height
-                            let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: (size.height-barH)/2, width: barW, height: barH)
-                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(Color.white.opacity(0.22)))
-                        }
-                    }
-                    Canvas { ctx, size in
-                        let step = size.width / CGFloat(bars.count)
-                        let barW = max(2, step * 0.72)
-                        for (i, h) in bars.enumerated() {
-                            let barH = h * size.height
-                            let rect = CGRect(x: CGFloat(i)*step+(step-barW)/2, y: (size.height-barH)/2, width: barW, height: barH)
-                            ctx.fill(Path(roundedRect: rect, cornerRadius: barW/2), with: .color(accent))
-                        }
-                    }
-                    .mask(alignment: .leading) {
-                        Rectangle().frame(width: max(0, geo.size.width * waveProgress))
-                    }
-                }
-                .contentShape(Rectangle())
-                .gesture(DragGesture(minimumDistance: 0)
-                    .onChanged { v in
-                        isScrubbing = true
-                        let p = max(0, min(1, v.location.x / geo.size.width))
-                        waveProgress = p
-                        playerVM.seek(to: p * playerVM.duration)
-                    }
-                    .onEnded { _ in isScrubbing = false }
-                )
-            }
-            .frame(height: 40)
-            timeLabels
-        }
-    }
-
-    // Waveform II — symmetric bars growing from center (unique per song)
+    // Waveform — symmetric bars growing from center (unique per song)
     private var waveform2Progress: some View {
         let bars  = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
         let accent = themeManager.current.primary

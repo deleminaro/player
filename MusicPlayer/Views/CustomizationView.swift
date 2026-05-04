@@ -428,17 +428,6 @@ private struct SliderTypeCard: View {
                 .frame(maxHeight: .infinity)
             }
             .frame(height: 20)
-        case .waveform1:
-            HStack(spacing: 2) {
-                ForEach(0..<18, id: \.self) { i in
-                    let heights: [CGFloat] = [4,6,10,7,12,8,14,10,6,9,13,7,11,8,5,9,12,6]
-                    let h = heights[i % heights.count]
-                    let filled = i < 11
-                    Capsule()
-                        .fill(filled ? accent : Color.white.opacity(0.15))
-                        .frame(width: 3, height: h)
-                }
-            }
         case .waveform2:
             HStack(spacing: 2) {
                 ForEach(0..<18, id: \.self) { i in
