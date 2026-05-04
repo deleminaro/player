@@ -27,27 +27,31 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 28) {
-                    greetingHeader
-                        .padding(.horizontal, 20)
-                        .padding(.top, 4)
+            ZStack {
+                bg.ignoresSafeArea()
+                waveBackground
 
-                    waveCard
-                        .padding(.horizontal, 20)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 28) {
+                        greetingHeader
+                            .padding(.horizontal, 20)
+                            .padding(.top, 4)
 
-                    quickRow
-                        .padding(.horizontal, 20)
+                        waveCard
+                            .padding(.horizontal, 20)
 
-                    if !playerVM.recentlyPlayed.isEmpty {
-                        recentSection
-                    } else {
-                        emptyHint.padding(.horizontal, 20)
+                        quickRow
+                            .padding(.horizontal, 20)
+
+                        if !playerVM.recentlyPlayed.isEmpty {
+                            recentSection
+                        } else {
+                            emptyHint.padding(.horizontal, 20)
+                        }
                     }
+                    .padding(.bottom, 120)
                 }
-                .padding(.bottom, 120)
             }
-            .background(bg.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -68,6 +72,41 @@ struct HomeView: View {
                 .environmentObject(playerVM)
                 .environmentObject(themeManager)
         }
+    }
+
+    // MARK: - Animated wave background
+
+    private var waveBackground: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30)) { tl in
+            let t = tl.date.timeIntervalSinceReferenceDate
+            GeometryReader { geo in
+                let count  = 55
+                let bw     = (geo.size.width + 2) / CGFloat(count)   // bar + gap
+                let maxH   = geo.size.height * 0.52
+
+                HStack(alignment: .bottom, spacing: 2) {
+                    ForEach(0..<count, id: \.self) { i in
+                        let w1  = sin(t * 2.2  + Double(i) * 0.38)
+                        let w2  = sin(t * 3.5  + Double(i) * 0.55)
+                        let w3  = sin(Double(i) * 0.7)
+                        let v   = (w1 + w2 + w3) / 3.0
+                        let h   = maxH * CGFloat(0.10 + (v + 1) / 2.0 * 0.90)
+                        let opc = 0.055 + Double(i) / Double(count) * 0.055
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(accent.opacity(opc))
+                            .frame(width: max(bw - 2, 1), height: h)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+            .overlay(
+                LinearGradient(
+                    colors: [bg, bg.opacity(0.75), bg.opacity(0.2), .clear],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
+        }
+        .ignoresSafeArea()
     }
 
     // MARK: - Greeting
