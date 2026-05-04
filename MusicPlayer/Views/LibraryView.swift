@@ -79,12 +79,12 @@ struct LibraryView: View {
                     }
                 }
             }
-        }
-        .sheet(isPresented: $showLiked) {
-            LikedTracksView().environmentObject(playerVM).environmentObject(themeManager)
-        }
-        .sheet(item: $selectedPlaylist) { pl in
-            PlaylistDetailView(playlist: pl).environmentObject(playerVM).environmentObject(themeManager)
+            .navigationDestination(isPresented: $showLiked) {
+                LikedTracksView().environmentObject(playerVM).environmentObject(themeManager)
+            }
+            .navigationDestination(item: $selectedPlaylist) { pl in
+                PlaylistDetailView(playlist: pl).environmentObject(playerVM).environmentObject(themeManager)
+            }
         }
         .alert("New Playlist", isPresented: $showCreateSheet) {
             TextField("Name", text: $newPlaylistName)
@@ -292,7 +292,6 @@ struct LibraryView: View {
 struct LikedTracksView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
-    @Environment(\.dismiss) var dismiss
 
     @State private var showSort    = false
     @State private var showSearch  = false
@@ -327,147 +326,142 @@ struct LikedTracksView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    heroHeader
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                }
+        List {
+            Section {
+                heroHeader
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
 
-                if showSearch {
-                    Section {
-                        HStack(spacing: 10) {
-                            Image(systemName: "magnifyingglass").foregroundStyle(.white.opacity(0.4))
-                            TextField("Search", text: $searchText)
-                                .foregroundStyle(.white).tint(primary)
-                            if !searchText.isEmpty {
-                                Button { searchText = "" } label: {
-                                    Image(systemName: "xmark.circle.fill").foregroundStyle(.white.opacity(0.4))
-                                }
+            if showSearch {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass").foregroundStyle(.white.opacity(0.4))
+                        TextField("Search", text: $searchText)
+                            .foregroundStyle(.white).tint(primary)
+                        if !searchText.isEmpty {
+                            Button { searchText = "" } label: {
+                                Image(systemName: "xmark.circle.fill").foregroundStyle(.white.opacity(0.4))
                             }
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
-                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal, 16).padding(.vertical, 6)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 16).padding(.vertical, 6)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(bg)
+                    .listRowSeparator(.hidden)
+                }
+            }
+
+            Section {
+                HStack(spacing: 12) {
+                    Button {
+                        guard !displayedTracks.isEmpty else { return }
+                        playerVM.playFromList(displayedTracks, startingWith: displayedTracks[0])
+                        playerVM.showingNowPlaying = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "play.fill").font(.system(size: 14, weight: .bold))
+                            Text("Play").font(.system(size: 16, weight: .bold))
+                        }
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity).padding(.vertical, 16)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.96))
+
+                    Button {
+                        guard !displayedTracks.isEmpty else { return }
+                        let s = displayedTracks.shuffled()
+                        playerVM.playFromList(s, startingWith: s[0])
+                        playerVM.showingNowPlaying = true
+                    } label: {
+                        Image(systemName: "shuffle")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(primary)
+                            .frame(width: 54, height: 54)
+                            .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.92))
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(bg)
+                .listRowSeparator(.hidden)
+            }
+
+            Section {
+                ForEach(displayedTracks) { track in
+                    LikedTrackRow(track: track)
+                        .onTapGesture {
+                            playerVM.playFromList(displayedTracks, startingWith: track)
+                            playerVM.showingNowPlaying = true
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                playerVM.toggleLike(track)
+                            } label: { Label("Unlike", systemImage: "heart.slash") }
+                        }
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(bg)
-                        .listRowSeparator(.hidden)
-                    }
+                        .listRowSeparatorTint(Color.white.opacity(0.06))
                 }
-
-                Section {
-                    HStack(spacing: 12) {
+            }
+        }
+        .listStyle(.plain)
+        .background(bg.ignoresSafeArea())
+        .preferredColorScheme(.dark)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("LIKED TRACKS")
+                    .font(.system(size: 12, weight: .black))
+                    .kerning(2.5)
+                    .foregroundStyle(.white)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 6) {
+                    Button { showSort = true } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            .padding(8).background(Color.white.opacity(0.15), in: Circle())
+                    }
+                    Button {
+                        withAnimation(.spring(response: 0.3)) { showSearch.toggle() }
+                        if !showSearch { searchText = "" }
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            .padding(8).background(Color.white.opacity(0.15), in: Circle())
+                    }
+                    Menu {
                         Button {
                             guard !displayedTracks.isEmpty else { return }
                             playerVM.playFromList(displayedTracks, startingWith: displayedTracks[0])
                             playerVM.showingNowPlaying = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "play.fill").font(.system(size: 14, weight: .bold))
-                                Text("Play").font(.system(size: 16, weight: .bold))
-                            }
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity).padding(.vertical, 16)
-                            .background(.white, in: RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(ScaleButtonStyle(scale: 0.96))
-
+                        } label: { Label("Play All", systemImage: "play.fill") }
                         Button {
                             guard !displayedTracks.isEmpty else { return }
                             let s = displayedTracks.shuffled()
                             playerVM.playFromList(s, startingWith: s[0])
                             playerVM.showingNowPlaying = true
-                        } label: {
-                            Image(systemName: "shuffle")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(primary)
-                                .frame(width: 54, height: 54)
-                                .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
+                        } label: { Label("Shuffle", systemImage: "shuffle") }
+                        Divider()
+                        Button { downloadAll() } label: {
+                            Label("Download All", systemImage: "arrow.down.circle")
                         }
-                        .buttonStyle(ScaleButtonStyle(scale: 0.92))
-                    }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(bg)
-                    .listRowSeparator(.hidden)
-                }
-
-                Section {
-                    ForEach(displayedTracks) { track in
-                        LikedTrackRow(track: track)
-                            .onTapGesture {
-                                playerVM.playFromList(displayedTracks, startingWith: track)
-                                playerVM.showingNowPlaying = true
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    playerVM.toggleLike(track)
-                                } label: { Label("Unlike", systemImage: "heart.slash") }
-                            }
-                            .listRowInsets(EdgeInsets())
-                            .listRowBackground(bg)
-                            .listRowSeparatorTint(Color.white.opacity(0.06))
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            .padding(8).background(Color.white.opacity(0.15), in: Circle())
                     }
                 }
             }
-            .listStyle(.plain)
-            .background(bg.ignoresSafeArea())
-            .preferredColorScheme(.dark)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    HStack(spacing: 6) {
-                        Button { dismiss() } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                                .padding(8).background(Color.white.opacity(0.15), in: Circle())
-                        }
-                        Button { showSort = true } label: {
-                            Image(systemName: "line.3.horizontal.decrease")
-                                .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                                .padding(8).background(Color.white.opacity(0.15), in: Circle())
-                        }
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 6) {
-                        Button {
-                            withAnimation(.spring(response: 0.3)) { showSearch.toggle() }
-                            if !showSearch { searchText = "" }
-                        } label: {
-                            Image(systemName: "magnifyingglass")
-                                .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                                .padding(8).background(Color.white.opacity(0.15), in: Circle())
-                        }
-                        Menu {
-                            Button {
-                                guard !displayedTracks.isEmpty else { return }
-                                playerVM.playFromList(displayedTracks, startingWith: displayedTracks[0])
-                                playerVM.showingNowPlaying = true
-                            } label: { Label("Play All", systemImage: "play.fill") }
-                            Button {
-                                guard !displayedTracks.isEmpty else { return }
-                                let s = displayedTracks.shuffled()
-                                playerVM.playFromList(s, startingWith: s[0])
-                                playerVM.showingNowPlaying = true
-                            } label: { Label("Shuffle", systemImage: "shuffle") }
-                            Divider()
-                            Button { downloadAll() } label: {
-                                Label("Download All", systemImage: "arrow.down.circle")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                                .padding(8).background(Color.white.opacity(0.15), in: Circle())
-                        }
-                    }
-                }
-            }
-            .toolbarBackground(primary, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
         }
-        .presentationBackground(bg)
+        .toolbarBackground(primary, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .overlay(alignment: .bottom) {
             if let msg = downloadToast {
                 Text(msg)
@@ -638,7 +632,6 @@ struct FavoritesSortSheet: View {
 struct PlaylistDetailView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
-    @Environment(\.dismiss) var dismiss
     let playlist: LocalPlaylist
 
     private var currentPlaylist: LocalPlaylist {
@@ -649,101 +642,96 @@ struct PlaylistDetailView: View {
     private var bgCard: Color { themeManager.current.card }
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    artworkHeader
-                        .frame(height: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .padding(.horizontal, 50)
-                        .padding(.top, 16).padding(.bottom, 12)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                artworkHeader
+                    .frame(height: 180)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .padding(.horizontal, 50)
+                    .padding(.top, 16).padding(.bottom, 12)
 
-                    Text(currentPlaylist.name)
-                        .font(themeManager.font(22, .bold)).foregroundStyle(.white)
-                    Text("\(currentPlaylist.tracks.count) tracks")
-                        .font(themeManager.font(12))
-                        .foregroundStyle(themeManager.current.primary.opacity(0.7)).padding(.top, 4)
+                Text(currentPlaylist.name)
+                    .font(themeManager.font(22, .bold)).foregroundStyle(.white)
+                Text("\(currentPlaylist.tracks.count) tracks")
+                    .font(themeManager.font(12))
+                    .foregroundStyle(themeManager.current.primary.opacity(0.7)).padding(.top, 4)
 
-                    HStack(spacing: 16) {
-                        Button {
-                            guard !currentPlaylist.tracks.isEmpty else { return }
-                            playerVM.playFromList(currentPlaylist.tracks, startingWith: currentPlaylist.tracks[0])
-                            playerVM.showingNowPlaying = true
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "play.fill")
-                                Text("Play").font(themeManager.font(13, .semibold))
-                            }
-                            .foregroundStyle(themeManager.current.onPrimary)
-                            .frame(maxWidth: .infinity).padding(.vertical, 14)
-                            .background(themeManager.current.primary, in: RoundedRectangle(cornerRadius: 14))
+                HStack(spacing: 16) {
+                    Button {
+                        guard !currentPlaylist.tracks.isEmpty else { return }
+                        playerVM.playFromList(currentPlaylist.tracks, startingWith: currentPlaylist.tracks[0])
+                        playerVM.showingNowPlaying = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "play.fill")
+                            Text("Play").font(themeManager.font(13, .semibold))
                         }
-                        Button {
-                            guard !currentPlaylist.tracks.isEmpty else { return }
-                            let s = currentPlaylist.tracks.shuffled()
-                            playerVM.playFromList(s, startingWith: s[0])
-                            playerVM.showingNowPlaying = true
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "shuffle")
-                                Text("Shuffle").font(themeManager.font(13, .semibold))
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 14)
-                            .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
-                        }
+                        .foregroundStyle(themeManager.current.onPrimary)
+                        .frame(maxWidth: .infinity).padding(.vertical, 14)
+                        .background(themeManager.current.primary, in: RoundedRectangle(cornerRadius: 14))
                     }
-                    .padding(.horizontal, 20).padding(.top, 20)
-
-                    if currentPlaylist.tracks.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "music.note")
-                                .font(.system(size: 36)).foregroundStyle(themeManager.current.primary.opacity(0.3))
-                            Text("No tracks yet")
-                                .font(themeManager.font(13, .semibold)).foregroundStyle(.white.opacity(0.4))
-                            Text("Add tracks from the Search tab.")
-                                .font(.system(size: 12)).foregroundStyle(.white.opacity(0.25))
+                    Button {
+                        guard !currentPlaylist.tracks.isEmpty else { return }
+                        let s = currentPlaylist.tracks.shuffled()
+                        playerVM.playFromList(s, startingWith: s[0])
+                        playerVM.showingNowPlaying = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "shuffle")
+                            Text("Shuffle").font(themeManager.font(13, .semibold))
                         }
-                        .padding(.top, 60)
-                    } else {
-                        LazyVStack(spacing: 0) {
-                            ForEach(currentPlaylist.tracks) { track in
-                                TrackRowView(track: track,
-                                             isLiked: playerVM.isLiked(track),
-                                             onToggleLike: { playerVM.toggleLike(track) })
-                                    .onTapGesture {
-                                        playerVM.playFromList(currentPlaylist.tracks, startingWith: track)
-                                        playerVM.showingNowPlaying = true
-                                        dismiss()
-                                    }
-                                    .swipeActions(edge: .trailing) {
-                                        Button(role: .destructive) {
-                                            playerVM.removeTrackFromPlaylist(track.id, playlistID: playlist.id)
-                                        } label: { Label("Remove", systemImage: "minus.circle") }
-                                    }
-                                Divider().background(Color.white.opacity(0.06)).padding(.leading, 76)
-                            }
-                        }
-                        .padding(.top, 16)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 14)
+                        .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
-                .padding(.bottom, 100)
+                .padding(.horizontal, 20).padding(.top, 20)
+
+                if currentPlaylist.tracks.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 36)).foregroundStyle(themeManager.current.primary.opacity(0.3))
+                        Text("No tracks yet")
+                            .font(themeManager.font(13, .semibold)).foregroundStyle(.white.opacity(0.4))
+                        Text("Add tracks from the Search tab.")
+                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.25))
+                    }
+                    .padding(.top, 60)
+                } else {
+                    LazyVStack(spacing: 0) {
+                        ForEach(currentPlaylist.tracks) { track in
+                            TrackRowView(track: track,
+                                         isLiked: playerVM.isLiked(track),
+                                         onToggleLike: { playerVM.toggleLike(track) })
+                                .onTapGesture {
+                                    playerVM.playFromList(currentPlaylist.tracks, startingWith: track)
+                                    playerVM.showingNowPlaying = true
+                                }
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        playerVM.removeTrackFromPlaylist(track.id, playlistID: playlist.id)
+                                    } label: { Label("Remove", systemImage: "minus.circle") }
+                                }
+                            Divider().background(Color.white.opacity(0.06)).padding(.leading, 76)
+                        }
+                    }
+                    .padding(.top, 16)
+                }
             }
-            .background(bg.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .preferredColorScheme(.dark)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.5))
-                    }
-                }
+            .padding(.bottom, 100)
+        }
+        .background(bg.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .preferredColorScheme(.dark)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(currentPlaylist.name.uppercased())
+                    .font(.system(size: 12, weight: .black))
+                    .kerning(2)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
             }
         }
-        .presentationBackground(bg)
     }
 
     @ViewBuilder

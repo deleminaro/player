@@ -35,6 +35,12 @@
         <true/>
     </dict>
 
+    <!-- Allow canOpenURL("spotify:") to check if Spotify is installed -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>spotify</string>
+    </array>
+
     <!-- Spotify PKCE callback URL scheme -->
     <key>CFBundleURLTypes</key>
     <array>

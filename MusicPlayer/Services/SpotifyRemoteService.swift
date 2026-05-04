@@ -55,8 +55,8 @@ final class SpotifyRemoteService: NSObject, ObservableObject {
             if UIApplication.shared.canOpenURL(URL(string: "spotify:")!) {
                 appRemote.connect()
             } else {
-                // Spotify not installed — caller should fall back to preview URL
-                onPlayStateChange?(false)
+                // Spotify not installed — trigger preview URL fallback
+                onConnectionFailed?()
             }
         }
     }
