@@ -450,6 +450,38 @@ private struct SliderTypeCard: View {
                         .frame(width: 3, height: h)
                 }
             }
+        case .glimmer:
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { tl in
+                let phase = CGFloat(
+                    tl.date.timeIntervalSinceReferenceDate
+                        .truncatingRemainder(dividingBy: 2.0) / 2.0
+                )
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(height: 5)
+                        Capsule()
+                            .fill(LinearGradient(
+                                stops: [
+                                    .init(color: accent,                    location: 0),
+                                    .init(color: accent,                    location: max(0, phase - 0.18)),
+                                    .init(color: Color.white.opacity(0.90), location: phase),
+                                    .init(color: accent,                    location: min(1, phase + 0.18)),
+                                    .init(color: accent,                    location: 1),
+                                ],
+                                startPoint: .leading, endPoint: .trailing
+                            ))
+                            .frame(width: geo.size.width * 0.6, height: 5)
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 13, height: 13)
+                            .offset(x: geo.size.width * 0.6 - 6.5)
+                    }
+                    .frame(maxHeight: .infinity)
+                }
+                .frame(height: 20)
+            }
         }
     }
 }

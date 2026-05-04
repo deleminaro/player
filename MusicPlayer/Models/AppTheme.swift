@@ -115,12 +115,14 @@ enum SliderType: String, CaseIterable {
     case waveform1 = "waveform1"
     case waveform2 = "waveform2"
     case classic   = "classic"
+    case glimmer   = "glimmer"
 
     var label: String {
         switch self {
         case .waveform1: return "Waveform I"
         case .waveform2: return "Waveform II"
         case .classic:   return "Classic"
+        case .glimmer:   return "Glimmer"
         }
     }
 }

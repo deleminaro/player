@@ -350,6 +350,7 @@ struct NowPlayingView: View {
         case .waveform1: waveform1Progress
         case .waveform2: waveform2Progress
         case .classic:   classicProgress
+        case .glimmer:   glimmerProgress
         }
     }
 
@@ -476,6 +477,65 @@ struct NowPlayingView: View {
                 )
             }
             .frame(height: 20)
+            timeLabels
+        }
+    }
+
+    // Glimmer — capsule with a shimmer highlight sweeping left→right
+    private var glimmerProgress: some View {
+        let trackH: CGFloat = isScrubbing ? 14 : 8
+        let accent = themeManager.current.primary
+        return VStack(spacing: 10) {
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { tl in
+                let phase = CGFloat(
+                    tl.date.timeIntervalSinceReferenceDate
+                        .truncatingRemainder(dividingBy: 2.0) / 2.0
+                )
+                GeometryReader { geo in
+                    let fillW = max(0, geo.size.width * waveProgress)
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(height: trackH)
+                        if fillW > 0 {
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        stops: [
+                                            .init(color: accent,                   location: 0),
+                                            .init(color: accent,                   location: max(0, phase - 0.18)),
+                                            .init(color: Color.white.opacity(0.90), location: phase),
+                                            .init(color: accent,                   location: min(1, phase + 0.18)),
+                                            .init(color: accent,                   location: 1),
+                                        ],
+                                        startPoint: .leading, endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: fillW, height: trackH)
+                        }
+                        Circle()
+                            .fill(.white)
+                            .frame(width: isScrubbing ? 20 : 16,
+                                   height: isScrubbing ? 20 : 16)
+                            .shadow(color: accent.opacity(0.55), radius: 6)
+                            .offset(x: max(0, fillW - (isScrubbing ? 10 : 8)))
+                    }
+                    .animation(.spring(response: 0.28, dampingFraction: 0.72),
+                               value: isScrubbing)
+                    .frame(maxHeight: .infinity, alignment: .center)
+                    .contentShape(Rectangle())
+                    .gesture(DragGesture(minimumDistance: 0)
+                        .onChanged { v in
+                            isScrubbing = true
+                            let p = max(0, min(1, v.location.x / geo.size.width))
+                            waveProgress = p
+                            playerVM.seek(to: p * playerVM.duration)
+                        }
+                        .onEnded { _ in isScrubbing = false }
+                    )
+                }
+                .frame(height: 28)
+            }
             timeLabels
         }
     }
