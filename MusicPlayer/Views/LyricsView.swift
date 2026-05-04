@@ -130,16 +130,14 @@ struct LyricsView: View {
 
     // MARK: - Lyrics renderer
 
-    @ViewBuilder
     private func lyricsBody(_ text: String) -> some View {
         let blocks = text.components(separatedBy: "\n\n")
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                let trimmed = block.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { EmptyView() }
-
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(blocks.indices, id: \.self) { i in
+                let trimmed = blocks[i]
                 if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") {
-                    // Section header e.g. [Chorus]
                     Text(trimmed.dropFirst().dropLast().uppercased())
                         .font(.system(size: 10, weight: .black))
                         .kerning(2)
@@ -147,7 +145,6 @@ struct LyricsView: View {
                         .padding(.top, 32)
                         .padding(.bottom, 10)
                 } else {
-                    // Lyric stanza
                     Text(trimmed)
                         .font(themeManager.font(20, .medium))
                         .foregroundStyle(.white.opacity(0.9))
