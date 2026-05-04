@@ -145,15 +145,9 @@ final class PlayerViewModel: ObservableObject {
                     audio.play(url: localURL)
                     return
                 }
-                // Spotify source
+                // Spotify source — use preview URL directly (App Remote requires
+                // Spotify Premium + installed app; preview is more reliable for all users)
                 if track.source == .spotify {
-                    // Premium: use App Remote for full tracks (requires Spotify app installed)
-                    if let uri = track.spotifyURI,
-                       let token = SpotifyService.shared.currentAccessToken {
-                        SpotifyRemoteService.shared.play(uri: uri, accessToken: token)
-                        return
-                    }
-                    // Fallback: 30s preview URL
                     if let preview = track.previewURL, let url = URL(string: preview) {
                         guard currentTrack?.id == track.id else { return }
                         audio.play(url: url)
