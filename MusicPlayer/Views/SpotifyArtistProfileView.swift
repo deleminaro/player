@@ -205,7 +205,7 @@ struct SpotifyArtistProfileView: View {
             if topTracks.isEmpty {
                 emptyLabel("NO TRACKS AVAILABLE")
             } else {
-                ForEach(Array(topTracks.enumerated()), id: \.element.id) { index, track in
+                ForEach(Array(topTracks.enumerated()), id: \.offset) { index, track in
                     HStack(spacing: 0) {
                         Text("\(index + 1)")
                             .font(.system(size: 11, weight: .bold))

@@ -122,7 +122,7 @@ struct WaveView: View {
     private var trackList: some View {
         LazyVStack(spacing: 0) {
             Divider().background(Color.white.opacity(0.06))
-            ForEach(Array(wave.waveTracks.enumerated()), id: \.element.id) { idx, track in
+            ForEach(Array(wave.waveTracks.enumerated()), id: \.offset) { idx, track in
                 TrackRowView(
                     track: track,
                     isLiked: playerVM.isLiked(track),

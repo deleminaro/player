@@ -112,7 +112,7 @@ struct SpotifyAlbumDetailView: View {
 
     private var trackList: some View {
         LazyVStack(spacing: 0) {
-            ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
+            ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
                 HStack(spacing: 0) {
                     Text("\(index + 1)")
                         .font(.system(size: 11, weight: .bold))
