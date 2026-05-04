@@ -222,7 +222,6 @@ struct AnimatedWaveBars: View {
                     }
                 }
             }
-        }
     }
 }
 
