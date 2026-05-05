@@ -54,9 +54,10 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Text("POSTOR")
-                        .font(themeManager.font(13, .black))
+                        .font(.system(size: 13, weight: .black))
                         .kerning(2.5)
                         .foregroundStyle(accent)
+                        .fixedSize()
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     avatarView
@@ -123,17 +124,28 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 22))
             .allowsHitTesting(false)
 
-            // Text + buttons
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
+            // POSTOR branding — top-left
+            VStack(alignment: .leading, spacing: 2) {
+                Text("POSTOR")
+                    .font(.system(size: 11, weight: .black))
+                    .kerning(2.5)
+                    .foregroundStyle(.white.opacity(0.55))
+                HStack(spacing: 5) {
                     Image(systemName: "waveform")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(accent)
                     Text("MY WAVE")
-                        .font(themeManager.font(10, .black))
-                        .kerning(2)
-                        .foregroundStyle(.white.opacity(0.65))
+                        .font(.system(size: 9, weight: .black))
+                        .kerning(1.5)
+                        .foregroundStyle(.white.opacity(0.35))
                 }
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .allowsHitTesting(false)
+
+            // Text + buttons
+            VStack(alignment: .leading, spacing: 8) {
                 Text(wave.waveTracks.isEmpty ? "Your personal radio" : "\(wave.waveTracks.count) tracks picked for you")
                     .font(themeManager.font(17, .bold))
                     .foregroundStyle(.white)
