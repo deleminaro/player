@@ -1,6 +1,12 @@
 import AVFoundation
 import Foundation
 
+// Wraps AVAssetExportSession (not Sendable) for Swift concurrency.
+// Safe: AVAssetExportSession's completion handler and status are thread-safe.
+private struct SendableExportSession: @unchecked Sendable {
+    let value: AVAssetExportSession
+}
+
 @MainActor
 final class DownloadManager: ObservableObject {
     static let shared = DownloadManager()
@@ -130,7 +136,6 @@ final class DownloadManager: ObservableObject {
         }
     }
 
-    /// Exports an HLS stream (or any AVAsset) to a local .m4a file.
     private func exportHLS(from url: URL, to dest: URL) async -> Bool {
         let asset = AVURLAsset(url: url)
         guard let session = AVAssetExportSession(asset: asset,
@@ -139,9 +144,10 @@ final class DownloadManager: ObservableObject {
         }
         session.outputURL      = dest
         session.outputFileType = .m4a
+        let box = SendableExportSession(value: session)
         return await withCheckedContinuation { cont in
-            session.exportAsynchronously {
-                cont.resume(returning: session.status == .completed)
+            box.value.exportAsynchronously {
+                cont.resume(returning: box.value.status == .completed)
             }
         }
     }

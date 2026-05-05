@@ -34,9 +34,10 @@ final class FirebaseManager: ObservableObject {
 
     private let auth = Auth.auth()
     private let db   = Firestore.firestore()
+    private var authListener: AuthStateDidChangeListenerHandle?
 
     init() {
-        auth.addStateDidChangeListener { [weak self] _, user in
+        authListener = auth.addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor [weak self] in
                 self?.isLoggedIn = user != nil
                 if let uid = user?.uid {
