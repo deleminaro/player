@@ -10,7 +10,8 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @AppStorage("spotifyOnboardingShown") private var spotifyOnboardingShown = false
     @State private var showSpotifyOnboarding = false
-    @State private var selectedTab: Int = 0
+    @State private var selectedTab: Int  = 0
+    @State private var sidebarCollapsed: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -121,13 +122,33 @@ struct ContentView: View {
     }
 
     private var ipadSidebar: some View {
-        VStack(spacing: 0) {
-            // Branding
-            Text("POSTOR")
-                .font(.app(15, .black))
-                .kerning(3)
-                .foregroundStyle(themeManager.current.primary)
-                .padding(.top, 52)
+        let collapsed = sidebarCollapsed
+        let accent    = themeManager.current.primary
+
+        return VStack(spacing: 0) {
+            // Toggle button + branding
+            VStack(spacing: collapsed ? 0 : 4) {
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        sidebarCollapsed.toggle()
+                    }
+                } label: {
+                    Image(systemName: collapsed ? "sidebar.right" : "sidebar.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+
+                if !collapsed {
+                    Text("POSTOR")
+                        .font(.app(13, .black))
+                        .kerning(3)
+                        .foregroundStyle(accent)
+                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                }
+            }
+            .padding(.top, 44)
 
             Spacer()
 
@@ -139,40 +160,53 @@ struct ContentView: View {
                 ipadNavButton("Library",  icon: "building.columns.fill", tag: 3)
                 ipadNavButton("Settings", icon: "gearshape.fill",        tag: 4)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, collapsed ? 8 : 12)
 
             Spacer()
         }
-        .frame(width: 190)
+        .frame(width: collapsed ? 62 : 190)
         .background(themeManager.current.card.opacity(0.6))
         .overlay(alignment: .leading) {
             Rectangle()
                 .fill(Color.white.opacity(0.05))
                 .frame(width: 1)
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: collapsed)
     }
 
     private func ipadNavButton(_ title: String, icon: String, tag: Int) -> some View {
-        let active = (selectedTab) == tag
+        let active    = selectedTab == tag
+        let collapsed = sidebarCollapsed
+        let accent    = themeManager.current.primary
+
         return Button {
             selectedTab = tag
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 22)
-                Text(title)
-                    .font(.app(14, .semibold))
-                Spacer()
+            Group {
+                if collapsed {
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                } else {
+                    HStack(spacing: 12) {
+                        Image(systemName: icon)
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(width: 22)
+                        Text(title)
+                            .font(.app(14, .semibold))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
             }
-            .foregroundStyle(active ? themeManager.current.primary : .white.opacity(0.5))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .foregroundStyle(active ? accent : .white.opacity(0.45))
             .background(
-                active ? themeManager.current.primary.opacity(0.12) : Color.clear,
+                active ? accent.opacity(0.12) : Color.clear,
                 in: RoundedRectangle(cornerRadius: 12)
             )
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 }
