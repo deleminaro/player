@@ -7,29 +7,23 @@ struct ContentView: View {
     @StateObject private var network = NetworkMonitor.shared
     @ObservedObject private var spotify = SpotifyService.shared
 
+    @Environment(\.horizontalSizeClass) private var hSizeClass
     @AppStorage("spotifyOnboardingShown") private var spotifyOnboardingShown = false
     @State private var showSpotifyOnboarding = false
+    @State private var selectedTab: Int = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            TabView {
-                HomeView()
-                    .tabItem { Label("Home", systemImage: "house.fill") }
-                SearchView()
-                    .tabItem { Label("Search", systemImage: "magnifyingglass") }
-                WaveView()
-                    .tabItem { Label("Wave", systemImage: "waveform") }
-                LibraryView()
-                    .tabItem { Label("Library", systemImage: "building.columns.fill") }
-                SettingsView()
-                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+            if hSizeClass == .regular {
+                ipadLayout
+            } else {
+                iphoneLayout
             }
-            .tint(themeManager.current.primary)
 
             if playerVM.currentTrack != nil {
                 MiniPlayerView()
                     .padding(.horizontal, 12)
-                    .padding(.bottom, 58)
+                    .padding(.bottom, hSizeClass == .regular ? 12 : 58)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -84,5 +78,57 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    // MARK: - iPhone layout (compact)
+
+    private var iphoneLayout: some View {
+        TabView {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house.fill") }
+            SearchView()
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
+            WaveView()
+                .tabItem { Label("Wave", systemImage: "waveform") }
+            LibraryView()
+                .tabItem { Label("Library", systemImage: "building.columns.fill") }
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+        }
+        .tint(themeManager.current.primary)
+    }
+
+    // MARK: - iPad layout (regular)
+
+    private var ipadLayout: some View {
+        NavigationSplitView {
+            List(selection: $selectedTab) {
+                sidebarItem("Home",    icon: "house.fill",             tag: 0)
+                sidebarItem("Search",  icon: "magnifyingglass",        tag: 1)
+                sidebarItem("Wave",    icon: "waveform",               tag: 2)
+                sidebarItem("Library", icon: "building.columns.fill",  tag: 3)
+                sidebarItem("Settings",icon: "gearshape.fill",         tag: 4)
+            }
+            .listStyle(.sidebar)
+            .navigationTitle("POSTOR")
+            .navigationBarTitleDisplayMode(.large)
+            .background(themeManager.current.background)
+            .scrollContentBackground(.hidden)
+        } detail: {
+            switch selectedTab {
+            case 1:  SearchView()
+            case 2:  WaveView()
+            case 3:  LibraryView()
+            case 4:  SettingsView()
+            default: HomeView()
+            }
+        }
+        .tint(themeManager.current.primary)
+    }
+
+    private func sidebarItem(_ title: String, icon: String, tag: Int) -> some View {
+        Label(title, systemImage: icon)
+            .font(.app(15, .semibold))
+            .tag(tag)
     }
 }
