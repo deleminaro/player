@@ -36,6 +36,7 @@ enum FavoritesSort: String, CaseIterable {
 struct LibraryView: View {
     @EnvironmentObject var playerVM:    PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
+    @StateObject private var dm         = DownloadManager.shared
     @State private var showLiked        = false
     @State private var showCreateSheet  = false
     @State private var newPlaylistName  = ""
@@ -134,8 +135,29 @@ struct LibraryView: View {
         HStack(spacing: 10) {
             statPill(value: "\(playerVM.likedTracks.count)", label: "Liked")
             statPill(value: "\(playerVM.playlists.count)", label: "Playlists")
-            statPill(value: "\(playerVM.recentlyPlayed.count)", label: "Played")
+            NavigationLink(destination: OfflineTracksView()
+                .environmentObject(playerVM)
+                .environmentObject(themeManager)
+            ) {
+                offlinePill
+            }
+            .buttonStyle(.plain)
         }
+    }
+
+    private var offlinePill: some View {
+        VStack(spacing: 4) {
+            Text("\(dm.offlineIDs.count)")
+                .font(themeManager.font(24, .black))
+                .foregroundStyle(.white)
+            Text("Offline")
+                .font(.system(size: 9, weight: .black))
+                .kerning(1)
+                .foregroundStyle(.white.opacity(0.3))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .background(card, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func statPill(value: String, label: String) -> some View {

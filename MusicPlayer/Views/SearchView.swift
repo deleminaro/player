@@ -328,8 +328,13 @@ struct SearchView: View {
     @ViewBuilder
     private var contentArea: some View {
         if isSearching {
-            ProgressView().tint(themeManager.current.primary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            LazyVStack(spacing: 0) {
+                ForEach(0..<8, id: \.self) { _ in
+                    SkeletonTrackRow()
+                        .listRowBackground(Color.clear)
+                }
+            }
+            .padding(.top, 8)
         } else if let err = searchError {
             errorState(err)
         } else {

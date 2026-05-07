@@ -227,10 +227,12 @@ struct HomeView: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 ZStack {
-                    if let url = artwork.flatMap(URL.init) {
-                        AsyncImage(url: url) { img in
+                    if artwork != nil {
+                        CachedAsyncImage(url: artwork) { img in
                             img.resizable().aspectRatio(contentMode: .fill)
-                        } placeholder: { card }
+                        } placeholder: {
+                            card
+                        }
                         .frame(width: 46, height: 46)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     } else {
@@ -297,7 +299,7 @@ struct HomeView: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 ZStack(alignment: .bottomTrailing) {
-                    AsyncImage(url: URL(string: track.highResArtworkURL ?? track.thumbnailArtworkURL ?? "")) { img in
+                    CachedAsyncImage(url: track.highResArtworkURL ?? track.thumbnailArtworkURL) { img in
                         img.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
                         card.overlay(

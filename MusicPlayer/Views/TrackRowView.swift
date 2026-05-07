@@ -103,7 +103,7 @@ struct NowPlayingBarsView: View {
 
 // MARK: - Image cache
 
-private final class ImageCache {
+final class ImageCache {
     static let shared = ImageCache()
     private let cache = NSCache<NSString, UIImage>()
     private init() { cache.countLimit = 200 }
