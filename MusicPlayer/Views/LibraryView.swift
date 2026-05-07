@@ -613,7 +613,7 @@ private struct LikedTrackRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ArtworkThumbnail(url: track.thumbnailArtworkURL)
+            ArtworkThumbnail(url: track.thumbnailArtworkURL, trackID: track.id)
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
                     .font(themeManager.font(14, .semibold)).foregroundStyle(.white).lineLimit(1)

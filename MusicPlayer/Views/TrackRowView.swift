@@ -11,7 +11,7 @@ struct TrackRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ArtworkThumbnail(url: track.thumbnailArtworkURL)
+            ArtworkThumbnail(url: track.thumbnailArtworkURL, trackID: track.id)
                 .overlay(alignment: .bottomTrailing) {
                     if track.source == .spotify {
                         Circle()
@@ -116,6 +116,7 @@ final class ImageCache {
 
 struct ArtworkThumbnail: View {
     let url: String?
+    var trackID: Int? = nil
     @State private var image: UIImage?
 
     var body: some View {
@@ -140,7 +141,18 @@ struct ArtworkThumbnail: View {
 
     private func loadImage() async {
         guard let urlStr = url, !urlStr.isEmpty else { return }
+        // 1. Memory cache
         if let cached = ImageCache.shared.get(urlStr) { image = cached; return }
+        // 2. Disk (only for downloaded offline tracks)
+        if let id = trackID,
+           let diskURL = DownloadManager.shared.localArtworkURL(for: id),
+           let data = try? Data(contentsOf: diskURL),
+           let uiImage = UIImage(data: data) {
+            ImageCache.shared.set(uiImage, for: urlStr)
+            image = uiImage
+            return
+        }
+        // 3. Network
         guard let url = URL(string: urlStr),
               let (data, _) = try? await URLSession.shared.data(from: url),
               let uiImage = UIImage(data: data) else { return }

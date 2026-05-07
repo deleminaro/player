@@ -26,10 +26,15 @@ final class DownloadManager: ObservableObject {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("OfflineTracks", isDirectory: true)
     }
+    private var artworkDir: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Artwork", isDirectory: true)
+    }
 
     private init() {
         try? FileManager.default.createDirectory(at: cacheDir,   withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: offlineDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: artworkDir, withIntermediateDirectories: true)
         loadPersistedIDs()
     }
 
@@ -67,6 +72,22 @@ final class DownloadManager: ObservableObject {
         }
     }
 
+    // MARK: - Artwork (disk-backed)
+
+    func localArtworkURL(for trackID: Int) -> URL? {
+        let u = artworkDir.appendingPathComponent("\(trackID).jpg")
+        return FileManager.default.fileExists(atPath: u.path) ? u : nil
+    }
+
+    func saveArtwork(trackID: Int, from urlStr: String) async {
+        let dest = artworkDir.appendingPathComponent("\(trackID).jpg")
+        guard !FileManager.default.fileExists(atPath: dest.path),
+              let url = URL(string: urlStr),
+              let (data, _) = try? await URLSession.shared.data(from: url),
+              !data.isEmpty else { return }
+        try? data.write(to: dest)
+    }
+
     // MARK: - Download offline (Documents dir — persists)
 
     func downloadOffline(track: Track, streamURL: URL) async {
@@ -76,6 +97,9 @@ final class DownloadManager: ObservableObject {
         if await store(from: streamURL, trackID: track.id, in: offlineDir) {
             offlineIDs.insert(track.id)
             UserDefaults.standard.set(Array(offlineIDs), forKey: kOffline)
+            if let artURL = track.thumbnailArtworkURL ?? track.artworkURL {
+                await saveArtwork(trackID: track.id, from: artURL)
+            }
         }
     }
 
@@ -86,6 +110,8 @@ final class DownloadManager: ObservableObject {
             let u = offlineDir.appendingPathComponent("\(trackID).\(ext)")
             try? FileManager.default.removeItem(at: u)
         }
+        let artworkFile = artworkDir.appendingPathComponent("\(trackID).jpg")
+        try? FileManager.default.removeItem(at: artworkFile)
         offlineIDs.remove(trackID)
         UserDefaults.standard.set(Array(offlineIDs), forKey: kOffline)
     }
