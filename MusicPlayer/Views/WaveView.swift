@@ -369,7 +369,7 @@ struct AnimatedWaveBars: View {
     @Environment(\.scenePhase) private var phase
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 10)) { tl in
+        TimelineView(.animation(minimumInterval: 1.0 / 20)) { tl in
             let t = phase == .active ? tl.date.timeIntervalSinceReferenceDate : 0
                 Canvas { ctx, size in
                     let bw   = size.width / CGFloat(barCount)

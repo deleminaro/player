@@ -116,7 +116,7 @@ struct HomeView: View {
 
             // Animated bars — full card
             AnimatedWaveBars(
-                barCount:          24,
+                barCount:          48,
                 maxHeightFraction: 0.90,
                 baseOpacity:       0.055,
                 accentColor:       .white
@@ -282,7 +282,7 @@ struct HomeView: View {
             .padding(.horizontal, 20)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 14) {
+                HStack(spacing: 14) {
                     ForEach(playerVM.recentlyPlayed.prefix(14)) { track in
                         recentCard(track)
                     }
