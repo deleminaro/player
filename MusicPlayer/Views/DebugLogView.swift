@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct DebugLogView: View {
-    @EnvironmentObject var themeManager: ThemeManager
-    @EnvironmentObject var playerVM:     PlayerViewModel
+    @EnvironmentObject var themeManager:    ThemeManager
+    @EnvironmentObject var playerVM:        PlayerViewModel
     @EnvironmentObject var firebaseManager: FirebaseManager
     @ObservedObject private var logger  = AppLogger.shared
     @StateObject    private var dm      = DownloadManager.shared
@@ -12,62 +12,58 @@ struct DebugLogView: View {
     @State private var filterCategory: String? = nil
     @State private var searchText = ""
 
-    private var bg:     Color { themeManager.current.background }
-    private var card:   Color { themeManager.current.card }
+    private var bg:   Color { themeManager.current.background }
+    private var card: Color { themeManager.current.card }
     private var accent: Color { themeManager.current.primary }
 
-    // MARK: - Snapshot
+    // MARK: - Snapshot rows (shown inline at top of the stream)
 
-    private var snapshotText: String {
-        let user = firebaseManager.currentUser
-        let track = playerVM.currentTrack
-        let offlineBytes = dm.offlineIDs.reduce(0) { acc, id in
-            acc + (try? FileManager.default.attributesOfItem(
-                atPath: dm.offlineDir.appendingPathComponent("\(id).mp3").path)[.size] as? Int64 ?? 0) ?? 0
-        }
-        return """
-        Device     : \(UIDevice.current.name) / iOS \(UIDevice.current.systemVersion)
-        App        : POSTOR
-        Date       : \(Date())
-
-        ── User ──────────────────────────
-        Firebase   : \(user != nil ? "signed in as \(user!.username) (\(user!.uid))" : "not signed in")
-        Spotify    : \(SpotifyService.shared.isAuthenticated ? "authenticated" : "not authenticated")
-
-        ── Network ───────────────────────
-        Connected  : \(network.isConnected ? "yes" : "NO — offline")
-
-        ── Playback ──────────────────────
-        State      : \(playerVM.playerState)
-        Track      : \(track.map { "'\($0.title)' by \($0.username) [\($0.source.rawValue)]" } ?? "none")
-        Speed      : \(playerVM.playbackSpeed)×
-        Repeat     : \(playerVM.repeatMode.rawValue)
-        Shuffle    : \(playerVM.isShuffling)
-        Queue      : \(playerVM.queue.count) tracks
-        Liked      : \(playerVM.likedTracks.count) tracks
-        Playlists  : \(playerVM.playlists.count)
-
-        ── Downloads ─────────────────────
-        Offline    : \(dm.offlineIDs.count) tracks (~\(offlineBytes / 1_000_000) MB)
-        Cached     : \(dm.cachedIDs.count) tracks
-        In-progress: \(dm.downloading.count)
-
-        ── Settings ──────────────────────
-        Quality    : Lossless FLAC (locked)
-        Theme      : \(themeManager.current.name)
-        """
+    private struct SnapLine: Identifiable {
+        let id   = UUID()
+        let label: String
+        let value: String
     }
 
-    // MARK: - Filtered entries
+    private var snapLines: [SnapLine] {
+        let user  = firebaseManager.currentUser
+        let track = playerVM.currentTrack
+        let offlineMB = dm.offlineIDs.reduce(0) { acc, id in
+            let u = dm.offlineDir.appendingPathComponent("\(id).mp3")
+            return acc + ((try? FileManager.default.attributesOfItem(atPath: u.path)[.size] as? Int64) ?? 0)
+        } / 1_000_000
+        return [
+            .init(label: "device",    value: "\(UIDevice.current.name) · iOS \(UIDevice.current.systemVersion)"),
+            .init(label: "network",   value: network.isConnected ? "connected" : "OFFLINE"),
+            .init(label: "firebase",  value: user.map { "signed in · \($0.username) (\($0.uid))" } ?? "not signed in"),
+            .init(label: "spotify",   value: SpotifyService.shared.isAuthenticated ? "authenticated" : "not authenticated"),
+            .init(label: "playback",  value: "\(playerVM.playerState) · \(playerVM.playbackSpeed)× · repeat:\(playerVM.repeatMode.rawValue) · shuffle:\(playerVM.isShuffling)"),
+            .init(label: "track",     value: track.map { "'\($0.title)' by \($0.username) [\($0.source.rawValue)]" } ?? "none"),
+            .init(label: "queue",     value: "\(playerVM.queue.count) tracks"),
+            .init(label: "liked",     value: "\(playerVM.likedTracks.count) tracks · \(playerVM.playlists.count) playlists"),
+            .init(label: "offline",   value: "\(dm.offlineIDs.count) tracks (~\(offlineMB) MB) · cached:\(dm.cachedIDs.count) · active:\(dm.downloading.count)"),
+            .init(label: "theme",     value: themeManager.current.name),
+        ]
+    }
+
+    // MARK: - Export text
+
+    private var exportText: String {
+        let snap = snapLines.map { "[\(Date())] [System] \($0.label): \($0.value)" }.joined(separator: "\n")
+        return logger.export(snapshot: snap)
+    }
+
+    // MARK: - Filtered events
 
     private var visibleEntries: [LogEntry] {
         logger.entries
             .filter { filterCategory == nil || $0.category == filterCategory }
-            .filter { searchText.isEmpty || $0.message.localizedCaseInsensitiveContains(searchText) || $0.category.localizedCaseInsensitiveContains(searchText) }
+            .filter { searchText.isEmpty
+                || $0.message.localizedCaseInsensitiveContains(searchText)
+                || $0.category.localizedCaseInsensitiveContains(searchText) }
             .reversed()
     }
 
-    private var categories: [String] {
+    private var allCategories: [String] {
         Array(Set(logger.entries.map(\.category))).sorted()
     }
 
@@ -75,38 +71,37 @@ struct DebugLogView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            searchBar
-            categoryFilter
+            searchAndFilter
             ScrollView(showsIndicators: false) {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    Section {
-                        snapshotCard
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    // ── Snapshot lines ──
+                    ForEach(snapLines) { line in
+                        snapRow(line)
+                        lineDivider
+                    }
+                    // separator between snapshot and events
+                    HStack {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(height: 1)
+                    }
+                    .padding(.vertical, 6)
+                    // ── Event rows ──
+                    if visibleEntries.isEmpty {
+                        Text(logger.entries.isEmpty ? "No events yet — start playing music." : "No matches.")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.3))
                             .padding(.horizontal, 16)
-                            .padding(.top, 12)
-                    } header: {
-                        sectionHeader("SYSTEM SNAPSHOT")
-                    }
-
-                    Section {
-                        if visibleEntries.isEmpty {
-                            Text("No log entries yet.")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.3))
-                                .padding(20)
-                        } else {
-                            ForEach(visibleEntries) { entry in
-                                logRow(entry)
-                                    .padding(.horizontal, 16)
-                                Divider()
-                                    .background(Color.white.opacity(0.04))
-                                    .padding(.leading, 16)
-                            }
+                            .padding(.top, 10)
+                    } else {
+                        ForEach(visibleEntries) { entry in
+                            eventRow(entry)
+                            lineDivider
                         }
-                        Spacer().frame(height: 100)
-                    } header: {
-                        sectionHeader("EVENTS (\(visibleEntries.count))")
                     }
+                    Spacer().frame(height: 100)
                 }
+                .padding(.top, 8)
             }
         }
         .background(bg.ignoresSafeArea())
@@ -119,7 +114,7 @@ struct DebugLogView: View {
                     .foregroundStyle(.white)
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                ShareLink(item: logger.export(snapshot: snapshotText)) {
+                ShareLink(item: exportText) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(accent)
@@ -137,103 +132,108 @@ struct DebugLogView: View {
         }
     }
 
-    // MARK: - Components
+    // MARK: - Top bar (search + filter)
 
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.4))
-            TextField("Filter entries…", text: $searchText)
-                .font(.system(size: 14))
-                .foregroundStyle(.white)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.4))
-                }
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(card, in: RoundedRectangle(cornerRadius: 12))
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-    }
-
-    private var categoryFilter: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterChip(label: "All", selected: filterCategory == nil) {
-                    filterCategory = nil
-                }
-                ForEach(categories, id: \.self) { cat in
-                    filterChip(label: cat, selected: filterCategory == cat, color: color(for: cat)) {
-                        filterCategory = filterCategory == cat ? nil : cat
+    private var searchAndFilter: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.35))
+                TextField("Search…", text: $searchText)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.4))
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 10)
+            .padding(.horizontal, 14).padding(.vertical, 9)
+            .background(card, in: RoundedRectangle(cornerRadius: 11))
+            .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 8)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    chip("All", selected: filterCategory == nil, color: .white) { filterCategory = nil }
+                    ForEach(allCategories, id: \.self) { cat in
+                        chip(cat, selected: filterCategory == cat, color: color(for: cat)) {
+                            filterCategory = filterCategory == cat ? nil : cat
+                        }
+                    }
+                }
+                .padding(.horizontal, 16).padding(.bottom, 8)
+            }
+            Divider().background(Color.white.opacity(0.06))
         }
     }
 
-    private func filterChip(label: String, selected: Bool, color: Color = .white, action: @escaping () -> Void) -> some View {
+    // MARK: - Rows
+
+    private func snapRow(_ line: SnapLine) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("SYS")
+                .font(.system(size: 9, weight: .black))
+                .foregroundStyle(.white.opacity(0.25))
+                .frame(width: 38, alignment: .leading)
+                .padding(.top, 1)
+            Text(line.label)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.4))
+                .frame(width: 68, alignment: .leading)
+            Text(line.value)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(snapValueColor(line.label, value: line.value))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 5)
+    }
+
+    private func eventRow(_ entry: LogEntry) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(entry.category.prefix(3).uppercased())
+                .font(.system(size: 9, weight: .black))
+                .foregroundStyle(color(for: entry.category))
+                .frame(width: 38, alignment: .leading)
+                .padding(.top, 1)
+            Text(entry.timestamp)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.3))
+                .frame(width: 68, alignment: .leading)
+            Text(entry.message)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 6)
+    }
+
+    private var lineDivider: some View {
+        Divider()
+            .background(Color.white.opacity(0.05))
+            .padding(.leading, 16)
+    }
+
+    // MARK: - Chip
+
+    private func chip(_ label: String, selected: Bool, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(selected ? .black : color.opacity(0.7))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 11).padding(.vertical, 5)
                 .background(selected ? color : card, in: Capsule())
         }
         .buttonStyle(.plain)
     }
 
-    private var snapshotCard: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            Text(snapshotText)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.65))
-                .padding(14)
-        }
-        .background(card, in: RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func logRow(_ entry: LogEntry) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(entry.timestamp)
-                .font(.system(size: 10, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.3))
-                .frame(width: 80, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.category.uppercased())
-                    .font(.system(size: 9, weight: .black))
-                    .foregroundStyle(color(for: entry.category))
-                Text(entry.message)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(.vertical, 7)
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 9, weight: .black)).kerning(1.8)
-                .foregroundStyle(.white.opacity(0.3))
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 7)
-        .background(bg)
-    }
+    // MARK: - Colors
 
     private func color(for category: String) -> Color {
         switch category {
@@ -244,6 +244,16 @@ struct DebugLogView: View {
         case "Spotify":  return Color(red: 0.11, green: 0.73, blue: 0.33)
         case "Wave":     return .purple
         default:         return .white
+        }
+    }
+
+    private func snapValueColor(_ label: String, value: String) -> Color {
+        switch label {
+        case "network":  return value.contains("OFFLINE") ? .red : .green
+        case "firebase": return value.contains("not") ? .white.opacity(0.35) : .orange
+        case "spotify":  return value.contains("not") ? .white.opacity(0.35) : Color(red: 0.11, green: 0.73, blue: 0.33)
+        case "track":    return value == "none" ? .white.opacity(0.35) : .white
+        default:         return .white.opacity(0.7)
         }
     }
 }
