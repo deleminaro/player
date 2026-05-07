@@ -10,7 +10,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @AppStorage("spotifyOnboardingShown") private var spotifyOnboardingShown = false
     @State private var showSpotifyOnboarding = false
-    @State private var selectedTab: Int = 0
+    @State private var selectedTab: Int? = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -115,7 +115,7 @@ struct ContentView: View {
             .background(themeManager.current.background)
             .scrollContentBackground(.hidden)
         } detail: {
-            switch selectedTab {
+            switch selectedTab ?? 0 {
             case 1:  SearchView()
             case 2:  WaveView()
             case 3:  LibraryView()
