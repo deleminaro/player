@@ -78,13 +78,14 @@ struct NowPlayingBarsView: View {
     let color: Color
 
     var body: some View {
-        TimelineView(isPlaying ? .animation(minimumInterval: 1.0 / 24) : .animation(paused: true)) { tl in
+        TimelineView(isPlaying ? .animation(minimumInterval: 1.0 / 12) : .animation(paused: true)) { tl in
             let t = tl.date.timeIntervalSinceReferenceDate
             HStack(alignment: .bottom, spacing: 2) {
                 bar(height: isPlaying ? wave(t, freq: 3.1, phase: 0.0) : 5)
                 bar(height: isPlaying ? wave(t, freq: 4.7, phase: 1.3) : 5)
                 bar(height: isPlaying ? wave(t, freq: 3.9, phase: 2.5) : 5)
             }
+            .drawingGroup()
         }
         .frame(width: 14, height: 14)
     }
@@ -106,7 +107,7 @@ struct NowPlayingBarsView: View {
 final class ImageCache {
     static let shared = ImageCache()
     private let cache = NSCache<NSString, UIImage>()
-    private init() { cache.countLimit = 200 }
+    private init() { cache.countLimit = 400 }
 
     func get(_ key: String) -> UIImage? { cache.object(forKey: key as NSString) }
     func set(_ image: UIImage, for key: String) { cache.setObject(image, forKey: key as NSString) }
