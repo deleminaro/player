@@ -166,16 +166,21 @@ enum AppFont: String, CaseIterable {
         }
     }
 
-    // Auto-discovers the correct PostScript name from registered fonts at first use.
+    // Auto-discovers bold then regular PostScript names from registered fonts at first use.
     private static let resolvedFontName: String? = {
-        let candidates = ["Monocraft", "Monocraft-Regular", "Minecraft", "Minecraft-Regular"]
+        let candidates = [
+            "Monocraft-Bold", "Monocraft Bold", "Monocraft-SemiBold",
+            "Monocraft", "Monocraft-Regular",
+            "Minecraft-Bold", "Minecraft", "Minecraft-Regular"
+        ]
         for name in candidates {
             if UIFont(name: name, size: 14) != nil { return name }
         }
         for family in UIFont.familyNames {
             let lower = family.lowercased()
             if lower.contains("monocraft") || lower.contains("minecraft") {
-                return UIFont.fontNames(forFamilyName: family).first ?? family
+                let names = UIFont.fontNames(forFamilyName: family)
+                return names.first(where: { $0.lowercased().contains("bold") }) ?? names.first ?? family
             }
         }
         return nil
