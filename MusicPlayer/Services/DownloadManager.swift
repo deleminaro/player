@@ -79,6 +79,17 @@ final class DownloadManager: ObservableObject {
         }
     }
 
+    // MARK: - Delete
+
+    func deleteDownload(trackID: Int) {
+        for ext in ["mp3", "m4a"] {
+            let u = offlineDir.appendingPathComponent("\(trackID).\(ext)")
+            try? FileManager.default.removeItem(at: u)
+        }
+        offlineIDs.remove(trackID)
+        UserDefaults.standard.set(Array(offlineIDs), forKey: kOffline)
+    }
+
     // MARK: - Prepare export (Save to folder)
 
     func prepareExport(track: Track, streamURL: URL) async -> URL? {

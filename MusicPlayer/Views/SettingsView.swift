@@ -7,16 +7,17 @@ struct SettingsView: View {
 
     @AppStorage("mp_audio_quality")   private var audioQuality:      AudioQuality = .lossless
     @AppStorage("mp_caching_mode")    private var cachingMode:       CachingMode  = .memory
-    @AppStorage("mp_show_notifs")     private var showNotifications: Bool         = true
     @AppStorage("mp_resume_track")    private var resumeLastTrack:   Bool         = true
     @AppStorage("mp_cache_listened")  private var cacheListened:     Bool         = true
     @AppStorage("mp_cache_playlists") private var cachePlaylists:    Bool         = false
 
-    @State private var showQualitySheet  = false
-    @State private var showCachingSheet  = false
-    @State private var showLogoutConfirm = false
-    @State private var showNameEdit      = false
-    @State private var editingName       = ""
+    @StateObject private var dm = DownloadManager.shared
+    @State private var showQualitySheet       = false
+    @State private var showCachingSheet       = false
+    @State private var showLogoutConfirm      = false
+    @State private var showNameEdit           = false
+    @State private var showClearDownloads     = false
+    @State private var editingName            = ""
     @State private var avatarItem: PhotosPickerItem?
 
     private var bg:     Color { themeManager.current.background }
@@ -46,9 +47,6 @@ struct SettingsView: View {
                     settingsGroup("PLAYBACK") {
                         toggleRow(icon: "arrow.counterclockwise", iconBg: Color.orange.opacity(0.2), iconFg: .orange,
                                   title: "Resume on launch", value: $resumeLastTrack)
-                        rowDivider()
-                        toggleRow(icon: "bell.fill", iconBg: Color.red.opacity(0.2), iconFg: .red,
-                                  title: "Notifications", value: $showNotifications)
                     }
 
                     settingsGroup("APPEARANCE") {
@@ -106,6 +104,24 @@ struct SettingsView: View {
                         }
                         .buttonStyle(ScaleButtonStyle(scale: 0.97))
                     }
+
+                    Button { showClearDownloads = true } label: {
+                        HStack(spacing: 14) {
+                            iconBox("trash.fill", bg: Color.green.opacity(0.15), fg: .green)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Remove Downloaded Songs")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(.green)
+                                Text("\(dm.offlineIDs.count) track\(dm.offlineIDs.count == 1 ? "" : "s") stored locally")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.green.opacity(0.55))
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .background(Color.green.opacity(0.07), in: RoundedRectangle(cornerRadius: 18))
+                    }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.97))
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -142,6 +158,16 @@ struct SettingsView: View {
         .confirmationDialog("Sign Out", isPresented: $showLogoutConfirm, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) { firebaseManager.logOut() }
             Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog("Remove Downloaded Songs", isPresented: $showClearDownloads, titleVisibility: .visible) {
+            Button("Remove All Downloads", role: .destructive) {
+                for id in dm.offlineIDs {
+                    dm.deleteDownload(trackID: id)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will delete all \(dm.offlineIDs.count) locally stored tracks. They can be re-downloaded from the Library.")
         }
         .alert("Display Name", isPresented: $showNameEdit) {
             TextField("Name", text: $editingName).autocorrectionDisabled()
