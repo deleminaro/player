@@ -140,7 +140,7 @@ enum AppFont: String, CaseIterable {
         case .rounded:   return "Rounded"
         case .serif:     return "Serif"
         case .mono:      return "Pixel"
-        case .minecraft: return "Minecraft"
+        case .minecraft: return "Monocraft"
         }
     }
 
@@ -166,7 +166,7 @@ enum AppFont: String, CaseIterable {
         }
     }
 
-    private static let minecraftFontName = "Minecraft"
+    private static let minecraftFontName = "Monocraft"
 
     // Global reference — updated on main thread whenever ThemeManager changes the font.
     nonisolated(unsafe) static var current: AppFont = .system

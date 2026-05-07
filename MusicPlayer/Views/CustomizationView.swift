@@ -375,7 +375,7 @@ struct CustomizationView: View {
         case .rounded:   return "SF Rounded · soft edges"
         case .serif:     return "New York · editorial"
         case .mono:      return "SF Mono · pixel / retro"
-        case .minecraft: return "Minecraft · by Craftron Gaming"
+        case .minecraft: return "Monocraft · by IdreesInc"
         }
     }
 }

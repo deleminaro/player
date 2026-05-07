@@ -41,7 +41,7 @@
 		AA18101EAA18101EAA18101E /* SpotifyArtistProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001EAA10001EAA10001E /* SpotifyArtistProfileView.swift */; };
 		AA181020AA181020AA181020 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100020AA100020AA100020 /* AuthView.swift */; };
 		AA181021AA181021AA181021 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100021AA100021AA100021 /* FirebaseManager.swift */; };
-		AA18102FAA18102FAA18102F /* Minecraft.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA10002FAA10002FAA10002F /* Minecraft.ttf */; };
+		AA18102FAA18102FAA18102F /* Monocraft.ttc in Resources */ = {isa = PBXBuildFile; fileRef = AA10002FAA10002FAA10002F /* Monocraft.ttc */; };
 		AA181022AA181022AA181022 /* SpotifyRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100022AA100022AA100022 /* SpotifyRemoteService.swift */; };
 		AA181023AA181023AA181023 /* SpotifyAlbumDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */; };
 		AA181024AA181024AA181024 /* WaveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100024AA100024AA100024 /* WaveService.swift */; };
@@ -88,7 +88,7 @@
 		AA10001EAA10001EAA10001E /* SpotifyArtistProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyArtistProfileView.swift; sourceTree = "<group>"; };
 		AA100020AA100020AA100020 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		AA100021AA100021AA100021 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
-		AA10002FAA10002FAA10002F /* Minecraft.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Minecraft.ttf; sourceTree = "<group>"; };
+		AA10002FAA10002FAA10002F /* Monocraft.ttc */ = {isa = PBXFileReference; lastKnownFileType = file; path = Monocraft.ttc; sourceTree = "<group>"; };
 		AA100022AA100022AA100022 /* SpotifyRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyRemoteService.swift; sourceTree = "<group>"; };
 		AA100023AA100023AA100023 /* SpotifyAlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAlbumDetailView.swift; sourceTree = "<group>"; };
 		AA100024AA100024AA100024 /* WaveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveService.swift; sourceTree = "<group>"; };
@@ -135,7 +135,7 @@
 				AA100003AA100003AA100003 /* Constants.swift */,
 				AA100011AA100011AA100011 /* Info.plist */,
 				AA100010AA100010AA100010 /* Assets.xcassets */,
-				AA10002FAA10002FAA10002F /* Minecraft.ttf */,
+				AA10002FAA10002FAA10002F /* Monocraft.ttc */,
 				AA300003AA300003AA300003 /* Models */,
 				AA300004AA300004AA300004 /* Services */,
 				AA300005AA300005AA300005 /* ViewModels */,
@@ -289,7 +289,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA181010AA181010AA181010 /* Assets.xcassets in Resources */,
-				AA18102FAA18102FAA18102F /* Minecraft.ttf in Resources */,
+				AA18102FAA18102FAA18102F /* Monocraft.ttc in Resources */,
 				04A6082F2FA08C1E0006D97E /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

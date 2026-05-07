@@ -73,7 +73,7 @@
     <!-- Custom fonts -->
     <key>UIAppFonts</key>
     <array>
-        <string>Minecraft.ttf</string>
+        <string>Monocraft.ttc</string>
     </array>
 </dict>
 </plist>
