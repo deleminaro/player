@@ -260,8 +260,22 @@ final class ThemeManager: ObservableObject {
             appFont = f
             AppFont.current = f
         }
-        let fontInfo = AppFont.resolvedFontName.map { "Monocraft → \"\($0)\"" } ?? "Monocraft → NOT FOUND (font file missing or wrong name)"
+        let fontInfo = AppFont.resolvedFontName.map { "Monocraft → \"\($0)\"" } ?? "Monocraft → NOT FOUND"
         AppLogger.shared.log(fontInfo, category: "Font")
+        // Log every registered non-system font family so we can find the correct PostScript name
+        let systemFamilies = Set(["Arial", "Helvetica", "Times New Roman", "Courier", "Georgia",
+                                   "Verdana", "Trebuchet MS", "Impact", "Palatino", "Didot",
+                                   "American Typewriter", "Futura", "Gill Sans", "Optima",
+                                   "Baskerville", "Copperplate", ".SF", "SF Pro", "SF Compact",
+                                   "New York", "Menlo", "Monaco", "Courier New", "Symbol",
+                                   "Apple SD", "PingFang", "Hiragino", "Noto"])
+        for family in UIFont.familyNames.sorted() {
+            let isSystem = systemFamilies.contains(where: { family.hasPrefix($0) }) || family.hasPrefix(".")
+            if !isSystem {
+                let names = UIFont.fontNames(forFamilyName: family).joined(separator: ", ")
+                AppLogger.shared.log("family:\"\(family)\" → [\(names)]", category: "Font")
+            }
+        }
         applyFontAppearance()
         if let url = wallpaperURL, let data = try? Data(contentsOf: url) {
             customWallpaper = UIImage(data: data)
