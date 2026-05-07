@@ -74,7 +74,7 @@ struct SCArtistProfileView: View {
                     img.resizable()
                        .aspectRatio(contentMode: .fill)
                        .frame(width: geo.size.width, height: 220)
-                       .blur(radius: 28)
+                       .blur(radius: 14)
                        .brightness(-0.22)
                        .clipped()
                 } placeholder: {
