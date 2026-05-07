@@ -31,11 +31,15 @@ struct RecentlyPlayedView: View {
                 }
             }
             .background(bg.ignoresSafeArea())
-            .navigationTitle("Recently Played")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Recently Played")
+                        .font(.app(15, .bold))
+                        .foregroundStyle(.white)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")

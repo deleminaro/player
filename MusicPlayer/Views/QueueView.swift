@@ -92,11 +92,15 @@ struct QueueView: View {
                 }
             }
             .background(bg.ignoresSafeArea())
-            .navigationTitle("Queue")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Queue")
+                        .font(.app(15, .bold))
+                        .foregroundStyle(.white)
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Done") { dismiss() }
                         .foregroundStyle(themeManager.current.primary)
