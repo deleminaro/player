@@ -37,10 +37,16 @@ struct CustomizationView: View {
             .padding(.bottom, 120)
         }
         .background(bg.ignoresSafeArea())
-        .navigationTitle("Customization")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(bg, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Customization")
+                    .font(.app(15, .bold))
+                    .foregroundStyle(.white)
+            }
+        }
         .preferredColorScheme(.dark)
         .onChange(of: coverPhotoItem) { _, item in
             Task {

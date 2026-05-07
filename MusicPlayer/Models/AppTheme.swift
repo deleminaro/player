@@ -1,6 +1,14 @@
 import SwiftUI
 import UIKit
 
+private extension UIView {
+    func findViews<T: UIView>(_ type: T.Type) -> [T] {
+        var result = subviews.flatMap { $0.findViews(type) }
+        if let self = self as? T { result.append(self) }
+        return result
+    }
+}
+
 struct AppTheme: Identifiable, Equatable {
     let id: String
     let name: String
@@ -339,6 +347,15 @@ final class ThemeManager: ObservableObject {
         tab.compactInlineLayoutAppearance = itemAppearance
         UITabBar.appearance().standardAppearance   = tab
         UITabBar.appearance().scrollEdgeAppearance = tab
+        // Directly update any UITabBar instances already on screen
+        for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
+            for window in scene.windows {
+                window.findViews(UITabBar.self).forEach {
+                    $0.standardAppearance   = tab
+                    $0.scrollEdgeAppearance = tab
+                }
+            }
+        }
     }
 
     func saveCustomWallpaper(_ image: UIImage) {

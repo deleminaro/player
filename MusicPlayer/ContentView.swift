@@ -73,6 +73,8 @@ struct ContentView: View {
                 .onDisappear { spotifyOnboardingShown = true }
         }
         .onAppear {
+            // Re-apply font appearance now that tab bar exists on screen
+            themeManager.applyFontAppearance()
             if !spotifyOnboardingShown && !spotify.isAuthenticated {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     showSpotifyOnboarding = true
