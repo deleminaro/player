@@ -10,7 +10,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @AppStorage("spotifyOnboardingShown") private var spotifyOnboardingShown = false
     @State private var showSpotifyOnboarding = false
-    @State private var selectedTab: Int? = 0
+    @State private var selectedTab: Int = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -98,37 +98,81 @@ struct ContentView: View {
         .tint(themeManager.current.primary)
     }
 
-    // MARK: - iPad layout (regular)
+    // MARK: - iPad layout (regular) — content left, sidebar right
 
     private var ipadLayout: some View {
-        NavigationSplitView {
-            List(selection: $selectedTab) {
-                sidebarItem("Home",    icon: "house.fill",             tag: 0)
-                sidebarItem("Search",  icon: "magnifyingglass",        tag: 1)
-                sidebarItem("Wave",    icon: "waveform",               tag: 2)
-                sidebarItem("Library", icon: "building.columns.fill",  tag: 3)
-                sidebarItem("Settings",icon: "gearshape.fill",         tag: 4)
+        HStack(spacing: 0) {
+            // Main content
+            ZStack {
+                switch selectedTab {
+                case 1:  SearchView()
+                case 2:  WaveView()
+                case 3:  LibraryView()
+                case 4:  SettingsView()
+                default: HomeView()
+                }
             }
-            .listStyle(.sidebar)
-            .navigationTitle("POSTOR")
-            .navigationBarTitleDisplayMode(.large)
-            .background(themeManager.current.background)
-            .scrollContentBackground(.hidden)
-        } detail: {
-            switch selectedTab ?? 0 {
-            case 1:  SearchView()
-            case 2:  WaveView()
-            case 3:  LibraryView()
-            case 4:  SettingsView()
-            default: HomeView()
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // Right sidebar
+            ipadSidebar
         }
-        .tint(themeManager.current.primary)
+        .ignoresSafeArea()
     }
 
-    private func sidebarItem(_ title: String, icon: String, tag: Int) -> some View {
-        Label(title, systemImage: icon)
-            .font(.app(15, .semibold))
-            .tag(tag)
+    private var ipadSidebar: some View {
+        VStack(spacing: 0) {
+            // Branding
+            Text("POSTOR")
+                .font(.app(15, .black))
+                .kerning(3)
+                .foregroundStyle(themeManager.current.primary)
+                .padding(.top, 52)
+
+            Spacer()
+
+            // Nav buttons — vertically centred
+            VStack(spacing: 6) {
+                ipadNavButton("Home",     icon: "house.fill",            tag: 0)
+                ipadNavButton("Search",   icon: "magnifyingglass",       tag: 1)
+                ipadNavButton("Wave",     icon: "waveform",              tag: 2)
+                ipadNavButton("Library",  icon: "building.columns.fill", tag: 3)
+                ipadNavButton("Settings", icon: "gearshape.fill",        tag: 4)
+            }
+            .padding(.horizontal, 12)
+
+            Spacer()
+        }
+        .frame(width: 190)
+        .background(themeManager.current.card.opacity(0.6))
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(Color.white.opacity(0.05))
+                .frame(width: 1)
+        }
+    }
+
+    private func ipadNavButton(_ title: String, icon: String, tag: Int) -> some View {
+        let active = (selectedTab) == tag
+        return Button {
+            selectedTab = tag
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 22)
+                Text(title)
+                    .font(.app(14, .semibold))
+                Spacer()
+            }
+            .foregroundStyle(active ? themeManager.current.primary : .white.opacity(0.5))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                active ? themeManager.current.primary.opacity(0.12) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 12)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
