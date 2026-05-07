@@ -262,6 +262,7 @@ final class ThemeManager: ObservableObject {
         }
         let fontInfo = AppFont.resolvedFontName.map { "Monocraft → \"\($0)\"" } ?? "Monocraft → NOT FOUND (font file missing or wrong name)"
         AppLogger.shared.log(fontInfo, category: "Font")
+        applyFontAppearance()
         if let url = wallpaperURL, let data = try? Data(contentsOf: url) {
             customWallpaper = UIImage(data: data)
         }
@@ -294,6 +295,46 @@ final class ThemeManager: ObservableObject {
         appFont = f
         AppFont.current = f
         UserDefaults.standard.set(f.rawValue, forKey: fontKey)
+        applyFontAppearance(f)
+    }
+
+    // Applies custom font to UINavigationBar and UITabBar system UI elements.
+    func applyFontAppearance(_ f: AppFont? = nil) {
+        let active = f ?? appFont
+        guard active == .minecraft, let name = AppFont.resolvedFontName else {
+            // Reset to system defaults
+            let nav = UINavigationBarAppearance()
+            nav.configureWithTransparentBackground()
+            UINavigationBar.appearance().standardAppearance   = nav
+            UINavigationBar.appearance().scrollEdgeAppearance = nav
+            UINavigationBar.appearance().compactAppearance    = nav
+            return
+        }
+        let titleSize: CGFloat  = 17
+        let largeSize: CGFloat  = 32
+        let tabSize:   CGFloat  = 10
+        let titleFont    = UIFont(name: name, size: titleSize) ?? .systemFont(ofSize: titleSize, weight: .semibold)
+        let largeTitleFont = UIFont(name: name, size: largeSize) ?? .boldSystemFont(ofSize: largeSize)
+        let tabFont      = UIFont(name: name, size: tabSize)   ?? .systemFont(ofSize: tabSize)
+
+        let nav = UINavigationBarAppearance()
+        nav.configureWithTransparentBackground()
+        nav.titleTextAttributes      = [.font: titleFont,      .foregroundColor: UIColor.white]
+        nav.largeTitleTextAttributes = [.font: largeTitleFont, .foregroundColor: UIColor.white]
+        UINavigationBar.appearance().standardAppearance   = nav
+        UINavigationBar.appearance().scrollEdgeAppearance = nav
+        UINavigationBar.appearance().compactAppearance    = nav
+
+        let itemAppearance = UITabBarItemAppearance()
+        itemAppearance.normal.titleTextAttributes   = [.font: tabFont]
+        itemAppearance.selected.titleTextAttributes = [.font: tabFont]
+        let tab = UITabBarAppearance()
+        tab.configureWithDefaultBackground()
+        tab.stackedLayoutAppearance       = itemAppearance
+        tab.inlineLayoutAppearance        = itemAppearance
+        tab.compactInlineLayoutAppearance = itemAppearance
+        UITabBar.appearance().standardAppearance   = tab
+        UITabBar.appearance().scrollEdgeAppearance = tab
     }
 
     func saveCustomWallpaper(_ image: UIImage) {
