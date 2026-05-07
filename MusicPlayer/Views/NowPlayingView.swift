@@ -3,7 +3,6 @@ import SwiftUI
 struct NowPlayingView: View {
     @EnvironmentObject var playerVM: PlayerViewModel
     @EnvironmentObject var themeManager: ThemeManager
-    @AppStorage("mp_audio_quality") private var audioQuality: AudioQuality = .lossless
     @State private var showLyrics        = false
     @State private var showQueue         = false
     @State private var showEQ            = false
@@ -319,12 +318,8 @@ struct NowPlayingView: View {
         let accent = themeManager.current.primary
         if track?.source == .spotify {
             badge(icon: "s.circle.fill", label: "PREVIEW", color: Color(red: 0.11, green: 0.73, blue: 0.33))
-        } else if audioQuality == .lossless,
-                  track?.media?.transcodings.contains(where: { $0.format.mimeType.contains("opus") }) == true {
+        } else {
             badge(icon: "waveform", label: "LOSSLESS", color: accent)
-        } else if let q = AudioQuality(rawValue: UserDefaults.standard.string(forKey: "mp_audio_quality") ?? ""),
-                  q != .lossless {
-            badge(icon: "headphones", label: q.label.uppercased(), color: .white.opacity(0.5))
         }
     }
 

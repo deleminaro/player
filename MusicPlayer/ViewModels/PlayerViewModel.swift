@@ -42,7 +42,6 @@ final class PlayerViewModel: ObservableObject {
     private let kLiked      = "mp_liked_tracks"
     private let kSearches   = "mp_recent_searches"
     private let kPlaylists  = "mp_playlists"
-    private let kQuality    = "mp_audio_quality"
     private let kSpeed      = "mp_playback_speed"
     private let kEQGains    = "mp_eq_gains"
     private let kPitch      = "mp_pitch_preserved"
@@ -65,9 +64,7 @@ final class PlayerViewModel: ObservableObject {
         }
     }
 
-    private var currentQuality: AudioQuality {
-        AudioQuality(rawValue: UserDefaults.standard.string(forKey: kQuality) ?? "") ?? .lossless
-    }
+    private var currentQuality: AudioQuality { .lossless }
 
     // MARK: - Audio callback bridge
 

@@ -5,14 +5,12 @@ struct SettingsView: View {
     @EnvironmentObject var themeManager:    ThemeManager
     @EnvironmentObject var firebaseManager: FirebaseManager
 
-    @AppStorage("mp_audio_quality")   private var audioQuality:      AudioQuality = .lossless
     @AppStorage("mp_caching_mode")    private var cachingMode:       CachingMode  = .memory
     @AppStorage("mp_resume_track")    private var resumeLastTrack:   Bool         = true
     @AppStorage("mp_cache_listened")  private var cacheListened:     Bool         = true
     @AppStorage("mp_cache_playlists") private var cachePlaylists:    Bool         = false
 
     @StateObject private var dm = DownloadManager.shared
-    @State private var showQualitySheet       = false
     @State private var showCachingSheet       = false
     @State private var showLogoutConfirm      = false
     @State private var showNameEdit           = false
@@ -33,10 +31,20 @@ struct SettingsView: View {
                     }
 
                     settingsGroup("AUDIO") {
-                        settingsRow(icon: "waveform", iconBg: Color.blue.opacity(0.2), iconFg: .blue,
-                                    title: "Audio Quality", subtitle: audioQuality.subtitle.uppercased()) {
-                            showQualitySheet = true
+                        HStack(spacing: 14) {
+                            iconBox("waveform", bg: Color.blue.opacity(0.2), fg: .blue)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Audio Quality")
+                                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                Text("Always Lossless FLAC")
+                                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.blue.opacity(0.7))
+                            }
+                            Spacer()
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white.opacity(0.2))
                         }
+                        .padding(.horizontal, 16).padding(.vertical, 14)
                         rowDivider()
                         settingsRow(icon: cachingMode.icon, iconBg: Color.purple.opacity(0.2), iconFg: .purple,
                                     title: "Caching", subtitle: cachingMode.label) {
@@ -140,13 +148,6 @@ struct SettingsView: View {
                         .foregroundStyle(.white)
                 }
             }
-        }
-        .sheet(isPresented: $showQualitySheet) {
-            AudioQualitySheet(selected: $audioQuality)
-                .environmentObject(themeManager)
-                .presentationDetents([.fraction(0.58)])
-                .presentationBackground(card)
-                .presentationCornerRadius(28)
         }
         .sheet(isPresented: $showCachingSheet) {
             CachingSheet(mode: $cachingMode, cacheListened: $cacheListened, cachePlaylists: $cachePlaylists)
@@ -313,55 +314,11 @@ struct SettingsView: View {
     private var debugLogText: String {
         """
         POSTOR Debug Log — \(Date())
-        Audio Quality : \(audioQuality.label) (\(audioQuality.subtitle))
+        Audio Quality : Lossless FLAC (locked)
         Caching Mode  : \(cachingMode.label)
         Theme         : \(themeManager.current.name)
         Slider        : \(themeManager.sliderType.label)
         """
-    }
-}
-
-// MARK: - Audio quality sheet
-
-private struct AudioQualitySheet: View {
-    @Binding var selected: AudioQuality
-    @EnvironmentObject var themeManager: ThemeManager
-    @Environment(\.dismiss) var dismiss
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Capsule().fill(Color.white.opacity(0.25)).frame(width: 36, height: 4)
-                .padding(.top, 12).padding(.bottom, 16)
-            ForEach(AudioQuality.allCases, id: \.rawValue) { q in
-                let on = selected == q
-                Button {
-                    selected = q
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { dismiss() }
-                } label: {
-                    HStack(spacing: 16) {
-                        ZStack {
-                            Circle()
-                                .fill(on ? Color.white.opacity(0.18) : Color.white.opacity(0.07))
-                                .frame(width: 48, height: 48)
-                            Image(systemName: q.icon).font(.system(size: 20)).foregroundStyle(.white)
-                        }
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(q.label).font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
-                            Text(q.subtitle).font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
-                        }
-                        Spacer()
-                        if on { Image(systemName: "checkmark").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white) }
-                    }
-                    .padding(.horizontal, 20).padding(.vertical, 14)
-                    .background(on ? Color.white.opacity(0.06) : Color.clear, in: RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal, 12).padding(.vertical, 3)
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(on ? Color.white.opacity(0.25) : .clear, lineWidth: 1).padding(.horizontal, 12).padding(.vertical, 3))
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-        .preferredColorScheme(.dark)
     }
 }
 
