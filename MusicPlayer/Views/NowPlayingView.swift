@@ -578,24 +578,33 @@ struct NowPlayingView: View {
 
             Spacer()
 
-            // Repeat
+            // Repeat — cycles off → one → all
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isRepeating.toggle() }
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    playerVM.repeatMode = playerVM.repeatMode.next
+                }
             } label: {
-                Image(systemName: playerVM.isRepeating ? "repeat.1" : "repeat")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(playerVM.isRepeating ? themeManager.current.primary : .white.opacity(0.45))
-                    .contentTransition(.symbolEffect(.replace))
-                    .animation(.easeInOut(duration: 0.2), value: playerVM.isRepeating)
-                    .frame(width: 46, height: 46)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(playerVM.isRepeating ? themeManager.current.primary.opacity(0.18) : Color.clear)
-                            .animation(.easeInOut(duration: 0.2), value: playerVM.isRepeating)
-                    )
+                let active = playerVM.repeatMode != .off
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: playerVM.repeatMode.icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(active ? themeManager.current.primary : .white.opacity(0.45))
+                        .contentTransition(.symbolEffect(.replace))
+                        .frame(width: 46, height: 46)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(active ? themeManager.current.primary.opacity(0.18) : Color.clear)
+                        )
+                    if playerVM.repeatMode == .all {
+                        Circle()
+                            .fill(themeManager.current.primary)
+                            .frame(width: 7, height: 7)
+                            .offset(x: -2, y: 2)
+                    }
+                }
             }
             .buttonStyle(ScaleButtonStyle(scale: 0.85))
-            .sensoryFeedback(.selection, trigger: playerVM.isRepeating)
+            .sensoryFeedback(.selection, trigger: playerVM.repeatMode)
         }
     }
 

@@ -156,6 +156,26 @@ enum PlayerState {
     case idle, loading, playing, paused
 }
 
+enum RepeatMode: String {
+    case off, one, all
+
+    var next: RepeatMode {
+        switch self {
+        case .off: return .one
+        case .one: return .all
+        case .all: return .off
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .off: return "repeat"
+        case .one: return "repeat.1"
+        case .all: return "repeat"
+        }
+    }
+}
+
 struct QueueItem: Identifiable {
     let id   = UUID()
     let track: Track

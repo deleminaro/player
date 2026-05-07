@@ -21,7 +21,7 @@ final class PlayerViewModel: ObservableObject {
     @Published var recentSearches:    [String]        = []
     @Published var showingNowPlaying: Bool            = false
     @Published var isShuffling:       Bool            = false
-    @Published var isRepeating:       Bool            = false
+    @Published var repeatMode:        RepeatMode      = .off
     @Published var isPitchPreserved:  Bool            = true
 
     var nextTrack: Track? {
@@ -211,18 +211,31 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Queue navigation
 
     func skipNext() {
-        if isRepeating, let t = currentTrack { play(t); return }
-        guard !queue.isEmpty else { playerState = .idle; clearNowPlaying(); return }
-        if let idx = currentIndex() {
-            if isShuffling {
-                let others = queue.indices.filter { $0 != idx }
-                if let r = others.randomElement() { play(queue[r].track) } else { playerState = .idle; clearNowPlaying() }
-            } else {
-                let next = idx + 1
-                if next < queue.count { play(queue[next].track) } else { playerState = .idle; clearNowPlaying() }
-            }
-        } else {
-            play(queue[0].track)
+        switch repeatMode {
+        case .one:
+            if let t = currentTrack { play(t) }
+        case .all:
+            guard !queue.isEmpty else { playerState = .idle; clearNowPlaying(); return }
+            if let idx = currentIndex() {
+                if isShuffling {
+                    let others = queue.indices.filter { $0 != idx }
+                    play(queue[others.randomElement() ?? 0].track)
+                } else {
+                    let next = idx + 1
+                    play(next < queue.count ? queue[next].track : queue[0].track)
+                }
+            } else { play(queue[0].track) }
+        case .off:
+            guard !queue.isEmpty else { playerState = .idle; clearNowPlaying(); return }
+            if let idx = currentIndex() {
+                if isShuffling {
+                    let others = queue.indices.filter { $0 != idx }
+                    if let r = others.randomElement() { play(queue[r].track) } else { playerState = .idle; clearNowPlaying() }
+                } else {
+                    let next = idx + 1
+                    if next < queue.count { play(queue[next].track) } else { playerState = .idle; clearNowPlaying() }
+                }
+            } else { play(queue[0].track) }
         }
     }
 
