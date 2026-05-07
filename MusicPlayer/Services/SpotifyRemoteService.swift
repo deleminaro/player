@@ -129,7 +129,7 @@ extension SpotifyRemoteService: SPTAppRemoteDelegate {
         Task { @MainActor in
             remote.playerAPI?.delegate = self
             remote.playerAPI?.subscribe(toPlayerState: { _, error in
-                if let error { print("[SpotifyRemote] subscribe: \(error.localizedDescription)") }
+                if let error { AppLogger.shared.log("subscribe error: \(error.localizedDescription)", category: "Spotify") }
             })
             if let uri = self.pendingURI {
                 self.pendingURI = nil
@@ -140,7 +140,7 @@ extension SpotifyRemoteService: SPTAppRemoteDelegate {
 
     nonisolated func appRemote(_ remote: SPTAppRemote, didFailConnectionAttemptWithError error: Error?) {
         Task { @MainActor in
-            print("[SpotifyRemote] Connection failed: \(error?.localizedDescription ?? "unknown")")
+            AppLogger.shared.log("Connection failed: \(error?.localizedDescription ?? "unknown")", category: "Spotify")
             self.stopPositionTimer()
             self.onConnectionFailed?()
         }

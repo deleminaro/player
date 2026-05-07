@@ -92,14 +92,18 @@ final class DownloadManager: ObservableObject {
 
     func downloadOffline(track: Track, streamURL: URL) async {
         guard !offlineIDs.contains(track.id), !downloading.contains(track.id) else { return }
+        AppLogger.shared.log("⬇ start '\(track.title)'", category: "Download")
         downloading.insert(track.id)
         defer { downloading.remove(track.id) }
         if await store(from: streamURL, trackID: track.id, in: offlineDir) {
             offlineIDs.insert(track.id)
             UserDefaults.standard.set(Array(offlineIDs), forKey: kOffline)
+            AppLogger.shared.log("✓ saved '\(track.title)' (id:\(track.id))", category: "Download")
             if let artURL = track.thumbnailArtworkURL ?? track.artworkURL {
                 await saveArtwork(trackID: track.id, from: artURL)
             }
+        } else {
+            AppLogger.shared.log("✗ failed '\(track.title)' url:\(streamURL.lastPathComponent)", category: "Download")
         }
     }
 
@@ -114,6 +118,7 @@ final class DownloadManager: ObservableObject {
         try? FileManager.default.removeItem(at: artworkFile)
         offlineIDs.remove(trackID)
         UserDefaults.standard.set(Array(offlineIDs), forKey: kOffline)
+        AppLogger.shared.log("🗑 deleted id:\(trackID)", category: "Download")
     }
 
     // MARK: - Prepare export (Save to folder)

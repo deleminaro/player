@@ -41,8 +41,10 @@ final class FirebaseManager: ObservableObject {
             Task { @MainActor [weak self] in
                 self?.isLoggedIn = user != nil
                 if let uid = user?.uid {
+                    AppLogger.shared.log("Auth state: signed in uid:\(uid)", category: "Firebase")
                     await self?.loadProfile(uid: uid)
                 } else {
+                    AppLogger.shared.log("Auth state: signed out", category: "Firebase")
                     self?.currentUser = nil
                 }
             }
@@ -156,19 +158,19 @@ final class FirebaseManager: ObservableObject {
 
     func syncLikedTracks(_ tracks: [Track]) async {
         guard let uid = auth.currentUser?.uid else {
-            print("[Firebase] syncLikedTracks: no current user"); return
+            AppLogger.shared.log("syncLikedTracks: no current user", category: "Firebase"); return
         }
         guard let data = try? JSONEncoder().encode(tracks),
               let str  = String(data: data, encoding: .utf8) else {
-            print("[Firebase] syncLikedTracks: encode failed"); return
+            AppLogger.shared.log("syncLikedTracks: encode failed", category: "Firebase"); return
         }
         do {
             try await db.collection("users").document(uid)
                 .collection("data").document("liked")
                 .setData(["tracks": str])
-            print("[Firebase] syncLikedTracks: synced \(tracks.count) tracks")
+            AppLogger.shared.log("syncLikedTracks: synced \(tracks.count) tracks", category: "Firebase")
         } catch {
-            print("[Firebase] syncLikedTracks error: \(error)")
+            AppLogger.shared.log("syncLikedTracks error: \(error)", category: "Firebase")
         }
     }
 

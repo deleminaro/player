@@ -132,6 +132,7 @@ final class PlayerViewModel: ObservableObject {
         playerState  = .loading
         addToRecent(track)
         updateNowPlayingInfo(track: track)
+        AppLogger.shared.log("▶ play '\(track.title)' by \(track.username) [\(track.source.rawValue)]", category: "Player")
         MPRemoteCommandCenter.shared().likeCommand.isActive = isLiked(track)
 
         Task {
@@ -173,7 +174,7 @@ final class PlayerViewModel: ObservableObject {
                 audio.play(url: url)
             } catch {
                 if currentTrack?.id == track.id { playerState = .idle }
-                print("[PlayerVM] play error: \(error.localizedDescription)")
+                AppLogger.shared.log("play error for '\(track.title)': \(error.localizedDescription)", category: "Player")
             }
         }
     }

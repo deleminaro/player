@@ -11,8 +11,10 @@ final class NetworkMonitor: ObservableObject {
 
     private init() {
         monitor.pathUpdateHandler = { [weak self] path in
+            let connected = path.status == .satisfied
             DispatchQueue.main.async {
-                self?.isConnected = path.status == .satisfied
+                self?.isConnected = connected
+                AppLogger.shared.log(connected ? "Connected (\(path.availableInterfaces.map(\.name).joined(separator: ", ")))" : "Disconnected — no network", category: "Network")
             }
         }
         monitor.start(queue: queue)

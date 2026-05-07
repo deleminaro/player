@@ -4,6 +4,7 @@ import PhotosUI
 struct SettingsView: View {
     @EnvironmentObject var themeManager:    ThemeManager
     @EnvironmentObject var firebaseManager: FirebaseManager
+    @EnvironmentObject var playerVM:        PlayerViewModel
 
     @AppStorage("mp_caching_mode")    private var cachingMode:       CachingMode  = .memory
     @AppStorage("mp_resume_track")    private var resumeLastTrack:   Bool         = true
@@ -80,18 +81,24 @@ struct SettingsView: View {
                     }
 
                     settingsGroup("DEVELOPER") {
-                        ShareLink(item: debugLogText) {
+                        NavigationLink {
+                            DebugLogView()
+                                .environmentObject(themeManager)
+                                .environmentObject(playerVM)
+                                .environmentObject(firebaseManager)
+                        } label: {
                             HStack(spacing: 14) {
                                 iconBox("ladybug.fill", bg: Color.gray.opacity(0.2), fg: .gray)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Debug Log")
                                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-                                    Text("Share for issue diagnosis")
+                                    Text("\(AppLogger.shared.entries.count) events captured")
                                         .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
                                 }
                                 Spacer()
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 14)).foregroundStyle(.white.opacity(0.3))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.22))
                             }
                             .padding(.horizontal, 16).padding(.vertical, 14)
                         }
@@ -311,15 +318,6 @@ struct SettingsView: View {
         Divider().background(Color.white.opacity(0.06)).padding(.leading, 66)
     }
 
-    private var debugLogText: String {
-        """
-        POSTOR Debug Log — \(Date())
-        Audio Quality : Lossless FLAC (locked)
-        Caching Mode  : \(cachingMode.label)
-        Theme         : \(themeManager.current.name)
-        Slider        : \(themeManager.sliderType.label)
-        """
-    }
 }
 
 // MARK: - Caching sheet

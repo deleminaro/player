@@ -52,6 +52,8 @@
 		AA181029AA181029AA181029 /* SkeletonViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100029AA100029AA100029 /* SkeletonViews.swift */; };
 		AA181030AA181030AA181030 /* SpotifyOnboardingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100030AA100030AA100030 /* SpotifyOnboardingSheet.swift */; };
 		AA181031AA181031AA181031 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100031AA100031AA100031 /* CachedAsyncImage.swift */; };
+		AA181032AA181032AA181032 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100032AA100032AA100032 /* AppLogger.swift */; };
+		AA181033AA181033AA181033 /* DebugLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100033AA100033AA100033 /* DebugLogView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -97,6 +99,8 @@
 		AA100029AA100029AA100029 /* SkeletonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonViews.swift; sourceTree = "<group>"; };
 		AA100030AA100030AA100030 /* SpotifyOnboardingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyOnboardingSheet.swift; sourceTree = "<group>"; };
 		AA100031AA100031AA100031 /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
+		AA100032AA100032AA100032 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		AA100033AA100033AA100033 /* DebugLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +167,7 @@
 				AA100024AA100024AA100024 /* WaveService.swift */,
 				AA100026AA100026AA100026 /* NetworkMonitor.swift */,
 				AA100027AA100027AA100027 /* BackendClient.swift */,
+				AA100032AA100032AA100032 /* AppLogger.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -196,6 +201,7 @@
 				AA100025AA100025AA100025 /* WaveView.swift */,
 				AA100020AA100020AA100020 /* AuthView.swift */,
 				AA100028AA100028AA100028 /* OfflineTracksView.swift */,
+				AA100033AA100033AA100033 /* DebugLogView.swift */,
 				AA300007AA300007AA300007 /* Components */,
 			);
 			path = Views;
@@ -332,6 +338,8 @@
 				AA181029AA181029AA181029 /* SkeletonViews.swift in Sources */,
 				AA181030AA181030AA181030 /* SpotifyOnboardingSheet.swift in Sources */,
 				AA181031AA181031AA181031 /* CachedAsyncImage.swift in Sources */,
+				AA181032AA181032AA181032 /* AppLogger.swift in Sources */,
+				AA181033AA181033AA181033 /* DebugLogView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
