@@ -434,7 +434,7 @@ struct NowPlayingView: View {
         let trackH: CGFloat = isScrubbing ? 14 : 8
         let accent = themeManager.current.primary
         return VStack(spacing: 10) {
-            TimelineView(.animation(minimumInterval: 1.0 / 8)) { tl in
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { tl in
                 let phase = CGFloat(
                     tl.date.timeIntervalSinceReferenceDate
                         .truncatingRemainder(dividingBy: 2.0) / 2.0

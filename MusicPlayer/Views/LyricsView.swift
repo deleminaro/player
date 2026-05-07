@@ -26,7 +26,7 @@ struct LyricsView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 340)
                     .clipped()
-                    .blur(radius: 18)
+                    .blur(radius: 40)
                     .overlay(
                         LinearGradient(
                             colors: [bg.opacity(0.55), bg],
