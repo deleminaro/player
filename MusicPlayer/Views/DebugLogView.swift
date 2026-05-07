@@ -89,7 +89,7 @@ struct DebugLogView: View {
                     // ── Event rows ──
                     if visibleEntries.isEmpty {
                         Text(logger.entries.isEmpty ? "No events yet — start playing music." : "No matches.")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.app(12))
                             .foregroundStyle(.white.opacity(0.3))
                             .padding(.horizontal, 16)
                             .padding(.top, 10)
@@ -110,18 +110,18 @@ struct DebugLogView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text("DEBUG LOG")
-                    .font(.system(size: 12, weight: .black)).kerning(2.5)
+                    .font(.app(12, .black)).kerning(2.5)
                     .foregroundStyle(.white)
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 ShareLink(item: exportText) {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.app(14, .semibold))
                         .foregroundStyle(accent)
                 }
                 Button { showClearConfirm = true } label: {
                     Image(systemName: "trash")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.app(14, .semibold))
                         .foregroundStyle(.red.opacity(0.8))
                 }
             }
@@ -138,17 +138,17 @@ struct DebugLogView: View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
+                    .font(.app(13))
                     .foregroundStyle(.white.opacity(0.35))
                 TextField("Search…", text: $searchText)
-                    .font(.system(size: 13, design: .monospaced))
+                    .font(.app(13))
                     .foregroundStyle(.white)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 13))
+                            .font(.app(13))
                             .foregroundStyle(.white.opacity(0.4))
                     }
                 }
@@ -177,16 +177,16 @@ struct DebugLogView: View {
     private func snapRow(_ line: SnapLine) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("SYS")
-                .font(.system(size: 9, weight: .black))
+                .font(.app(9, .black))
                 .foregroundStyle(.white.opacity(0.25))
                 .frame(width: 38, alignment: .leading)
                 .padding(.top, 1)
             Text(line.label)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.app(11))
                 .foregroundStyle(.white.opacity(0.4))
                 .frame(width: 68, alignment: .leading)
             Text(line.value)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.app(11))
                 .foregroundStyle(snapValueColor(line.label, value: line.value))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -197,16 +197,16 @@ struct DebugLogView: View {
     private func eventRow(_ entry: LogEntry) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(entry.category.prefix(3).uppercased())
-                .font(.system(size: 9, weight: .black))
+                .font(.app(9, .black))
                 .foregroundStyle(color(for: entry.category))
                 .frame(width: 38, alignment: .leading)
                 .padding(.top, 1)
             Text(entry.timestamp)
-                .font(.system(size: 10, design: .monospaced))
+                .font(.app(10))
                 .foregroundStyle(.white.opacity(0.3))
                 .frame(width: 68, alignment: .leading)
             Text(entry.message)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.app(12))
                 .foregroundStyle(.white.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -225,7 +225,7 @@ struct DebugLogView: View {
     private func chip(_ label: String, selected: Bool, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.app(11, .semibold))
                 .foregroundStyle(selected ? .black : color.opacity(0.7))
                 .padding(.horizontal, 11).padding(.vertical, 5)
                 .background(selected ? color : card, in: Capsule())

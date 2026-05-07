@@ -53,7 +53,7 @@ struct ContentView: View {
             if !network.isConnected {
                 HStack(spacing: 8) {
                     Image(systemName: "wifi.slash").font(.system(size: 12, weight: .semibold))
-                    Text("No Internet Connection").font(.system(size: 13, weight: .semibold))
+                    Text("No Internet Connection").font(.app(13, .semibold))
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 20).padding(.vertical, 10)

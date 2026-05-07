@@ -166,7 +166,20 @@ enum AppFont: String, CaseIterable {
         }
     }
 
-    private static let minecraftFontName = "Monocraft"
+    // Auto-discovers the correct PostScript name from registered fonts at first use.
+    private static let resolvedFontName: String? = {
+        let candidates = ["Monocraft", "Monocraft-Regular", "Minecraft", "Minecraft-Regular"]
+        for name in candidates {
+            if UIFont(name: name, size: 14) != nil { return name }
+        }
+        for family in UIFont.familyNames {
+            let lower = family.lowercased()
+            if lower.contains("monocraft") || lower.contains("minecraft") {
+                return UIFont.fontNames(forFamilyName: family).first ?? family
+            }
+        }
+        return nil
+    }()
 
     // Global reference — updated on main thread whenever ThemeManager changes the font.
     nonisolated(unsafe) static var current: AppFont = .system
@@ -178,8 +191,8 @@ enum AppFont: String, CaseIterable {
         case .serif:     return .system(size: size, weight: weight, design: .serif)
         case .mono:      return .system(size: size, weight: weight, design: .monospaced)
         case .minecraft:
-            if UIFont(name: AppFont.minecraftFontName, size: size) != nil {
-                return .custom(AppFont.minecraftFontName, size: size)
+            if let name = AppFont.resolvedFontName {
+                return .custom(name, size: size)
             }
             return .system(size: size, weight: weight, design: .monospaced)
         }
@@ -242,6 +255,8 @@ final class ThemeManager: ObservableObject {
             appFont = f
             AppFont.current = f
         }
+        let fontInfo = AppFont.resolvedFontName.map { "Monocraft → \"\($0)\"" } ?? "Monocraft → NOT FOUND (font file missing or wrong name)"
+        AppLogger.shared.log(fontInfo, category: "Font")
         if let url = wallpaperURL, let data = try? Data(contentsOf: url) {
             customWallpaper = UIImage(data: data)
         }
