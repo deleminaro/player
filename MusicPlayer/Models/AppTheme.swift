@@ -167,7 +167,7 @@ enum AppFont: String, CaseIterable {
     }
 
     // Auto-discovers bold then regular PostScript names from registered fonts at first use.
-    private static let resolvedFontName: String? = {
+    fileprivate static let resolvedFontName: String? = {
         let candidates = [
             "Monocraft-Bold", "Monocraft Bold", "Monocraft-SemiBold",
             "Monocraft", "Monocraft-Regular",
