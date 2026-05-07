@@ -114,13 +114,13 @@ struct QueueView: View {
     private var emptyState: some View {
         VStack(spacing: 14) {
             Image(systemName: "list.bullet")
-                .font(.system(size: 40))
+                .font(.app(40))
                 .foregroundStyle(themeManager.current.primary.opacity(0.3))
             Text("QUEUE IS EMPTY")
-                .font(.system(size: 13, weight: .black)).kerning(2)
+                .font(.app(13, .black)).kerning(2)
                 .foregroundStyle(.white.opacity(0.45))
             Text("Add tracks from the Search tab.")
-                .font(.system(size: 12))
+                .font(.app(12))
                 .foregroundStyle(.white.opacity(0.25))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

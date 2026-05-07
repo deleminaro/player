@@ -158,7 +158,7 @@ struct NowPlayingView: View {
                 ZStack {
                     Circle().fill(Color.white.opacity(0.12)).frame(width: 40, height: 40)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.app(13, .bold))
                         .foregroundStyle(.white)
                 }
             }
@@ -202,7 +202,7 @@ struct NowPlayingView: View {
                 ZStack {
                     Circle().fill(Color.white.opacity(0.12)).frame(width: 40, height: 40)
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.app(14, .bold))
                         .foregroundStyle(.white)
                 }
             }
@@ -250,12 +250,12 @@ struct NowPlayingView: View {
                     img.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Image(systemName: "music.note")
-                        .font(.system(size: 48, weight: .ultraLight))
+                        .font(.app(48, .ultraLight))
                         .foregroundStyle(.white.opacity(0.2))
                 }
             } else {
                 Image(systemName: "music.note")
-                    .font(.system(size: 48, weight: .ultraLight))
+                    .font(.app(48, .ultraLight))
                     .foregroundStyle(.white.opacity(0.2))
             }
         }
@@ -301,7 +301,7 @@ struct NowPlayingView: View {
                         .frame(width: 46, height: 46)
                         .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
                     Image(systemName: liked ? "heart.fill" : "heart")
-                        .font(.system(size: 19))
+                        .font(.app(19))
                         .foregroundStyle(liked ? .pink : .white.opacity(0.6))
                         .scaleEffect(liked ? 1.1 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
@@ -326,9 +326,9 @@ struct NowPlayingView: View {
     private func badge(icon: String, label: String, color: Color) -> some View {
         HStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 8, weight: .bold))
+                .font(.app(8, .bold))
             Text(label)
-                .font(.system(size: 8, weight: .bold))
+                .font(.app(8, .bold))
                 .kerning(0.5)
         }
         .foregroundStyle(color)
@@ -508,7 +508,7 @@ struct NowPlayingView: View {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { playerVM.isShuffling.toggle() }
             } label: {
                 Image(systemName: "shuffle")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.app(16, .semibold))
                     .foregroundStyle(playerVM.isShuffling ? themeManager.current.primary : .white.opacity(0.45))
                     .frame(width: 46, height: 46)
                     .background(
@@ -527,7 +527,7 @@ struct NowPlayingView: View {
                 ZStack {
                     Circle().fill(Color.white.opacity(0.1)).frame(width: 56, height: 56)
                     Image(systemName: "backward.end.fill")
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.app(24, .semibold))
                         .foregroundStyle(.white)
                 }
             }
@@ -546,7 +546,7 @@ struct NowPlayingView: View {
                         ProgressView().tint(.black).scaleEffect(1.1)
                     } else {
                         Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 26, weight: .bold))
+                            .font(.app(26, .bold))
                             .foregroundStyle(.black)
                             .offset(x: playerVM.isPlaying ? 0 : 2)
                             .contentTransition(.symbolEffect(.replace))
@@ -564,7 +564,7 @@ struct NowPlayingView: View {
                 ZStack {
                     Circle().fill(Color.white.opacity(0.1)).frame(width: 56, height: 56)
                     Image(systemName: "forward.end.fill")
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.app(24, .semibold))
                         .foregroundStyle(.white)
                 }
             }
@@ -582,7 +582,7 @@ struct NowPlayingView: View {
                 let active = playerVM.repeatMode != .off
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: playerVM.repeatMode.icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(16, .semibold))
                         .foregroundStyle(active ? themeManager.current.primary : .white.opacity(0.45))
                         .contentTransition(.symbolEffect(.replace))
                         .frame(width: 46, height: 46)
@@ -630,13 +630,13 @@ struct NowPlayingView: View {
             VStack(spacing: 5) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: icon)
-                        .font(.system(size: 19, weight: .regular))
+                        .font(.app(19, .regular))
                         .foregroundStyle(tint)
                         .frame(height: 24)
                         .contentTransition(.symbolEffect(.replace))
                     if let b = badge {
                         Text(b)
-                            .font(.system(size: 8, weight: .black))
+                            .font(.app(8, .black))
                             .foregroundStyle(.black)
                             .padding(3.5)
                             .background(themeManager.current.primary, in: Circle())
@@ -744,11 +744,11 @@ struct AddToPlaylistSheet: View {
                                 RoundedRectangle(cornerRadius: 12).fill(themeManager.current.primary.opacity(0.15))
                                     .frame(width: 52, height: 52)
                                 Image(systemName: "plus")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(.app(18, .bold))
                                     .foregroundStyle(themeManager.current.primary)
                             }
                             Text("New Playlist")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.app(15, .semibold))
                                 .foregroundStyle(.white)
                             Spacer()
                         }
@@ -763,7 +763,7 @@ struct AddToPlaylistSheet: View {
                     if playerVM.playlists.isEmpty {
                         VStack(spacing: 10) {
                             Image(systemName: "music.note.list")
-                                .font(.system(size: 32))
+                                .font(.app(32))
                                 .foregroundStyle(.white.opacity(0.15))
                             Text("No playlists yet")
                                 .font(themeManager.font(13))
@@ -786,16 +786,16 @@ struct AddToPlaylistSheet: View {
 
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(pl.name)
-                                                .font(.system(size: 15, weight: .semibold))
+                                                .font(.app(15, .semibold))
                                                 .foregroundStyle(.white).lineLimit(1)
                                             Text("\(pl.tracks.count) tracks")
-                                                .font(.system(size: 11))
+                                                .font(.app(11))
                                                 .foregroundStyle(.white.opacity(0.4))
                                         }
                                         Spacer()
                                         if alreadyAdded {
                                             Image(systemName: "checkmark.circle.fill")
-                                                .font(.system(size: 18))
+                                                .font(.app(18))
                                                 .foregroundStyle(themeManager.current.primary)
                                         }
                                     }
@@ -819,7 +819,7 @@ struct AddToPlaylistSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.app(14, .bold))
                         .foregroundStyle(themeManager.current.primary)
                 }
             }
@@ -830,7 +830,7 @@ struct AddToPlaylistSheet: View {
         .overlay(alignment: .bottom) {
             if let msg = toastMessage {
                 Text(msg)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.app(13, .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20).padding(.vertical, 12)
                     .background(.ultraThinMaterial, in: Capsule())
@@ -913,7 +913,7 @@ struct SpeedPickerSheet: View {
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "waveform")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.app(13, .semibold))
                         .foregroundStyle(playerVM.isPitchPreserved ? themeManager.current.primary : .white.opacity(0.4))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Pitch lock")
@@ -948,7 +948,7 @@ struct SpeedPickerSheet: View {
                     } label: {
                         VStack(spacing: 10) {
                             Image(systemName: mode.icon)
-                                .font(.system(size: 28, weight: .regular))
+                                .font(.app(28, .regular))
                                 .foregroundStyle(selected ? .black : .white)
                             Text(mode.label)
                                 .font(themeManager.font(16, .semibold))

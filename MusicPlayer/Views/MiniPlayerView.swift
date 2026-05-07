@@ -50,7 +50,7 @@ struct MiniPlayerView: View {
                             ProgressView().tint(themeManager.current.onPrimary).scaleEffect(0.8)
                         } else {
                             Image(systemName: playerVM.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.app(15, .bold))
                                 .foregroundStyle(themeManager.current.onPrimary)
                                 .offset(x: playerVM.isPlaying ? 0 : 1)
                                 .contentTransition(.symbolEffect(.replace))
@@ -63,7 +63,7 @@ struct MiniPlayerView: View {
                 // Skip forward
                 Button { playerVM.skipNext() } label: {
                     Image(systemName: "forward.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(16, .semibold))
                         .foregroundStyle(.white.opacity(0.45))
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())

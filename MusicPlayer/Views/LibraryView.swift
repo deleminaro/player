@@ -71,14 +71,14 @@ struct LibraryView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("LIBRARY")
-                        .font(.system(size: 12, weight: .black))
+                        .font(.app(12, .black))
                         .kerning(2.5)
                         .foregroundStyle(.white)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showCreateSheet = true } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.app(16, .semibold))
                             .foregroundStyle(accent)
                     }
                 }
@@ -151,7 +151,7 @@ struct LibraryView: View {
                 .font(themeManager.font(24, .black))
                 .foregroundStyle(.white)
             Text("Offline")
-                .font(.system(size: 9, weight: .black))
+                .font(.app(9, .black))
                 .kerning(1)
                 .foregroundStyle(.white.opacity(0.3))
         }
@@ -166,7 +166,7 @@ struct LibraryView: View {
                 .font(themeManager.font(24, .black))
                 .foregroundStyle(.white)
             Text(label)
-                .font(.system(size: 9, weight: .black))
+                .font(.app(9, .black))
                 .kerning(1)
                 .foregroundStyle(.white.opacity(0.3))
         }
@@ -180,7 +180,7 @@ struct LibraryView: View {
     private var likedSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("LIKED TRACKS")
-                .font(.system(size: 10, weight: .black)).kerning(2)
+                .font(.app(10, .black)).kerning(2)
                 .foregroundStyle(.white.opacity(0.3))
                 .padding(.horizontal, 20)
 
@@ -192,7 +192,7 @@ struct LibraryView: View {
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         )
                         Image(systemName: "heart.fill")
-                            .font(.system(size: 24))
+                            .font(.app(24))
                             .foregroundStyle(.white.opacity(0.9))
                     }
                     .frame(width: 64, height: 64)
@@ -215,7 +215,7 @@ struct LibraryView: View {
                         playerVM.showingNowPlaying = true
                     } label: {
                         Image(systemName: "play.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.app(14, .bold))
                             .foregroundStyle(themeManager.current.onPrimary)
                             .frame(width: 42, height: 42)
                             .background(accent, in: Circle())
@@ -237,13 +237,13 @@ struct LibraryView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("PLAYLISTS")
-                    .font(.system(size: 10, weight: .black)).kerning(2)
+                    .font(.app(10, .black)).kerning(2)
                     .foregroundStyle(.white.opacity(0.3))
                 Spacer()
                 Button { showCreateSheet = true } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "plus").font(.system(size: 11, weight: .bold))
-                        Text("New").font(.system(size: 12, weight: .semibold))
+                        Text("New").font(.app(12, .semibold))
                     }
                     .foregroundStyle(accent)
                     .padding(.horizontal, 12).padding(.vertical, 6)
@@ -256,7 +256,7 @@ struct LibraryView: View {
             if playerVM.playlists.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "music.note.list")
-                        .font(.system(size: 36))
+                        .font(.app(36))
                         .foregroundStyle(.white.opacity(0.1))
                     Text("No playlists yet")
                         .font(themeManager.font(14))
@@ -304,7 +304,7 @@ struct LibraryView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.app(12, .semibold))
                     .foregroundStyle(.white.opacity(0.2))
             }
             .padding(.horizontal, 16)
@@ -346,7 +346,7 @@ struct LibraryView: View {
         } else {
             card.overlay(
                 Image(systemName: "music.note.list")
-                    .font(.system(size: 20))
+                    .font(.app(20))
                     .foregroundStyle(.white.opacity(0.2))
             )
         }
@@ -430,7 +430,7 @@ struct LikedTracksView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "play.fill").font(.system(size: 14, weight: .bold))
-                            Text("Play").font(.system(size: 16, weight: .bold))
+                            Text("Play").font(.app(16, .bold))
                         }
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity).padding(.vertical, 16)
@@ -445,7 +445,7 @@ struct LikedTracksView: View {
                         playerVM.showingNowPlaying = true
                     } label: {
                         Image(systemName: "shuffle")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.app(18, .semibold))
                             .foregroundStyle(primary)
                             .frame(width: 54, height: 54)
                             .background(primary.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
@@ -483,7 +483,7 @@ struct LikedTracksView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text("LIKED TRACKS")
-                    .font(.system(size: 12, weight: .black))
+                    .font(.app(12, .black))
                     .kerning(2.5)
                     .foregroundStyle(.white)
             }
@@ -491,7 +491,7 @@ struct LikedTracksView: View {
                 HStack(spacing: 6) {
                     Button { showSort = true } label: {
                         Image(systemName: "line.3.horizontal.decrease")
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            .font(.app(13, .semibold)).foregroundStyle(.white)
                             .padding(8).background(Color.white.opacity(0.15), in: Circle())
                     }
                     Button {
@@ -499,7 +499,7 @@ struct LikedTracksView: View {
                         if !showSearch { searchText = "" }
                     } label: {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            .font(.app(13, .semibold)).foregroundStyle(.white)
                             .padding(8).background(Color.white.opacity(0.15), in: Circle())
                     }
                     Menu {
@@ -520,7 +520,7 @@ struct LikedTracksView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            .font(.app(13, .semibold)).foregroundStyle(.white)
                             .padding(8).background(Color.white.opacity(0.15), in: Circle())
                     }
                 }
@@ -531,7 +531,7 @@ struct LikedTracksView: View {
         .overlay(alignment: .bottom) {
             if let msg = downloadToast {
                 Text(msg)
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    .font(.app(13, .semibold)).foregroundStyle(.white)
                     .padding(.horizontal, 20).padding(.vertical, 12)
                     .background(.ultraThinMaterial, in: Capsule())
                     .padding(.bottom, 32)
@@ -710,13 +710,13 @@ struct FavoritesSortSheet: View {
                     } label: {
                         HStack(spacing: 18) {
                             Image(systemName: sort.icon)
-                                .font(.system(size: 17)).foregroundStyle(.white).frame(width: 26)
+                                .font(.app(17)).foregroundStyle(.white).frame(width: 26)
                             Text(sort.rawValue)
                                 .font(themeManager.font(17, .semibold)).foregroundStyle(.white)
                             Spacer()
                             if sortOrder == sort {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                                    .font(.app(14, .semibold)).foregroundStyle(.white)
                             }
                         }
                         .padding(.horizontal, 24).padding(.vertical, 18)
@@ -795,11 +795,11 @@ struct PlaylistDetailView: View {
                 if currentPlaylist.tracks.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "music.note")
-                            .font(.system(size: 36)).foregroundStyle(themeManager.current.primary.opacity(0.3))
+                            .font(.app(36)).foregroundStyle(themeManager.current.primary.opacity(0.3))
                         Text("No tracks yet")
                             .font(themeManager.font(13, .semibold)).foregroundStyle(.white.opacity(0.4))
                         Text("Add tracks from the Search tab.")
-                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.25))
+                            .font(.app(12)).foregroundStyle(.white.opacity(0.25))
                     }
                     .padding(.top, 60)
                 } else {
@@ -831,7 +831,7 @@ struct PlaylistDetailView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(currentPlaylist.name.uppercased())
-                    .font(.system(size: 12, weight: .black))
+                    .font(.app(12, .black))
                     .kerning(2)
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -884,7 +884,7 @@ struct DownloadOptionsSheet: View {
                 .padding(.top, 12).padding(.bottom, 18)
 
             Text("DOWNLOAD")
-                .font(.system(size: 10, weight: .black)).kerning(2)
+                .font(.app(10, .black)).kerning(2)
                 .foregroundStyle(.white.opacity(0.35))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20).padding(.bottom, 12)
@@ -923,7 +923,7 @@ struct DownloadOptionsSheet: View {
 
             Button { dismiss() } label: {
                 Text("Back")
-                    .font(.system(size: 15, weight: .black)).kerning(1).foregroundStyle(.white)
+                    .font(.app(15, .black)).kerning(1).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 18)
                     .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
             }
@@ -936,7 +936,7 @@ struct DownloadOptionsSheet: View {
         .overlay(alignment: .bottom) {
             if let msg = toast {
                 Text(msg)
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    .font(.app(13, .semibold)).foregroundStyle(.white)
                     .padding(.horizontal, 20).padding(.vertical, 12)
                     .background(.ultraThinMaterial, in: Capsule())
                     .padding(.bottom, 20)
@@ -962,7 +962,7 @@ struct DownloadOptionsSheet: View {
                     VStack(spacing: 3) {
                         Image(systemName: icon).font(.system(size: 22)).foregroundStyle(.white)
                         if let b = badge {
-                            Text(b).font(.system(size: 7, weight: .black))
+                            Text(b).font(.app(7, .black))
                                 .foregroundStyle(.white.opacity(0.5))
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Color.white.opacity(0.1), in: Capsule())
@@ -971,18 +971,18 @@ struct DownloadOptionsSheet: View {
                     .padding(.bottom, 6)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-                    Text(subtitle).font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
+                    Text(title).font(.app(15, .semibold)).foregroundStyle(.white)
+                    Text(subtitle).font(.app(12)).foregroundStyle(.white.opacity(0.4))
                 }
                 Spacer()
                 if busy {
                     ProgressView().tint(.white).scaleEffect(0.85)
                 } else if done {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18)).foregroundStyle(themeManager.current.primary)
+                        .font(.app(18)).foregroundStyle(themeManager.current.primary)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.25))
+                        .font(.app(13, .semibold)).foregroundStyle(.white.opacity(0.25))
                 }
             }
             .padding(14)

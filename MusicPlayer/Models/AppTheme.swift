@@ -168,6 +168,9 @@ enum AppFont: String, CaseIterable {
 
     private static let minecraftFontName = "Minecraft"
 
+    // Global reference — updated on main thread whenever ThemeManager changes the font.
+    nonisolated(unsafe) static var current: AppFont = .system
+
     func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         switch self {
         case .system:    return .system(size: size, weight: weight)
@@ -180,6 +183,13 @@ enum AppFont: String, CaseIterable {
             }
             return .system(size: size, weight: weight, design: .monospaced)
         }
+    }
+}
+
+// Convenience — use anywhere without needing an environment object.
+extension Font {
+    static func app(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        AppFont.current.font(size, weight)
     }
 }
 
@@ -230,6 +240,7 @@ final class ThemeManager: ObservableObject {
         if let raw = UserDefaults.standard.string(forKey: fontKey),
            let f = AppFont(rawValue: raw) {
             appFont = f
+            AppFont.current = f
         }
         if let url = wallpaperURL, let data = try? Data(contentsOf: url) {
             customWallpaper = UIImage(data: data)
@@ -261,6 +272,7 @@ final class ThemeManager: ObservableObject {
 
     func selectFont(_ f: AppFont) {
         appFont = f
+        AppFont.current = f
         UserDefaults.standard.set(f.rawValue, forKey: fontKey)
     }
 

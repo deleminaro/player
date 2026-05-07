@@ -42,7 +42,7 @@ struct SCArtistProfileView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.app(13, .bold))
                             .foregroundStyle(.white.opacity(0.5))
                     }
                 }
@@ -101,14 +101,14 @@ struct SCArtistProfileView: View {
                     .shadow(color: .black.opacity(0.5), radius: 12, y: 6)
 
                 Text(artist.username)
-                    .font(.system(size: 28, weight: .black))
+                    .font(.app(28, .black))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
 
                 if let followers = artist.followersCount {
                     Text(formattedFollowers(followers).uppercased())
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.app(11, .bold))
                         .kerning(1.5)
                         .foregroundStyle(accent)
                 }
@@ -133,11 +133,11 @@ struct SCArtistProfileView: View {
         } label: {
             HStack(spacing: 5) {
                 Text(label)
-                    .font(.system(size: 11, weight: .black))
+                    .font(.app(11, .black))
                     .kerning(1.5)
                 if count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.app(9, .bold))
                         .padding(.horizontal, 5).padding(.vertical, 2)
                         .background(activeTab == tab ? bg.opacity(0.4) : card)
                         .clipShape(Capsule())
@@ -217,11 +217,11 @@ struct SCArtistProfileView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(pl.title.uppercased())
-                    .font(.system(size: 12, weight: .black))
+                    .font(.app(12, .black))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 Text("\(pl.trackCount) TRACKS")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.app(9, .bold))
                     .kerning(1)
                     .foregroundStyle(.white.opacity(0.3))
             }
@@ -232,7 +232,7 @@ struct SCArtistProfileView: View {
                 ProgressView().tint(.white)
             } else {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
+                    .font(.app(12))
                     .foregroundStyle(.white.opacity(0.2))
             }
         }
@@ -259,7 +259,7 @@ struct SCArtistProfileView: View {
 
     private func emptyLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .bold)).kerning(1.5)
+            .font(.app(11, .bold)).kerning(1.5)
             .foregroundStyle(.white.opacity(0.25))
             .frame(maxWidth: .infinity)
             .padding(.top, 40)
@@ -268,13 +268,13 @@ struct SCArtistProfileView: View {
     private func errorView(_ msg: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36))
+                .font(.app(36))
                 .foregroundStyle(.orange.opacity(0.6))
             Text("COULDN'T LOAD PROFILE")
-                .font(.system(size: 13, weight: .black)).kerning(2)
+                .font(.app(13, .black)).kerning(2)
                 .foregroundStyle(.white.opacity(0.4))
             Text(msg)
-                .font(.system(size: 11))
+                .font(.app(11))
                 .foregroundStyle(.white.opacity(0.25))
                 .multilineTextAlignment(.center)
         }
@@ -325,10 +325,10 @@ struct SCPlaylistTracksView: View {
                     if tracks.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "music.note.list")
-                                .font(.system(size: 36))
+                                .font(.app(36))
                                 .foregroundStyle(.white.opacity(0.2))
                             Text("NO TRACKS")
-                                .font(.system(size: 11, weight: .bold)).kerning(1.5)
+                                .font(.app(11, .bold)).kerning(1.5)
                                 .foregroundStyle(.white.opacity(0.25))
                         }
                         .frame(maxWidth: .infinity)
@@ -360,7 +360,7 @@ struct SCPlaylistTracksView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.app(13, .bold))
                             .foregroundStyle(.white.opacity(0.5))
                     }
                 }
@@ -375,7 +375,7 @@ struct SCPlaylistTracksView: View {
                                 Image(systemName: "play.fill")
                                 Text("Play All")
                             }
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.app(13, .semibold))
                             .foregroundStyle(themeManager.current.primary)
                         }
                     }

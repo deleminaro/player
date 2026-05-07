@@ -54,7 +54,7 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Text("POSTOR")
-                        .font(.system(size: 13, weight: .black))
+                        .font(.app(13, .black))
                         .kerning(2.5)
                         .foregroundStyle(accent)
                         .fixedSize()
@@ -97,7 +97,7 @@ struct HomeView: View {
                 .frame(width: 30, height: 30)
                 .overlay(
                     Image(systemName: "person.fill")
-                        .font(.system(size: 13))
+                        .font(.app(13))
                         .foregroundStyle(accent)
                 )
         }
@@ -127,15 +127,15 @@ struct HomeView: View {
             // POSTOR branding — top-left
             VStack(alignment: .leading, spacing: 2) {
                 Text("POSTOR")
-                    .font(.system(size: 11, weight: .black))
+                    .font(.app(11, .black))
                     .kerning(2.5)
                     .foregroundStyle(.white.opacity(0.55))
                 HStack(spacing: 5) {
                     Image(systemName: "waveform")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.app(9, .bold))
                         .foregroundStyle(accent)
                     Text("MY WAVE")
-                        .font(.system(size: 9, weight: .black))
+                        .font(.app(9, .black))
                         .kerning(1.5)
                         .foregroundStyle(.white.opacity(0.35))
                 }
@@ -182,7 +182,7 @@ struct HomeView: View {
                             Task { await wave.generate(from: playerVM.recentlyPlayed) }
                         } label: {
                             Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.app(13, .semibold))
                                 .foregroundStyle(.white.opacity(0.5))
                                 .frame(width: 36, height: 36)
                                 .background(Color.white.opacity(0.08), in: Circle())
@@ -241,7 +241,7 @@ struct HomeView: View {
                             .frame(width: 46, height: 46)
                             .overlay(
                                 Image(systemName: icon)
-                                    .font(.system(size: 16))
+                                    .font(.app(16))
                                     .foregroundStyle(accent)
                             )
                     }
@@ -252,7 +252,7 @@ struct HomeView: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "play.fill")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.app(11, .bold))
                     .foregroundStyle(themeManager.current.onPrimary)
                     .frame(width: 32, height: 32)
                     .background(accent, in: Circle())
@@ -270,7 +270,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("RECENTLY PLAYED")
-                    .font(.system(size: 10, weight: .black)).kerning(2)
+                    .font(.app(10, .black)).kerning(2)
                     .foregroundStyle(.white.opacity(0.3))
                 Spacer()
                 Button { showArchive = true } label: {
@@ -304,7 +304,7 @@ struct HomeView: View {
                     } placeholder: {
                         card.overlay(
                             Image(systemName: "music.note")
-                                .font(.system(size: 22))
+                                .font(.app(22))
                                 .foregroundStyle(.white.opacity(0.1))
                         )
                     }
@@ -314,7 +314,7 @@ struct HomeView: View {
                     ZStack {
                         Circle().fill(.black.opacity(0.5)).frame(width: 28, height: 28)
                         Image(systemName: playerVM.currentTrack?.id == track.id && playerVM.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.app(9, .bold))
                             .foregroundStyle(.white)
                             .offset(x: playerVM.currentTrack?.id == track.id && playerVM.isPlaying ? 0 : 1)
                     }
@@ -338,7 +338,7 @@ struct HomeView: View {
     private var emptyHint: some View {
         VStack(spacing: 14) {
             Image(systemName: "headphones")
-                .font(.system(size: 44))
+                .font(.app(44))
                 .foregroundStyle(accent.opacity(0.25))
                 .padding(.top, 32)
             Text("Nothing here yet")

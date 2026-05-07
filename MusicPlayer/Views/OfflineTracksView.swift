@@ -41,7 +41,7 @@ struct OfflineTracksView: View {
                 } header: {
                     HStack {
                         Text("\(offlineTracks.count) TRACKS AVAILABLE OFFLINE")
-                            .font(.system(size: 10, weight: .black)).kerning(1.5)
+                            .font(.app(10, .black)).kerning(1.5)
                             .foregroundStyle(.white.opacity(0.3))
                         Spacer()
                     }
@@ -58,7 +58,7 @@ struct OfflineTracksView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text("OFFLINE")
-                    .font(.system(size: 12, weight: .black)).kerning(2.5)
+                    .font(.app(12, .black)).kerning(2.5)
                     .foregroundStyle(.white)
             }
             if !offlineTracks.isEmpty {
@@ -69,7 +69,7 @@ struct OfflineTracksView: View {
                         playerVM.showingNowPlaying = true
                     } label: {
                         Image(systemName: "shuffle")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.app(14, .semibold))
                             .foregroundStyle(accent)
                     }
                 }
@@ -92,7 +92,7 @@ struct OfflineTracksView: View {
             }
             Spacer()
             Image(systemName: dm.offlineIDs.contains(track.id) ? "internaldrive" : "cylinder.split.1x2")
-                .font(.system(size: 13))
+                .font(.app(13))
                 .foregroundStyle(accent.opacity(0.6))
             Text(track.durationFormatted)
                 .font(themeManager.font(12))
@@ -106,7 +106,7 @@ struct OfflineTracksView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "internaldrive")
-                .font(.system(size: 44))
+                .font(.app(44))
                 .foregroundStyle(accent.opacity(0.25))
                 .padding(.top, 60)
             Text("No Offline Tracks")

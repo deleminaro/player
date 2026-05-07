@@ -36,13 +36,13 @@ struct SettingsView: View {
                             iconBox("waveform", bg: Color.blue.opacity(0.2), fg: .blue)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Audio Quality")
-                                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                    .font(.app(15, .semibold)).foregroundStyle(.white)
                                 Text("Always Lossless FLAC")
-                                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.blue.opacity(0.7))
+                                    .font(.app(11, .semibold)).foregroundStyle(.blue.opacity(0.7))
                             }
                             Spacer()
                             Image(systemName: "lock.fill")
-                                .font(.system(size: 12))
+                                .font(.app(12))
                                 .foregroundStyle(.white.opacity(0.2))
                         }
                         .padding(.horizontal, 16).padding(.vertical, 14)
@@ -66,13 +66,13 @@ struct SettingsView: View {
                                 iconBox("paintbrush.fill", bg: accent.opacity(0.2), fg: accent)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Customization")
-                                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                        .font(.app(15, .semibold)).foregroundStyle(.white)
                                     Text("Theme, cover, slider & font")
-                                        .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
+                                        .font(.app(12)).foregroundStyle(.white.opacity(0.4))
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.app(12, .semibold))
                                     .foregroundStyle(.white.opacity(0.22))
                             }
                             .padding(.horizontal, 16).padding(.vertical, 14)
@@ -91,13 +91,13 @@ struct SettingsView: View {
                                 iconBox("ladybug.fill", bg: Color.gray.opacity(0.2), fg: .gray)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Debug Log")
-                                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                        .font(.app(15, .semibold)).foregroundStyle(.white)
                                     Text("\(AppLogger.shared.entries.count) events captured")
-                                        .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
+                                        .font(.app(12)).foregroundStyle(.white.opacity(0.4))
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.app(12, .semibold))
                                     .foregroundStyle(.white.opacity(0.22))
                             }
                             .padding(.horizontal, 16).padding(.vertical, 14)
@@ -110,7 +110,7 @@ struct SettingsView: View {
                             HStack(spacing: 14) {
                                 iconBox("rectangle.portrait.and.arrow.right", bg: Color.red.opacity(0.15), fg: .red)
                                 Text("Sign Out")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.app(15, .semibold))
                                     .foregroundStyle(.red)
                                 Spacer()
                             }
@@ -125,10 +125,10 @@ struct SettingsView: View {
                             iconBox("trash.fill", bg: Color.green.opacity(0.15), fg: .green)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Remove Downloaded Songs")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.app(15, .semibold))
                                     .foregroundStyle(.green)
                                 Text("\(dm.offlineIDs.count) track\(dm.offlineIDs.count == 1 ? "" : "s") stored locally")
-                                    .font(.system(size: 12))
+                                    .font(.app(12))
                                     .foregroundStyle(.green.opacity(0.55))
                             }
                             Spacer()
@@ -150,7 +150,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("SETTINGS")
-                        .font(.system(size: 12, weight: .black))
+                        .font(.app(12, .black))
                         .kerning(2.5)
                         .foregroundStyle(.white)
                 }
@@ -215,7 +215,7 @@ struct SettingsView: View {
                             .frame(width: 66, height: 66)
                             .overlay(
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 27))
+                                    .font(.app(27))
                                     .foregroundStyle(accent)
                             )
                     }
@@ -224,7 +224,7 @@ struct SettingsView: View {
                         .frame(width: 22, height: 22)
                         .overlay(
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 9, weight: .bold))
+                                .font(.app(9, .bold))
                                 .foregroundStyle(.white.opacity(0.6))
                         )
                         .offset(x: 3, y: 3)
@@ -239,22 +239,22 @@ struct SettingsView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Text(user.displayName.isEmpty ? "Add your name" : user.displayName)
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.app(17, .bold))
                             .foregroundStyle(.white)
                         Image(systemName: "pencil")
-                            .font(.system(size: 11))
+                            .font(.app(11))
                             .foregroundStyle(.white.opacity(0.3))
                     }
                 }
                 .buttonStyle(.plain)
 
                 Text("@\(user.username)")
-                    .font(.system(size: 13))
+                    .font(.app(13))
                     .foregroundStyle(.white.opacity(0.4))
 
                 if !user.email.isEmpty {
                     Text(user.email)
-                        .font(.system(size: 11))
+                        .font(.app(11))
                         .foregroundStyle(.white.opacity(0.25))
                 }
             }
@@ -269,7 +269,7 @@ struct SettingsView: View {
     private func settingsGroup<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 10, weight: .black)).kerning(2)
+                .font(.app(10, .black)).kerning(2)
                 .foregroundStyle(.white.opacity(0.3))
                 .padding(.horizontal, 4)
             VStack(spacing: 0) { content() }
@@ -282,12 +282,12 @@ struct SettingsView: View {
             HStack(spacing: 14) {
                 iconBox(icon, bg: iconBg, fg: iconFg)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-                    Text(subtitle).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.4))
+                    Text(title).font(.app(15, .semibold)).foregroundStyle(.white)
+                    Text(subtitle).font(.app(11, .semibold)).foregroundStyle(.white.opacity(0.4))
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.app(12, .semibold))
                     .foregroundStyle(.white.opacity(0.22))
             }
             .padding(.horizontal, 16).padding(.vertical, 14).contentShape(Rectangle())
@@ -298,7 +298,7 @@ struct SettingsView: View {
     private func toggleRow(icon: String, iconBg: Color, iconFg: Color, title: String, value: Binding<Bool>) -> some View {
         HStack(spacing: 14) {
             iconBox(icon, bg: iconBg, fg: iconFg)
-            Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+            Text(title).font(.app(15, .semibold)).foregroundStyle(.white)
             Spacer()
             Toggle("", isOn: value)
                 .toggleStyle(SwitchToggleStyle(tint: accent))
@@ -341,7 +341,7 @@ private struct CachingSheet: View {
                             Circle().fill(on ? Color.white.opacity(0.18) : Color.white.opacity(0.07)).frame(width: 48, height: 48)
                             Image(systemName: m.icon).font(.system(size: 20)).foregroundStyle(.white)
                         }
-                        Text(m.label).font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                        Text(m.label).font(.app(16, .semibold)).foregroundStyle(.white)
                         Spacer()
                         if on { Image(systemName: "checkmark").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white) }
                     }
@@ -354,12 +354,12 @@ private struct CachingSheet: View {
             }
             Divider().background(Color.white.opacity(0.07)).padding(.horizontal, 20).padding(.vertical, 8)
             HStack {
-                Text("Cache listened tracks").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                Text("Cache listened tracks").font(.app(15, .semibold)).foregroundStyle(.white)
                 Spacer()
                 Toggle("", isOn: $cacheListened).toggleStyle(SwitchToggleStyle(tint: themeManager.current.primary)).labelsHidden()
             }.padding(.horizontal, 20).padding(.vertical, 10)
             HStack {
-                Text("Cache playlist tracks").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                Text("Cache playlist tracks").font(.app(15, .semibold)).foregroundStyle(.white)
                 Spacer()
                 Toggle("", isOn: $cachePlaylists).toggleStyle(SwitchToggleStyle(tint: themeManager.current.primary)).labelsHidden()
             }.padding(.horizontal, 20).padding(.vertical, 10)

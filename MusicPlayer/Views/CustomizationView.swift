@@ -58,7 +58,7 @@ struct CustomizationView: View {
         return Button { tab = t } label: {
             HStack(spacing: 6) {
                 Image(systemName: icon).font(.system(size: 12, weight: .semibold))
-                Text(title).font(.system(size: 13, weight: .semibold))
+                Text(title).font(.app(13, .semibold))
             }
             .foregroundStyle(on ? .black : .white.opacity(0.65))
             .padding(.horizontal, 14).padding(.vertical, 9)
@@ -84,7 +84,7 @@ struct CustomizationView: View {
                             LinearGradient(colors: [Color(white: 0.28), Color(white: 0.06)],
                                            startPoint: .top, endPoint: .bottom)
                             Image(systemName: "music.note")
-                                .font(.system(size: 26, weight: .light))
+                                .font(.app(26, .light))
                                 .foregroundStyle(.white.opacity(0.35))
                         }
                     }
@@ -103,10 +103,10 @@ struct CustomizationView: View {
                                 Color(white: 0.14)
                                 VStack(spacing: 6) {
                                     Image(systemName: "plus")
-                                        .font(.system(size: 22, weight: .light))
+                                        .font(.app(22, .light))
                                         .foregroundStyle(.white.opacity(0.35))
                                     Text("Add Photo")
-                                        .font(.system(size: 9, weight: .bold)).kerning(1)
+                                        .font(.app(9, .bold)).kerning(1)
                                         .foregroundStyle(.white.opacity(0.25))
                                 }
                             }
@@ -122,7 +122,7 @@ struct CustomizationView: View {
                         ZStack {
                             Color(white: 0.10)
                             Image(systemName: "eye.slash")
-                                .font(.system(size: 22, weight: .light))
+                                .font(.app(22, .light))
                                 .foregroundStyle(.white.opacity(0.25))
                         }
                     }
@@ -143,20 +143,20 @@ struct CustomizationView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Custom Cover")
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                            .font(.app(14, .semibold)).foregroundStyle(.white)
                         Text("Tap replace to update")
-                            .font(.system(size: 11)).foregroundStyle(.white.opacity(0.35))
+                            .font(.app(11)).foregroundStyle(.white.opacity(0.35))
                     }
                     Spacer()
 
                     PhotosPicker(selection: $coverPhotoItem, matching: .images) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 16)).foregroundStyle(.white.opacity(0.45))
+                            .font(.app(16)).foregroundStyle(.white.opacity(0.45))
                     }
 
                     Button { themeManager.deleteCustomCoverImage() } label: {
                         Image(systemName: "trash")
-                            .font(.system(size: 16)).foregroundStyle(.red.opacity(0.6))
+                            .font(.app(16)).foregroundStyle(.red.opacity(0.6))
                     }
                 }
                 .padding(16)
@@ -166,16 +166,16 @@ struct CustomizationView: View {
                 PhotosPicker(selection: $coverPhotoItem, matching: .images) {
                     HStack(spacing: 12) {
                         Image(systemName: "photo.badge.plus")
-                            .font(.system(size: 20)).foregroundStyle(themeManager.current.primary)
+                            .font(.app(20)).foregroundStyle(themeManager.current.primary)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Add Custom Cover")
-                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                                .font(.app(14, .semibold)).foregroundStyle(.white)
                             Text("Choose from your photo library")
-                                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.35))
+                                .font(.app(11)).foregroundStyle(.white.opacity(0.35))
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.2))
+                            .font(.app(12, .semibold)).foregroundStyle(.white.opacity(0.2))
                     }
                     .padding(16)
                     .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
@@ -233,7 +233,7 @@ struct CustomizationView: View {
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .black)).kerning(2)
+            .font(.app(10, .black)).kerning(2)
             .foregroundStyle(.white.opacity(0.35))
             .padding(.horizontal, 16)
     }
@@ -248,14 +248,14 @@ struct CustomizationView: View {
                 .overlay(alignment: .topTrailing) {
                     if selected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 20))
+                            .font(.app(20))
                             .foregroundStyle(accent)
                             .padding(8)
                     }
                 }
 
             Text(label)
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                .font(.app(12, .semibold)).foregroundStyle(.white)
                 .padding(.top, 8)
         }
         .padding(.bottom, 4)
@@ -270,14 +270,14 @@ struct CustomizationView: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 16)).foregroundStyle(.white.opacity(0.4))
+                    .font(.app(16)).foregroundStyle(.white.opacity(0.4))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
-                    Text(subtitle).font(.system(size: 11)).foregroundStyle(.white.opacity(0.35))
+                    Text(title).font(.app(14, .semibold)).foregroundStyle(.white)
+                    Text(subtitle).font(.app(11)).foregroundStyle(.white.opacity(0.35))
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.2))
+                    .font(.app(12, .semibold)).foregroundStyle(.white.opacity(0.2))
             }
             .padding(16)
 
@@ -285,9 +285,9 @@ struct CustomizationView: View {
 
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 32)).foregroundStyle(.white.opacity(0.1))
+                    .font(.app(32)).foregroundStyle(.white.opacity(0.1))
                 Text(subtitle)
-                    .font(.system(size: 12)).foregroundStyle(.white.opacity(0.22))
+                    .font(.app(12)).foregroundStyle(.white.opacity(0.22))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 28)
@@ -312,10 +312,10 @@ struct CustomizationView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 14))
+                        .font(.app(14))
                         .foregroundStyle(themeManager.current.primary.opacity(0.6))
                     Text("Font applies throughout the app: track titles, artist names, menus, and controls.")
-                        .font(.system(size: 12))
+                        .font(.app(12))
                         .foregroundStyle(.white.opacity(0.45))
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -344,16 +344,16 @@ struct CustomizationView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(f.label)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.app(12, .semibold))
                             .foregroundStyle(selected ? accent : .white)
                         Text(fontSubtitle(f))
-                            .font(.system(size: 10))
+                            .font(.app(10))
                             .foregroundStyle(.white.opacity(0.4))
                     }
                     Spacer()
                     if selected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16))
+                            .font(.app(16))
                             .foregroundStyle(accent)
                     }
                 }
@@ -400,7 +400,7 @@ private struct SliderTypeCard: View {
             }
 
             Text(type.label)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.app(11, .semibold))
                 .foregroundStyle(isSelected ? accent : .white.opacity(0.55))
         }
         .padding(12)
@@ -496,7 +496,7 @@ private struct ThemeCard: View {
                     Spacer()
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16))
+                            .font(.app(16))
                             .foregroundStyle(theme.primary)
                     }
                 }
@@ -504,7 +504,7 @@ private struct ThemeCard: View {
             }
 
             Text(theme.name)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.app(11, .semibold))
                 .foregroundStyle(isSelected ? theme.primary : .white.opacity(0.55))
         }
         .padding(10)

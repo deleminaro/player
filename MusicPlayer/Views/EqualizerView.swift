@@ -29,11 +29,11 @@ struct EqualizerView: View {
         VStack(spacing: 0) {
             HStack {
                 Text("EQUALIZER")
-                    .font(.system(size: 14, weight: .black)).kerning(2).foregroundStyle(.white)
+                    .font(.app(14, .black)).kerning(2).foregroundStyle(.white)
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.app(13, .bold))
                         .foregroundStyle(.white.opacity(0.5))
                         .padding(8)
                         .background(Color.white.opacity(0.07), in: Circle())
@@ -44,9 +44,9 @@ struct EqualizerView: View {
             if isSpotifyPremium {
                 HStack(spacing: 10) {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 13))
+                        .font(.app(13))
                     Text("EQ and speed do not apply to Spotify Premium tracks — audio is rendered by the Spotify app.")
-                        .font(.system(size: 11))
+                        .font(.app(11))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .foregroundStyle(Color(red: 0.11, green: 0.73, blue: 0.33).opacity(0.9))
@@ -64,7 +64,7 @@ struct EqualizerView: View {
                             for (i, g) in pg.enumerated() { playerVM.setEQGain(g, band: i) }
                         } label: {
                             Text(name)
-                                .font(.system(size: 10, weight: .black)).kerning(1)
+                                .font(.app(10, .black)).kerning(1)
                                 .padding(.horizontal, 14).padding(.vertical, 8)
                                 .background(active ? themeManager.current.primary : Color.white.opacity(0.08), in: Capsule())
                                 .foregroundStyle(active ? themeManager.current.onPrimary : Color.white.opacity(0.7))
@@ -79,7 +79,7 @@ struct EqualizerView: View {
                 ForEach(0..<5, id: \.self) { i in
                     VStack(spacing: 10) {
                         Text("\(gains[i] >= 0 ? "+" : "")\(Int(gains[i]))")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.app(10, .bold))
                             .foregroundStyle(gains[i] != 0 ? themeManager.current.primary : Color.white.opacity(0.3))
                             .frame(width: 36)
 
@@ -96,7 +96,7 @@ struct EqualizerView: View {
                         .tint(themeManager.current.primary)
 
                         Text(bandNames[i])
-                            .font(.system(size: 8, weight: .black)).kerning(0.5)
+                            .font(.app(8, .black)).kerning(0.5)
                             .foregroundStyle(.white.opacity(0.4))
                             .multilineTextAlignment(.center)
                             .frame(width: 44)

@@ -30,13 +30,13 @@ struct SpotifyOnboardingSheet: View {
                     .fill(spotifyGreen.opacity(0.08))
                     .frame(width: 150, height: 150)
                 Text("S")
-                    .font(.system(size: 52, weight: .black))
+                    .font(.app(52, .black))
                     .foregroundStyle(spotifyGreen)
             }
             .padding(.bottom, 28)
 
             Text("Connect Spotify")
-                .font(.system(size: 28, weight: .black))
+                .font(.app(28, .black))
                 .foregroundStyle(.white)
             Text("Search and play Spotify tracks\ndirectly inside POSTOR.")
                 .font(themeManager.font(15))
@@ -59,7 +59,7 @@ struct SpotifyOnboardingSheet: View {
             VStack(spacing: 12) {
                 if let error {
                     Text(error)
-                        .font(.system(size: 12))
+                        .font(.app(12))
                         .foregroundStyle(.red.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -84,10 +84,10 @@ struct SpotifyOnboardingSheet: View {
                         if isConnecting {
                             ProgressView().tint(.black).scaleEffect(0.85)
                         } else {
-                            Text("S").font(.system(size: 16, weight: .black)).foregroundStyle(.black)
+                            Text("S").font(.app(16, .black)).foregroundStyle(.black)
                         }
                         Text(isConnecting ? "Connecting…" : "Connect Spotify")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.app(16, .bold))
                             .foregroundStyle(.black)
                     }
                     .frame(maxWidth: .infinity)
@@ -100,7 +100,7 @@ struct SpotifyOnboardingSheet: View {
 
                 Button { dismiss() } label: {
                     Text("Not now")
-                        .font(.system(size: 15))
+                        .font(.app(15))
                         .foregroundStyle(.white.opacity(0.35))
                 }
                 .padding(.bottom, 8)
@@ -114,7 +114,7 @@ struct SpotifyOnboardingSheet: View {
     private func featureBullet(icon: String, text: String) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.app(14))
                 .foregroundStyle(spotifyGreen)
                 .frame(width: 22)
             Text(text)

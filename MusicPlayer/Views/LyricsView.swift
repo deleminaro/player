@@ -67,14 +67,14 @@ struct LyricsView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("LYRICS")
-                        .font(.system(size: 12, weight: .black))
+                        .font(.app(12, .black))
                         .kerning(2.5)
                         .foregroundStyle(.white)
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.app(13, .bold))
                             .foregroundStyle(.white.opacity(0.6))
                             .padding(8)
                             .background(Color.white.opacity(0.1), in: Circle())
@@ -84,7 +84,7 @@ struct LyricsView: View {
                     if let url = geniusSearchURL {
                         Link(destination: url) {
                             Image(systemName: "safari")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.app(14, .semibold))
                                 .foregroundStyle(accent)
                         }
                     }
@@ -103,7 +103,7 @@ struct LyricsView: View {
             } placeholder: {
                 card.overlay(
                     Image(systemName: "music.note")
-                        .font(.system(size: 18))
+                        .font(.app(18))
                         .foregroundStyle(.white.opacity(0.2))
                 )
             }
@@ -123,7 +123,7 @@ struct LyricsView: View {
             Spacer()
 
             Image(systemName: "quote.opening")
-                .font(.system(size: 18, weight: .bold))
+                .font(.app(18, .bold))
                 .foregroundStyle(accent.opacity(0.6))
         }
     }
@@ -139,7 +139,7 @@ struct LyricsView: View {
                 let trimmed = blocks[i]
                 if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") {
                     Text(trimmed.dropFirst().dropLast().uppercased())
-                        .font(.system(size: 10, weight: .black))
+                        .font(.app(10, .black))
                         .kerning(2)
                         .foregroundStyle(accent.opacity(0.8))
                         .padding(.top, 32)
@@ -171,7 +171,7 @@ struct LyricsView: View {
                     .scaleEffect(1.3)
             }
             Text("SEARCHING LYRICS")
-                .font(.system(size: 10, weight: .black))
+                .font(.app(10, .black))
                 .kerning(2)
                 .foregroundStyle(.white.opacity(0.35))
             Spacer()
@@ -190,13 +190,13 @@ struct LyricsView: View {
                     .fill(Color.white.opacity(0.05))
                     .frame(width: 100, height: 100)
                 Image(systemName: "quote.bubble")
-                    .font(.system(size: 40))
+                    .font(.app(40))
                     .foregroundStyle(.white.opacity(0.15))
             }
 
             VStack(spacing: 8) {
                 Text("NO LYRICS FOUND")
-                    .font(.system(size: 13, weight: .black))
+                    .font(.app(13, .black))
                     .kerning(2)
                     .foregroundStyle(.white.opacity(0.5))
                 Text("Couldn't find lyrics for this track.\nTry searching on Genius.")
@@ -209,7 +209,7 @@ struct LyricsView: View {
                 Link(destination: url) {
                     HStack(spacing: 8) {
                         Image(systemName: "safari")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.app(13, .semibold))
                         Text("Open Genius")
                             .font(themeManager.font(14, .semibold))
                     }

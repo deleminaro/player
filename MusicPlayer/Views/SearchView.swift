@@ -86,7 +86,7 @@ struct SearchView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("SEARCH")
-                        .font(.system(size: 12, weight: .black))
+                        .font(.app(12, .black))
                         .kerning(2.5)
                         .foregroundStyle(.white)
                 }
@@ -131,11 +131,11 @@ struct SearchView: View {
                                 .frame(width: 30, height: 30)
                             if source == .spotify {
                                 Text("S")
-                                    .font(.system(size: 13, weight: .black))
+                                    .font(.app(13, .black))
                                     .foregroundStyle(.black)
                             } else {
                                 Image(systemName: "waveform")
-                                    .font(.system(size: 11, weight: .bold))
+                                    .font(.app(11, .bold))
                                     .foregroundStyle(.white)
                             }
                         }
@@ -180,15 +180,15 @@ struct SearchView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .medium))
+                .font(.app(16, .medium))
                 .foregroundStyle(.white.opacity(0.4))
 
             TextField("", text: $query,
                       prompt: Text("Artists, Songs, Lyrics, and More")
                         .foregroundStyle(.white.opacity(0.35))
-                        .font(.system(size: 15)))
+                        .font(.app(15)))
                 .foregroundStyle(.white)
-                .font(.system(size: 15))
+                .font(.app(15))
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .focused($focused)
@@ -199,7 +199,7 @@ struct SearchView: View {
                 Button { query = ""; resultSet = .empty; searchError = nil } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.white.opacity(0.4))
-                        .font(.system(size: 16))
+                        .font(.app(16))
                 }
             }
         }
@@ -217,22 +217,22 @@ struct SearchView: View {
                 .frame(width: 80, height: 80)
                 .overlay(
                     Text("S")
-                        .font(.system(size: 40, weight: .black))
+                        .font(.app(40, .black))
                         .foregroundStyle(Color(red: 0.11, green: 0.73, blue: 0.33))
                 )
 
             Text("CONNECT SPOTIFY")
-                .font(.system(size: 14, weight: .black)).kerning(2)
+                .font(.app(14, .black)).kerning(2)
                 .foregroundStyle(.white)
 
             Text("Sign in to search Spotify's catalog\nand play 30s previews.")
-                .font(.system(size: 13))
+                .font(.app(13))
                 .foregroundStyle(.white.opacity(0.4))
                 .multilineTextAlignment(.center)
 
             if let err = spotifyAuthError {
                 Text(err)
-                    .font(.system(size: 11))
+                    .font(.app(11))
                     .foregroundStyle(.red.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -254,7 +254,7 @@ struct SearchView: View {
                 }
             } label: {
                 Text("CONNECT")
-                    .font(.system(size: 14, weight: .black)).kerning(1.5)
+                    .font(.app(14, .black)).kerning(1.5)
                     .foregroundStyle(.black)
                     .frame(width: 180)
                     .padding(.vertical, 14)
@@ -280,9 +280,9 @@ struct SearchView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: f.icon)
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.app(12, .semibold))
                             Text(f.rawValue)
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.app(13, .bold))
                         }
                         .foregroundStyle(filter == f ? .black : .white)
                         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -308,9 +308,9 @@ struct SearchView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: f.icon)
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.app(12, .semibold))
                             Text(f.rawValue)
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.app(13, .bold))
                         }
                         .foregroundStyle(filter == f ? .black : .white)
                         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -473,16 +473,16 @@ struct SearchView: View {
                     HStack {
                         HStack(spacing: 6) {
                             Image(systemName: "clock.arrow.circlepath")
-                                .font(.system(size: 11))
+                                .font(.app(11))
                                 .foregroundStyle(.white.opacity(0.35))
                             Text("RECENT SEARCHES")
-                                .font(.system(size: 9, weight: .black)).kerning(1.5)
+                                .font(.app(9, .black)).kerning(1.5)
                                 .foregroundStyle(.white.opacity(0.35))
                         }
                         Spacer()
                         Button { playerVM.clearRecentSearches() } label: {
                             Text("CLEAR")
-                                .font(.system(size: 9, weight: .black)).kerning(1)
+                                .font(.app(9, .black)).kerning(1)
                                 .foregroundStyle(themeManager.current.primary)
                         }
                     }
@@ -494,10 +494,10 @@ struct SearchView: View {
                                 Button { query = s; commitSearch() } label: {
                                     HStack(spacing: 6) {
                                         Image(systemName: "arrow.up.left")
-                                            .font(.system(size: 9))
+                                            .font(.app(9))
                                             .foregroundStyle(.white.opacity(0.35))
                                         Text(s)
-                                            .font(.system(size: 11, weight: .semibold))
+                                            .font(.app(11, .semibold))
                                             .foregroundStyle(.white.opacity(0.7))
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 8)
@@ -510,12 +510,12 @@ struct SearchView: View {
                 } else {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 44)).foregroundStyle(themeManager.current.primary.opacity(0.25))
+                            .font(.app(44)).foregroundStyle(themeManager.current.primary.opacity(0.25))
                         Text("Search music")
                             .font(themeManager.font(13, .semibold))
                             .foregroundStyle(.white.opacity(0.4))
                         Text("Songs, artists, playlists and more.")
-                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.25))
+                            .font(.app(12)).foregroundStyle(.white.opacity(0.25))
                     }
                     .frame(maxWidth: .infinity).padding(.top, 60)
                 }
@@ -529,11 +529,11 @@ struct SearchView: View {
     private func errorState(_ msg: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36)).foregroundStyle(.orange.opacity(0.6))
+                .font(.app(36)).foregroundStyle(.orange.opacity(0.6))
             Text("Search failed")
                 .font(themeManager.font(13, .semibold))
                 .foregroundStyle(.white.opacity(0.4))
-            Text(msg).font(.system(size: 11))
+            Text(msg).font(.app(11))
                 .foregroundStyle(.white.opacity(0.25)).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity).padding(40)
@@ -727,7 +727,7 @@ private struct ArtistRowView: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12))
+                .font(.app(12))
                 .foregroundStyle(.white.opacity(0.2))
         }
         .padding(.vertical, 10)
@@ -762,14 +762,14 @@ private struct SpotifyArtistRowView: View {
                         img.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
                         Text("S")
-                            .font(.system(size: 20, weight: .black))
+                            .font(.app(20, .black))
                             .foregroundStyle(spotifyGreen)
                     }
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
                 } else {
                     Text("S")
-                        .font(.system(size: 20, weight: .black))
+                        .font(.app(20, .black))
                         .foregroundStyle(spotifyGreen)
                 }
             }
@@ -789,7 +789,7 @@ private struct SpotifyArtistRowView: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12))
+                .font(.app(12))
                 .foregroundStyle(.white.opacity(0.2))
         }
         .padding(.vertical, 10)
@@ -817,14 +817,14 @@ private struct SpotifyAlbumRowView: View {
                         img.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
                         Image(systemName: "opticaldisc")
-                            .font(.system(size: 18))
+                            .font(.app(18))
                             .foregroundStyle(spotifyGreen.opacity(0.6))
                     }
                     .frame(width: 48, height: 48)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                 } else {
                     Image(systemName: "opticaldisc")
-                        .font(.system(size: 18))
+                        .font(.app(18))
                         .foregroundStyle(spotifyGreen.opacity(0.6))
                 }
             }
@@ -912,7 +912,7 @@ struct SCPlaylistDetailView: View {
                     } else if failed {
                         VStack(spacing: 10) {
                             Image(systemName: "exclamationmark.triangle")
-                                .font(.system(size: 32)).foregroundStyle(.orange.opacity(0.5))
+                                .font(.app(32)).foregroundStyle(.orange.opacity(0.5))
                             Text("Couldn't load tracks")
                                 .font(themeManager.font(12, .semibold))
                                 .foregroundStyle(.white.opacity(0.4))
@@ -990,7 +990,7 @@ struct SCPlaylistDetailView: View {
                             ZStack {
                                 Circle().fill(Color.white.opacity(0.12)).frame(width: 36, height: 36)
                                 Image(systemName: "ellipsis")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.app(14, .bold))
                                     .foregroundStyle(.white)
                             }
                         }
@@ -999,7 +999,7 @@ struct SCPlaylistDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.5))
+                            .font(.app(13, .bold)).foregroundStyle(.white.opacity(0.5))
                     }
                 }
             }
@@ -1007,7 +1007,7 @@ struct SCPlaylistDetailView: View {
             .overlay(alignment: .top) {
                 if let msg = toast {
                     Text(msg)
-                        .font(.system(size: 12, weight: .bold)).kerning(0.5)
+                        .font(.app(12, .bold)).kerning(0.5)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 20).padding(.vertical, 10)
                         .background(.ultraThinMaterial, in: Capsule())

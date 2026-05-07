@@ -26,7 +26,7 @@ struct SpotifyAlbumDetailView: View {
                             .padding(.top, 40)
                     } else if tracks.isEmpty {
                         Text("NO TRACKS AVAILABLE")
-                            .font(.system(size: 11, weight: .bold)).kerning(1.5)
+                            .font(.app(11, .bold)).kerning(1.5)
                             .foregroundStyle(.white.opacity(0.25))
                             .frame(maxWidth: .infinity)
                             .padding(.top, 40)
@@ -42,7 +42,7 @@ struct SpotifyAlbumDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.app(13, .bold))
                             .foregroundStyle(.white.opacity(0.5))
                     }
                 }
@@ -71,16 +71,16 @@ struct SpotifyAlbumDetailView: View {
 
             VStack(spacing: 4) {
                 Text(album.name)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.app(20, .bold))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                 if let artist = album.artistName {
                     Text(artist)
-                        .font(.system(size: 13))
+                        .font(.app(13))
                         .foregroundStyle(spotifyGreen)
                 }
                 Text("\(album.releaseYear) · \(album.albumType.uppercased())")
-                    .font(.system(size: 11, weight: .semibold)).kerning(0.5)
+                    .font(.app(11, .semibold)).kerning(0.5)
                     .foregroundStyle(.white.opacity(0.35))
             }
             .padding(.horizontal, 24)
@@ -94,9 +94,9 @@ struct SpotifyAlbumDetailView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "play.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.app(14, .bold))
                         Text("Play All")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.app(15, .bold))
                     }
                     .foregroundStyle(.black)
                     .padding(.horizontal, 32).padding(.vertical, 12)
@@ -115,7 +115,7 @@ struct SpotifyAlbumDetailView: View {
             ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
                 HStack(spacing: 0) {
                     Text("\(index + 1)")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.app(11, .bold))
                         .foregroundStyle(.white.opacity(0.25))
                         .frame(width: 30)
                     TrackRowView(

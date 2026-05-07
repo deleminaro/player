@@ -75,7 +75,7 @@ struct WaveView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("MY WAVE")
-                        .font(.system(size: 12, weight: .black))
+                        .font(.app(12, .black))
                         .kerning(2.5)
                         .foregroundStyle(.white)
                 }
@@ -91,7 +91,7 @@ struct WaveView: View {
                             }
                         } label: {
                             Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.app(14, .semibold))
                                 .foregroundStyle(.white.opacity(0.45))
                         }
                     }
@@ -139,7 +139,7 @@ struct WaveView: View {
             if mode == .forYou && !wave.sourceArtists.isEmpty {
                 VStack(spacing: 5) {
                     Text("BASED ON YOUR LISTENING")
-                        .font(.system(size: 9, weight: .black)).kerning(1.5)
+                        .font(.app(9, .black)).kerning(1.5)
                         .foregroundStyle(.white.opacity(0.3))
                     Text(wave.sourceArtists.joined(separator: "  ·  "))
                         .font(themeManager.font(13, .semibold))
@@ -152,7 +152,7 @@ struct WaveView: View {
             if mode == .discover, let label = wave.seedLabel, !wave.discoverTracks.isEmpty {
                 VStack(spacing: 5) {
                     Text("WAVE FOR")
-                        .font(.system(size: 9, weight: .black)).kerning(1.5)
+                        .font(.app(9, .black)).kerning(1.5)
                         .foregroundStyle(.white.opacity(0.3))
                     Text(label)
                         .font(themeManager.font(15, .bold))
@@ -182,7 +182,7 @@ struct WaveView: View {
                         playerVM.showingNowPlaying = true
                     } label: {
                         Image(systemName: "shuffle")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.app(15, .semibold))
                             .foregroundStyle(.white.opacity(0.55))
                             .frame(width: 46, height: 46)
                             .background(Color.white.opacity(0.08), in: Circle())
@@ -203,7 +203,7 @@ struct WaveView: View {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.white.opacity(0.4))
-                    .font(.system(size: 14))
+                    .font(.app(14))
                 TextField("Artist, song, or vibe…", text: $searchText)
                     .foregroundStyle(.white)
                     .tint(accent)
@@ -229,7 +229,7 @@ struct WaveView: View {
             // Moods grid
             VStack(alignment: .leading, spacing: 10) {
                 Text("MOODS & ACTIVITIES")
-                    .font(.system(size: 10, weight: .black)).kerning(2)
+                    .font(.app(10, .black)).kerning(2)
                     .foregroundStyle(.white.opacity(0.3))
                     .padding(.horizontal, 20)
 
@@ -262,7 +262,7 @@ struct WaveView: View {
         } label: {
             HStack(spacing: 10) {
                 Text(mood.emoji)
-                    .font(.system(size: 22))
+                    .font(.app(22))
                     .frame(width: 36, height: 36)
                     .background(mood.color.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
                 Text(mood.label)
@@ -271,7 +271,7 @@ struct WaveView: View {
                 Spacer()
                 if isActive {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.app(11, .bold))
                         .foregroundStyle(mood.color)
                 }
             }
@@ -329,7 +329,7 @@ struct WaveView: View {
     private var forYouEmpty: some View {
         VStack(spacing: 20) {
             Image(systemName: "waveform")
-                .font(.system(size: 48))
+                .font(.app(48))
                 .foregroundStyle(accent.opacity(0.3))
                 .padding(.top, 60)
             VStack(spacing: 8) {

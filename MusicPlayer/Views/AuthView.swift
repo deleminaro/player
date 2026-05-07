@@ -28,18 +28,18 @@ struct WelcomeView: View {
                         .fill(Color.white.opacity(0.06))
                         .frame(width: 120, height: 120)
                     Image(systemName: "music.note")
-                        .font(.system(size: 48, weight: .ultraLight))
+                        .font(.app(48, .ultraLight))
                         .foregroundStyle(.white)
                 }
                 .padding(.bottom, 28)
 
                 Text("POSTOR")
-                    .font(.system(size: 42, weight: .black))
+                    .font(.app(42, .black))
                     .foregroundStyle(.white)
                     .kerning(4)
 
                 Text("Your music, everywhere.")
-                    .font(.system(size: 15))
+                    .font(.app(15))
                     .foregroundStyle(.white.opacity(0.4))
                     .padding(.top, 10)
 
@@ -50,7 +50,7 @@ struct WelcomeView: View {
                     // Email sign up
                     Button { showSignUp = true } label: {
                         Text("Create Account")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.app(16, .bold))
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 17)
@@ -61,7 +61,7 @@ struct WelcomeView: View {
                     // Email login
                     Button { showLogin = true } label: {
                         Text("Log In")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.app(16, .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 17)
@@ -77,7 +77,7 @@ struct WelcomeView: View {
                     HStack {
                         Rectangle().fill(Color.white.opacity(0.15)).frame(height: 1)
                         Text("or")
-                            .font(.system(size: 13))
+                            .font(.app(13))
                             .foregroundStyle(.white.opacity(0.35))
                             .padding(.horizontal, 10)
                         Rectangle().fill(Color.white.opacity(0.15)).frame(height: 1)
@@ -97,7 +97,7 @@ struct WelcomeView: View {
                         HStack(spacing: 10) {
                             GoogleBadge()
                             Text("Continue with Google")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.app(16, .semibold))
                                 .foregroundStyle(.black)
                         }
                         .frame(maxWidth: .infinity)
@@ -108,7 +108,7 @@ struct WelcomeView: View {
 
                     if !errorMsg.isEmpty {
                         Text(errorMsg)
-                            .font(.system(size: 13))
+                            .font(.app(13))
                             .foregroundStyle(Color.red.opacity(0.8))
                             .multilineTextAlignment(.center)
                             .padding(.top, 4)
@@ -146,7 +146,7 @@ private struct GoogleBadge: View {
                 )
                 .frame(width: 24, height: 24)
             Text("G")
-                .font(.system(size: 14, weight: .bold))
+                .font(.app(14, .bold))
                 .foregroundStyle(.white)
         }
     }
@@ -180,7 +180,7 @@ struct SignUpView: View {
                         ZStack {
                             Circle().fill(Color.white.opacity(0.1)).frame(width: 40, height: 40)
                             Image(systemName: "xmark")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.app(13, .bold))
                                 .foregroundStyle(.white)
                         }
                     }
@@ -192,10 +192,10 @@ struct SignUpView: View {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Create Account")
-                        .font(.system(size: 32, weight: .bold))
+                        .font(.app(32, .bold))
                         .foregroundStyle(.white)
                     Text("Join POSTOR and start listening.")
-                        .font(.system(size: 15))
+                        .font(.app(15))
                         .foregroundStyle(.white.opacity(0.4))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -219,7 +219,7 @@ struct SignUpView: View {
 
                 if !errorMessage.isEmpty {
                     Text(errorMessage)
-                        .font(.system(size: 13))
+                        .font(.app(13))
                         .foregroundStyle(Color.red.opacity(0.8))
                         .padding(.top, 16)
                         .padding(.horizontal, 28)
@@ -235,7 +235,7 @@ struct SignUpView: View {
                             .background(.white, in: RoundedRectangle(cornerRadius: 16))
                     } else {
                         Text("Create Account")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.app(16, .bold))
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 17)
@@ -296,7 +296,7 @@ struct LoginView: View {
                         ZStack {
                             Circle().fill(Color.white.opacity(0.1)).frame(width: 40, height: 40)
                             Image(systemName: "xmark")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.app(13, .bold))
                                 .foregroundStyle(.white)
                         }
                     }
@@ -307,10 +307,10 @@ struct LoginView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Welcome back")
-                        .font(.system(size: 32, weight: .bold))
+                        .font(.app(32, .bold))
                         .foregroundStyle(.white)
                     Text("Log in to continue listening.")
-                        .font(.system(size: 15))
+                        .font(.app(15))
                         .foregroundStyle(.white.opacity(0.4))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -327,7 +327,7 @@ struct LoginView: View {
 
                 if !errorMessage.isEmpty {
                     Text(errorMessage)
-                        .font(.system(size: 13))
+                        .font(.app(13))
                         .foregroundStyle(Color.red.opacity(0.8))
                         .padding(.top, 16)
                         .padding(.horizontal, 28)
@@ -343,7 +343,7 @@ struct LoginView: View {
                             .background(.white, in: RoundedRectangle(cornerRadius: 16))
                     } else {
                         Text("Log In")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.app(16, .bold))
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 17)
@@ -386,7 +386,7 @@ private func authField<F: Hashable>(
 ) -> some View {
     HStack(spacing: 12) {
         Image(systemName: icon)
-            .font(.system(size: 15))
+            .font(.app(15))
             .foregroundStyle(.white.opacity(0.35))
             .frame(width: 20)
         TextField(placeholder, text: text)
@@ -412,7 +412,7 @@ private func authFieldSecure<F: Hashable>(
 ) -> some View {
     HStack(spacing: 12) {
         Image(systemName: icon)
-            .font(.system(size: 15))
+            .font(.app(15))
             .foregroundStyle(.white.opacity(0.35))
             .frame(width: 20)
         Group {
@@ -430,7 +430,7 @@ private func authFieldSecure<F: Hashable>(
 
         Button { show.wrappedValue.toggle() } label: {
             Image(systemName: show.wrappedValue ? "eye.slash" : "eye")
-                .font(.system(size: 14))
+                .font(.app(14))
                 .foregroundStyle(.white.opacity(0.35))
         }
         .buttonStyle(.plain)

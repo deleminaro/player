@@ -44,7 +44,7 @@ struct SpotifyArtistProfileView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.app(13, .bold))
                             .foregroundStyle(.white.opacity(0.5))
                     }
                 }
@@ -82,7 +82,7 @@ struct SpotifyArtistProfileView: View {
                 spotifyHeroGradient.frame(maxWidth: .infinity).frame(height: 220)
                     .overlay(
                         Text("S")
-                            .font(.system(size: 80, weight: .black))
+                            .font(.app(80, .black))
                             .foregroundStyle(.black.opacity(0.25))
                     )
             }
@@ -98,13 +98,13 @@ struct SpotifyArtistProfileView: View {
             // Name + listeners
             VStack(alignment: .leading, spacing: 4) {
                 Text(artist.name)
-                    .font(.system(size: 32, weight: .black))
+                    .font(.app(32, .black))
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.6), radius: 4, y: 2)
 
                 if let count = artist.followersCount {
                     Text("\(formattedListeners(count)) MONTHLY LISTENERS")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.app(10, .semibold))
                         .kerning(1)
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -135,7 +135,7 @@ struct SpotifyArtistProfileView: View {
                 HStack(spacing: 8) {
                     ForEach(displayGenres, id: \.self) { genre in
                         Text(genre.uppercased())
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.app(9, .bold))
                             .kerning(1)
                             .foregroundStyle(spotifyGreen)
                             .padding(.horizontal, 12)
@@ -170,7 +170,7 @@ struct SpotifyArtistProfileView: View {
         } label: {
             VStack(spacing: 6) {
                 Text(label)
-                    .font(.system(size: 11, weight: .black))
+                    .font(.app(11, .black))
                     .kerning(1.5)
                     .foregroundStyle(isActive ? .white : .white.opacity(0.35))
                 Rectangle()
@@ -208,7 +208,7 @@ struct SpotifyArtistProfileView: View {
                 ForEach(Array(topTracks.enumerated()), id: \.offset) { index, track in
                     HStack(spacing: 0) {
                         Text("\(index + 1)")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.app(11, .bold))
                             .foregroundStyle(.white.opacity(0.25))
                             .frame(width: 30)
                         TrackRowView(
@@ -272,7 +272,7 @@ struct SpotifyArtistProfileView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     } else {
                         Image(systemName: "music.note")
-                            .font(.system(size: 24))
+                            .font(.app(24))
                             .foregroundStyle(.white.opacity(0.2))
                     }
                 }
@@ -281,19 +281,19 @@ struct SpotifyArtistProfileView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(album.name)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.app(11, .bold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 4) {
                         Text(album.releaseYear)
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.app(9, .semibold))
                             .foregroundStyle(.white.opacity(0.35))
                         Text("·")
-                            .font(.system(size: 9))
+                            .font(.app(9))
                             .foregroundStyle(.white.opacity(0.2))
                         Text(album.albumType.uppercased())
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.app(9, .bold))
                             .kerning(0.5)
                             .foregroundStyle(.white.opacity(0.35))
                     }
@@ -306,7 +306,7 @@ struct SpotifyArtistProfileView: View {
 
     private func emptyLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .bold)).kerning(1.5)
+            .font(.app(11, .bold)).kerning(1.5)
             .foregroundStyle(.white.opacity(0.25))
             .frame(maxWidth: .infinity)
             .padding(.top, 40)
@@ -315,13 +315,13 @@ struct SpotifyArtistProfileView: View {
     private func errorView(_ msg: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36))
+                .font(.app(36))
                 .foregroundStyle(.orange.opacity(0.6))
             Text("COULDN'T LOAD PROFILE")
-                .font(.system(size: 13, weight: .black)).kerning(2)
+                .font(.app(13, .black)).kerning(2)
                 .foregroundStyle(.white.opacity(0.4))
             Text(msg)
-                .font(.system(size: 11))
+                .font(.app(11))
                 .foregroundStyle(.white.opacity(0.25))
                 .multilineTextAlignment(.center)
         }

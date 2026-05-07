@@ -19,7 +19,7 @@ struct TrackRowView: View {
                             .frame(width: 13, height: 13)
                             .overlay(
                                 Text("S")
-                                    .font(.system(size: 7, weight: .black))
+                                    .font(.app(7, .black))
                                     .foregroundStyle(.black)
                             )
                             .offset(x: 3, y: 3)
@@ -54,7 +54,7 @@ struct TrackRowView: View {
 
             Button(action: onToggleLike) {
                 Image(systemName: isLiked ? "heart.fill" : "heart")
-                    .font(.system(size: 15))
+                    .font(.app(15))
                     .foregroundStyle(isLiked ? .pink : .white.opacity(0.25))
                     .scaleEffect(isLiked ? 1.08 : 1.0)
                     .animation(.spring(response: 0.25, dampingFraction: 0.5), value: isLiked)
@@ -130,7 +130,7 @@ struct ArtworkThumbnail: View {
                     .aspectRatio(contentMode: .fill)
             } else {
                 Image(systemName: "music.note")
-                    .font(.system(size: 14))
+                    .font(.app(14))
                     .foregroundStyle(.white.opacity(0.2))
             }
         }
