@@ -176,7 +176,6 @@ final class PlayerViewModel: ObservableObject {
     }
 
     // Re-fetch the track from SoundCloud when a 404 indicates the transcoding URL expired.
-    // If SoundCloud still can't serve it, falls back to a YouTube audio stream.
     private func resolveStreamURL(for track: Track) async throws -> URL {
         guard let transcoding = track.media?.transcoding(for: currentQuality) else {
             audio.stop(); playerState = .idle
@@ -187,14 +186,11 @@ final class PlayerViewModel: ObservableObject {
         } catch let err as SoundCloudService.SCError {
             guard case .badResponse(let code) = err, code == 404 else { throw err }
             // Transcoding URL is stale — re-fetch the track to get fresh ones
-            if let fresh = try? await sc.fetchTracksByIDs([track.id]).first,
-               let freshTranscoding = fresh.media?.transcoding(for: currentQuality),
-               let freshURL = try? await sc.resolveStreamURL(transcodingURL: freshTranscoding.url) {
-                return freshURL
+            guard let fresh = try await sc.fetchTracksByIDs([track.id]).first,
+                  let freshTranscoding = fresh.media?.transcoding(for: currentQuality) else {
+                throw err
             }
-            // SoundCloud still unavailable — fall back to YouTube via Invidious
-            AppLogger.shared.log("SC unavailable for '\(track.title)' — trying YouTube fallback", category: "Player")
-            return try await YouTubeService.shared.searchAudioURL(query: "\(track.title) \(track.username)")
+            return try await sc.resolveStreamURL(transcodingURL: freshTranscoding.url)
         }
     }
 

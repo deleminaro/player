@@ -38,7 +38,6 @@
 		AA18101AAA18101AAA18101A /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001AAA10001AAA10001A /* DownloadManager.swift */; };
 		AA18101BAA18101BAA18101B /* CustomizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001BAA10001BAA10001B /* CustomizationView.swift */; };
 		AA18101CAA18101CAA18101C /* SpotifyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001CAA10001CAA10001C /* SpotifyService.swift */; };
-		AA181030AA181030AA181030 /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100030AA100030AA100030 /* YouTubeService.swift */; };
 		AA18101DAA18101DAA18101D /* SCArtistProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001DAA10001DAA10001D /* SCArtistProfileView.swift */; };
 		AA18101EAA18101EAA18101E /* SpotifyArtistProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001EAA10001EAA10001E /* SpotifyArtistProfileView.swift */; };
 		AA181020AA181020AA181020 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100020AA100020AA100020 /* AuthView.swift */; };
@@ -86,7 +85,6 @@
 		AA10001AAA10001AAA10001A /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
 		AA10001BAA10001BAA10001B /* CustomizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomizationView.swift; sourceTree = "<group>"; };
 		AA10001CAA10001CAA10001C /* SpotifyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyService.swift; sourceTree = "<group>"; };
-		AA100030AA100030AA100030 /* YouTubeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeService.swift; sourceTree = "<group>"; };
 		AA10001DAA10001DAA10001D /* SCArtistProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCArtistProfileView.swift; sourceTree = "<group>"; };
 		AA10001EAA10001EAA10001E /* SpotifyArtistProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyArtistProfileView.swift; sourceTree = "<group>"; };
 		AA100020AA100020AA100020 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
@@ -164,7 +162,6 @@
 				AA100007AA100007AA100007 /* GeniusService.swift */,
 				AA10001AAA10001AAA10001A /* DownloadManager.swift */,
 				AA10001CAA10001CAA10001C /* SpotifyService.swift */,
-				AA100030AA100030AA100030 /* YouTubeService.swift */,
 				AA100022AA100022AA100022 /* SpotifyRemoteService.swift */,
 				AA100021AA100021AA100021 /* FirebaseManager.swift */,
 				AA100024AA100024AA100024 /* WaveService.swift */,
@@ -326,7 +323,6 @@
 				AA181017AA181017AA181017 /* SettingsView.swift in Sources */,
 				AA18101AAA18101AAA18101A /* DownloadManager.swift in Sources */,
 				AA18101CAA18101CAA18101C /* SpotifyService.swift in Sources */,
-				AA181030AA181030AA181030 /* YouTubeService.swift in Sources */,
 				AA18101BAA18101BAA18101B /* CustomizationView.swift in Sources */,
 				AA18101DAA18101DAA18101D /* SCArtistProfileView.swift in Sources */,
 				AA18101EAA18101EAA18101E /* SpotifyArtistProfileView.swift in Sources */,
