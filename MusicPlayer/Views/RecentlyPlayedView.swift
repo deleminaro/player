@@ -48,7 +48,7 @@ struct RecentlyPlayedView: View {
                     }
                 }
             }
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(themeManager.current.isDark ? .dark : .light)
         }
         .presentationBackground(bg)
     }

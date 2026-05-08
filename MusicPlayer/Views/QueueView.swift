@@ -110,7 +110,7 @@ struct QueueView: View {
                         .foregroundStyle(themeManager.current.primary)
                 }
             }
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(themeManager.current.isDark ? .dark : .light)
         }
         .presentationBackground(bg)
     }

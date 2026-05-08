@@ -17,10 +17,14 @@ struct AppTheme: Identifiable, Equatable {
     let background: Color  // main screen fill
     let card: Color        // elevated surface / card fill
     var swatches: [Color]
+    var foreground: Color = .white
+    var isDark: Bool = true
 }
 
 private let _darkBg   = Color(red: 0.075, green: 0.075, blue: 0.075)
 private let _darkCard = Color(red: 0.110, green: 0.110, blue: 0.110)
+private let _lightBg   = Color(red: 0.960, green: 0.960, blue: 0.972)
+private let _lightCard = Color(red: 0.910, green: 0.910, blue: 0.922)
 
 extension AppTheme {
     static let dark     = AppTheme(id:"dark",     name:"Dark",     primary:.white,                                                   onPrimary:.black,                                           background:_darkBg, card:_darkCard, swatches:[.white])
@@ -33,15 +37,16 @@ extension AppTheme {
     static let rose     = AppTheme(id:"rose",     name:"Rose",     primary:Color(red:1.0,green:0.46,blue:0.56),   onPrimary:Color(red:0.68,green:0.06,blue:0.24), background:_darkBg, card:_darkCard, swatches:[Color(red:1.0,green:0.46,blue:0.56), Color(red:0.68,green:0.06,blue:0.24)])
     static let amber    = AppTheme(id:"amber",    name:"Amber",    primary:Color(red:1.0,green:0.74,blue:0.12),   onPrimary:Color(red:0.54,green:0.26,blue:0.02), background:_darkBg, card:_darkCard, swatches:[Color(red:1.0,green:0.74,blue:0.12), Color(red:0.54,green:0.26,blue:0.02)])
     static let slate    = AppTheme(id:"slate",    name:"Slate",    primary:Color(red:0.44,green:0.64,blue:1.0),   onPrimary:Color(red:0.10,green:0.22,blue:0.56), background:_darkBg, card:_darkCard, swatches:[Color(red:0.44,green:0.64,blue:1.0), Color(red:0.10,green:0.22,blue:0.56)])
-    static let light    = AppTheme(id:"light",    name:"Light",    primary:Color(white:0.88),                     onPrimary:.black,                                background:_darkBg, card:_darkCard, swatches:[Color(white:0.88)])
+    static let light    = AppTheme(id:"light",    name:"Light",    primary:Color(red:0.14,green:0.48,blue:0.99),  onPrimary:.white,                                background:_lightBg,card:_lightCard,swatches:[Color(red:0.14,green:0.48,blue:0.99)], foreground:Color(white:0.08), isDark:false)
     static let sky      = AppTheme(id:"sky",      name:"Sky",      primary:Color(red:0.38,green:0.72,blue:1.0),   onPrimary:Color(red:0.08,green:0.28,blue:0.82), background:_darkBg, card:_darkCard, swatches:[Color(red:0.38,green:0.72,blue:1.0), Color(red:0.08,green:0.28,blue:0.82)])
     static let mint     = AppTheme(id:"mint",     name:"Mint",     primary:Color(red:0.22,green:0.90,blue:0.60),  onPrimary:Color(red:0.04,green:0.40,blue:0.24), background:_darkBg, card:_darkCard, swatches:[Color(red:0.22,green:0.90,blue:0.60), Color(red:0.04,green:0.40,blue:0.24)])
     static let violet   = AppTheme(id:"violet",   name:"Violet",   primary:Color(red:0.72,green:0.40,blue:1.0),   onPrimary:Color(red:0.28,green:0.04,blue:0.62), background:_darkBg, card:_darkCard, swatches:[Color(red:0.72,green:0.40,blue:1.0), Color(red:0.28,green:0.04,blue:0.62)])
     static let blossom  = AppTheme(id:"blossom",  name:"Blossom",  primary:Color(red:1.0,green:0.36,blue:0.38),   onPrimary:Color(red:0.62,green:0.04,blue:0.14), background:_darkBg, card:_darkCard, swatches:[Color(red:1.0,green:0.36,blue:0.38), Color(red:0.62,green:0.04,blue:0.14)])
     static let sand     = AppTheme(id:"sand",     name:"Sand",     primary:Color(red:1.0,green:0.74,blue:0.20),   onPrimary:Color(red:0.52,green:0.28,blue:0.02), background:_darkBg, card:_darkCard, swatches:[Color(red:1.0,green:0.74,blue:0.20), Color(red:0.52,green:0.28,blue:0.02)])
     static let aqua     = AppTheme(id:"aqua",     name:"Aqua",     primary:Color(red:0.14,green:0.88,blue:0.78),  onPrimary:Color(red:0.02,green:0.42,blue:0.38), background:_darkBg, card:_darkCard, swatches:[Color(red:0.14,green:0.88,blue:0.78), Color(red:0.02,green:0.42,blue:0.38)])
+    static let ivory    = AppTheme(id:"ivory",    name:"Ivory",    primary:Color(red:0.72,green:0.22,blue:0.10),  onPrimary:.white,                                background:Color(red:0.972,green:0.964,blue:0.942),card:Color(red:0.920,green:0.912,blue:0.892),swatches:[Color(red:0.72,green:0.22,blue:0.10)], foreground:Color(white:0.10), isDark:false)
 
-    static let all: [AppTheme] = [dark, amoled, midnight, emerald, sunset, ocean, lavender, rose, amber, slate, light, sky, mint, violet, blossom, sand, aqua]
+    static let all: [AppTheme] = [dark, amoled, midnight, emerald, sunset, ocean, lavender, rose, amber, slate, light, sky, mint, violet, blossom, sand, aqua, ivory]
 }
 
 // MARK: - Audio quality
