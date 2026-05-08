@@ -164,18 +164,33 @@ final class PlayerViewModel: ObservableObject {
                     if currentTrack?.id == track.id { playerState = .idle }
                     return
                 }
-                // SoundCloud: resolve transcoding URL
-                guard let transcoding = track.media?.transcoding(for: currentQuality) else {
-                    if currentTrack?.id == track.id { audio.stop(); playerState = .idle }
-                    return
-                }
-                let url = try await sc.resolveStreamURL(transcodingURL: transcoding.url)
+                // SoundCloud: resolve transcoding URL (auto-retries if URL is stale)
+                let url = try await resolveStreamURL(for: track)
                 guard currentTrack?.id == track.id else { return }
                 audio.play(url: url)
             } catch {
                 if currentTrack?.id == track.id { playerState = .idle }
                 AppLogger.shared.log("play error for '\(track.title)': \(error.localizedDescription)", category: "Player")
             }
+        }
+    }
+
+    // Re-fetch the track from SoundCloud when a 404 indicates the transcoding URL expired.
+    private func resolveStreamURL(for track: Track) async throws -> URL {
+        guard let transcoding = track.media?.transcoding(for: currentQuality) else {
+            audio.stop(); playerState = .idle
+            throw SoundCloudService.SCError.invalidURL
+        }
+        do {
+            return try await sc.resolveStreamURL(transcodingURL: transcoding.url)
+        } catch let err as SoundCloudService.SCError {
+            guard case .badResponse(let code) = err, code == 404 else { throw err }
+            // Transcoding URL is stale — re-fetch the track to get fresh ones
+            guard let fresh = try await sc.fetchTracksByIDs([track.id]).first,
+                  let freshTranscoding = fresh.media?.transcoding(for: currentQuality) else {
+                throw err
+            }
+            return try await sc.resolveStreamURL(transcodingURL: freshTranscoding.url)
         }
     }
 
