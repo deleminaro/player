@@ -121,8 +121,10 @@ actor SoundCloudService {
     // MARK: - Helpers
 
     private func validate(_ response: URLResponse) throws {
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw SCError.badResponse
+        guard let http = response as? HTTPURLResponse else { throw SCError.badResponse(nil) }
+        guard (200..<300).contains(http.statusCode) else {
+            AppLogger.shared.log("HTTP \(http.statusCode) from \(http.url?.host ?? "?")", category: "Network")
+            throw SCError.badResponse(http.statusCode)
         }
     }
 
@@ -140,12 +142,20 @@ actor SoundCloudService {
 
     enum SCError: LocalizedError {
         case invalidURL
-        case badResponse
+        case badResponse(Int?)
 
         var errorDescription: String? {
             switch self {
-            case .invalidURL:   return "Invalid SoundCloud URL."
-            case .badResponse:  return "SoundCloud returned an unexpected response. Check your client_id."
+            case .invalidURL:          return "Invalid SoundCloud URL."
+            case .badResponse(let code):
+                switch code {
+                case 401:  return "SoundCloud: unauthorized (client_id expired or invalid)."
+                case 403:  return "SoundCloud: access forbidden — track may be private or geo-blocked."
+                case 404:  return "SoundCloud: track not found."
+                case 429:  return "SoundCloud: rate limited — too many requests."
+                case let s?: return "SoundCloud returned HTTP \(s)."
+                case nil:  return "SoundCloud returned an unexpected response."
+                }
             }
         }
     }
