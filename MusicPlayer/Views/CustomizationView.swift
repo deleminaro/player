@@ -7,29 +7,34 @@ struct CustomizationView: View {
     @State private var coverPhotoItem: PhotosPickerItem?
     private var bg:     Color { themeManager.current.background }
     private var bgCard: Color { themeManager.current.card }
+    private var fg:     Color { themeManager.current.foreground }
 
     enum CTab { case cover, slider, theme, font }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
+                // Live preview — always visible at top
+                livePreview
+                    .padding(.top, 16)
+
                 // Filter pills
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        pill("Cover",      icon: "photo.on.rectangle.angled", t: .cover)
-                        pill("Slider",     icon: "slider.horizontal.3",       t: .slider)
-                        pill("Theme",      icon: "paintpalette.fill",         t: .theme)
-                        pill("Font",       icon: "textformat",                t: .font)
+                        pill("Cover",  icon: "photo.on.rectangle.angled", t: .cover)
+                        pill("Slider", icon: "slider.horizontal.3",       t: .slider)
+                        pill("Theme",  icon: "paintpalette.fill",         t: .theme)
+                        pill("Font",   icon: "textformat",                t: .font)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
 
                 Group {
                     switch tab {
-                    case .cover:      coverTab
-                    case .slider:     sliderTab
-                    case .theme:      themeTab
-                    case .font:       fontTab
+                    case .cover:  coverTab
+                    case .slider: sliderTab
+                    case .theme:  themeTab
+                    case .font:   fontTab
                     }
                 }
                 .padding(.top, 8)
@@ -44,16 +49,99 @@ struct CustomizationView: View {
             ToolbarItem(placement: .principal) {
                 Text("Customization")
                     .font(.app(15, .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(fg)
             }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(themeManager.current.isDark ? .dark : .light)
         .onChange(of: coverPhotoItem) { _, item in
             Task {
                 guard let data = try? await item?.loadTransferable(type: Data.self),
                       let image = UIImage(data: data) else { return }
                 themeManager.saveCustomCoverImage(image)
             }
+        }
+    }
+
+    // MARK: - Live preview
+
+    private var livePreview: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("LIVE PREVIEW")
+
+            VStack(spacing: 0) {
+                // Mini player row
+                HStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(LinearGradient(
+                            colors: [themeManager.current.primary.opacity(0.7),
+                                     themeManager.current.primary.opacity(0.25)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 46, height: 46)
+                        .overlay(
+                            Image(systemName: "music.note")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.75))
+                        )
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Track Title")
+                            .font(.app(14, .bold))
+                            .foregroundStyle(fg)
+                            .lineLimit(1)
+                        Text("Artist Name")
+                            .font(.app(12))
+                            .foregroundStyle(fg.opacity(0.5))
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: 18) {
+                        Image(systemName: "backward.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(fg.opacity(0.45))
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(themeManager.current.primary)
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(fg.opacity(0.45))
+                    }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+                .background(themeManager.current.card)
+
+                Rectangle()
+                    .fill(fg.opacity(0.06))
+                    .frame(height: 0.5)
+
+                // Theme + font badge row
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(themeManager.current.primary)
+                        .frame(width: 6, height: 6)
+                    Text(themeManager.current.name)
+                        .font(.app(11, .semibold))
+                        .foregroundStyle(themeManager.current.primary)
+                    Text("·")
+                        .font(.app(11))
+                        .foregroundStyle(fg.opacity(0.2))
+                    Text(themeManager.appFont.label)
+                        .font(.app(11))
+                        .foregroundStyle(fg.opacity(0.4))
+                    Spacer()
+                }
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(themeManager.current.background)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(themeManager.current.primary.opacity(0.2), lineWidth: 1)
+            )
+            .padding(.horizontal, 16)
+            .animation(.easeInOut(duration: 0.3), value: themeManager.current.id)
+            .animation(.easeInOut(duration: 0.3), value: themeManager.appFont)
         }
     }
 
@@ -66,9 +154,9 @@ struct CustomizationView: View {
                 Image(systemName: icon).font(.system(size: 12, weight: .semibold))
                 Text(title).font(.app(13, .semibold))
             }
-            .foregroundStyle(on ? .black : .white.opacity(0.65))
+            .foregroundStyle(on ? themeManager.current.background : fg.opacity(0.65))
             .padding(.horizontal, 14).padding(.vertical, 9)
-            .background(on ? .white : Color.white.opacity(0.1), in: Capsule())
+            .background(on ? fg : fg.opacity(0.08), in: Capsule())
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.18), value: tab)
@@ -149,15 +237,15 @@ struct CustomizationView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Custom Cover")
-                            .font(.app(14, .semibold)).foregroundStyle(.white)
+                            .font(.app(14, .semibold)).foregroundStyle(fg)
                         Text("Tap replace to update")
-                            .font(.app(11)).foregroundStyle(.white.opacity(0.35))
+                            .font(.app(11)).foregroundStyle(fg.opacity(0.35))
                     }
                     Spacer()
 
                     PhotosPicker(selection: $coverPhotoItem, matching: .images) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.app(16)).foregroundStyle(.white.opacity(0.45))
+                            .font(.app(16)).foregroundStyle(fg.opacity(0.45))
                     }
 
                     Button { themeManager.deleteCustomCoverImage() } label: {
@@ -175,13 +263,13 @@ struct CustomizationView: View {
                             .font(.app(20)).foregroundStyle(themeManager.current.primary)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Add Custom Cover")
-                                .font(.app(14, .semibold)).foregroundStyle(.white)
+                                .font(.app(14, .semibold)).foregroundStyle(fg)
                             Text("Choose from your photo library")
-                                .font(.app(11)).foregroundStyle(.white.opacity(0.35))
+                                .font(.app(11)).foregroundStyle(fg.opacity(0.35))
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.app(12, .semibold)).foregroundStyle(.white.opacity(0.2))
+                            .font(.app(12, .semibold)).foregroundStyle(fg.opacity(0.2))
                     }
                     .padding(16)
                     .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
@@ -203,7 +291,8 @@ struct CustomizationView: View {
                         type: type,
                         isSelected: themeManager.sliderType == type,
                         accent: themeManager.current.primary,
-                        bgCard: bgCard
+                        bgCard: bgCard,
+                        appForeground: fg
                     )
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.2)) { themeManager.selectSlider(type) }
@@ -224,15 +313,133 @@ struct CustomizationView: View {
                 ForEach(AppTheme.all) { theme in
                     ThemeCard(theme: theme,
                               isSelected: themeManager.current.id == theme.id,
-                              bgCard: bgCard)
+                              bgCard: bgCard,
+                              appForeground: fg)
                         .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.2)) { themeManager.select(theme) }
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                themeManager.select(theme)
+                            }
                         }
                 }
             }
             .padding(.horizontal, 16)
-
         }
+    }
+
+    // MARK: - Font tab
+
+    private var fontTab: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Monocraft quick toggle
+            sectionHeader("MONOCRAFT")
+
+            HStack(spacing: 14) {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(themeManager.current.primary.opacity(0.12))
+                    .frame(width: 44, height: 44)
+                    .overlay(
+                        Text("Mc")
+                            .font(AppFont.minecraft.font(13, .bold))
+                            .foregroundStyle(themeManager.current.primary)
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Monocraft")
+                        .font(.app(15, .semibold))
+                        .foregroundStyle(fg)
+                    Text("Pixel-style bitmap font by IdreesInc")
+                        .font(.app(12))
+                        .foregroundStyle(fg.opacity(0.45))
+                }
+
+                Spacer()
+
+                Toggle("", isOn: Binding(
+                    get: { themeManager.appFont == .minecraft },
+                    set: { use in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            themeManager.selectFont(use ? .minecraft : .system)
+                        }
+                    }
+                ))
+                .tint(themeManager.current.primary)
+                .labelsHidden()
+            }
+            .padding(16)
+            .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
+            .padding(.horizontal, 16)
+
+            // All font styles
+            sectionHeader("FONT STYLE")
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach(AppFont.allCases, id: \.self) { f in
+                    fontCard(f)
+                }
+            }
+            .padding(.horizontal, 16)
+
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "info.circle")
+                        .font(.app(14))
+                        .foregroundStyle(themeManager.current.primary.opacity(0.6))
+                    Text("Font applies throughout the app: track titles, artist names, menus, and controls.")
+                        .font(.app(12))
+                        .foregroundStyle(fg.opacity(0.45))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
+            }
+            .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func fontCard(_ f: AppFont) -> some View {
+        let selected = themeManager.appFont == f
+        let accent   = themeManager.current.primary
+
+        return Button {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                themeManager.selectFont(f)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(f.preview)
+                    .font(f.font(18, .semibold))
+                    .foregroundStyle(fg)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Divider().background(fg.opacity(0.08))
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(f.label)
+                            .font(.app(12, .semibold))
+                            .foregroundStyle(selected ? accent : fg)
+                        Text(fontSubtitle(f))
+                            .font(.app(10))
+                            .foregroundStyle(fg.opacity(0.4))
+                    }
+                    Spacer()
+                    if selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.app(16))
+                            .foregroundStyle(accent)
+                    }
+                }
+            }
+            .padding(14)
+            .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(selected ? accent : fg.opacity(0.06), lineWidth: selected ? 1.5 : 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.15), value: themeManager.appFont)
     }
 
     // MARK: - Helpers
@@ -240,8 +447,18 @@ struct CustomizationView: View {
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
             .font(.app(10, .black)).kerning(2)
-            .foregroundStyle(.white.opacity(0.35))
+            .foregroundStyle(fg.opacity(0.35))
             .padding(.horizontal, 16)
+    }
+
+    private func fontSubtitle(_ f: AppFont) -> String {
+        switch f {
+        case .system:    return "SF Pro · system default"
+        case .rounded:   return "SF Rounded · soft edges"
+        case .serif:     return "New York · editorial"
+        case .mono:      return "SF Mono · pixel / retro"
+        case .minecraft: return "Monocraft · by IdreesInc"
+        }
     }
 
     @ViewBuilder
@@ -261,7 +478,7 @@ struct CustomizationView: View {
                 }
 
             Text(label)
-                .font(.app(12, .semibold)).foregroundStyle(.white)
+                .font(.app(12, .semibold)).foregroundStyle(fg)
                 .padding(.top, 8)
         }
         .padding(.bottom, 4)
@@ -270,119 +487,6 @@ struct CustomizationView: View {
                 .stroke(selected ? accent : Color.clear, lineWidth: 2)
         )
         .frame(maxWidth: .infinity)
-    }
-
-    private func emptyCard(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.app(16)).foregroundStyle(.white.opacity(0.4))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.app(14, .semibold)).foregroundStyle(.white)
-                    Text(subtitle).font(.app(11)).foregroundStyle(.white.opacity(0.35))
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.app(12, .semibold)).foregroundStyle(.white.opacity(0.2))
-            }
-            .padding(16)
-
-            Divider().background(Color.white.opacity(0.07))
-
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.app(32)).foregroundStyle(.white.opacity(0.1))
-                Text(subtitle)
-                    .font(.app(12)).foregroundStyle(.white.opacity(0.22))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 28)
-        }
-        .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 16)
-    }
-
-    // MARK: - Font tab
-
-    private var fontTab: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            sectionHeader("FONT STYLE")
-
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                ForEach(AppFont.allCases, id: \.self) { f in
-                    fontCard(f)
-                }
-            }
-            .padding(.horizontal, 16)
-
-            VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    Image(systemName: "info.circle")
-                        .font(.app(14))
-                        .foregroundStyle(themeManager.current.primary.opacity(0.6))
-                    Text("Font applies throughout the app: track titles, artist names, menus, and controls.")
-                        .font(.app(12))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(14)
-            }
-            .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
-            .padding(.horizontal, 16)
-        }
-    }
-
-    private func fontCard(_ f: AppFont) -> some View {
-        let selected = themeManager.appFont == f
-        let accent   = themeManager.current.primary
-
-        return Button { themeManager.selectFont(f) } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                // Preview text
-                Text(f.preview)
-                    .font(f.font(18, .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Divider().background(Color.white.opacity(0.08))
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(f.label)
-                            .font(.app(12, .semibold))
-                            .foregroundStyle(selected ? accent : .white)
-                        Text(fontSubtitle(f))
-                            .font(.app(10))
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                    Spacer()
-                    if selected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.app(16))
-                            .foregroundStyle(accent)
-                    }
-                }
-            }
-            .padding(14)
-            .background(bgCard, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(selected ? accent : Color.white.opacity(0.06), lineWidth: selected ? 1.5 : 0.5)
-            )
-        }
-        .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.15), value: themeManager.appFont)
-    }
-
-    private func fontSubtitle(_ f: AppFont) -> String {
-        switch f {
-        case .system:    return "SF Pro · system default"
-        case .rounded:   return "SF Rounded · soft edges"
-        case .serif:     return "New York · editorial"
-        case .mono:      return "SF Mono · pixel / retro"
-        case .minecraft: return "Monocraft · by IdreesInc"
-        }
     }
 }
 
@@ -393,10 +497,10 @@ private struct SliderTypeCard: View {
     let isSelected: Bool
     let accent: Color
     let bgCard: Color
+    let appForeground: Color
 
     var body: some View {
         VStack(spacing: 10) {
-            // Preview
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color.white.opacity(0.05))
@@ -407,14 +511,14 @@ private struct SliderTypeCard: View {
 
             Text(type.label)
                 .font(.app(11, .semibold))
-                .foregroundStyle(isSelected ? accent : .white.opacity(0.55))
+                .foregroundStyle(isSelected ? accent : appForeground.opacity(0.55))
         }
         .padding(12)
         .frame(maxWidth: .infinity)
         .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(isSelected ? accent : Color.white.opacity(0.07), lineWidth: isSelected ? 1.5 : 0.5)
+                .stroke(isSelected ? accent : appForeground.opacity(0.07), lineWidth: isSelected ? 1.5 : 0.5)
         )
         .animation(.easeInOut(duration: 0.15), value: isSelected)
     }
@@ -487,10 +591,10 @@ private struct ThemeCard: View {
     let theme: AppTheme
     let isSelected: Bool
     let bgCard: Color
+    let appForeground: Color
 
     var body: some View {
         VStack(spacing: 8) {
-            // Swatch row
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(theme.background)
@@ -511,13 +615,13 @@ private struct ThemeCard: View {
 
             Text(theme.name)
                 .font(.app(11, .semibold))
-                .foregroundStyle(isSelected ? theme.primary : .white.opacity(0.55))
+                .foregroundStyle(isSelected ? theme.primary : appForeground.opacity(0.55))
         }
         .padding(10)
         .background(bgCard, in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(isSelected ? theme.primary : Color.white.opacity(0.07), lineWidth: isSelected ? 1.5 : 0.5)
+                .stroke(isSelected ? theme.primary : appForeground.opacity(0.07), lineWidth: isSelected ? 1.5 : 0.5)
         )
         .animation(.easeInOut(duration: 0.15), value: isSelected)
     }

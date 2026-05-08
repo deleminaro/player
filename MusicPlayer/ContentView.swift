@@ -81,6 +81,7 @@ struct ContentView: View {
                 }
             }
         }
+        .preferredColorScheme(themeManager.current.isDark ? .dark : .light)
     }
 
     // MARK: - iPhone layout (compact)
