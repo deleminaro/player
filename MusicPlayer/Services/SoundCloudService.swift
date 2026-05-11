@@ -100,6 +100,62 @@ actor SoundCloudService {
         return try JSONDecoder().decode(type, from: data)
     }
 
+    // MARK: - User resolve & likes import
+
+    /// Resolves a SoundCloud username/URL to a user object.
+    func resolveUser(permalink: String) async throws -> SCArtist {
+        var input = permalink
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "https://", with: "")
+            .replacingOccurrences(of: "http://",  with: "")
+            .replacingOccurrences(of: "www.",      with: "")
+        if !input.hasPrefix("soundcloud.com/") {
+            input = "soundcloud.com/\(input)"
+        }
+        let profileURL = "https://\(input)"
+        var comps = URLComponents(string: "\(base)/resolve")!
+        comps.queryItems = [
+            URLQueryItem(name: "url",       value: profileURL),
+            URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
+        ]
+        guard let url = comps.url else { throw SCError.invalidURL }
+        let (data, resp) = try await URLSession.shared.data(from: url)
+        try validate(resp)
+        return try JSONDecoder().decode(SCArtist.self, from: data)
+    }
+
+    /// Fetches all liked tracks for a user (paginates until empty or 500 tracks).
+    func fetchUserLikes(userID: Int) async throws -> [Track] {
+        var all: [Track] = []
+        var nextURLStr: String? = "\(base)/users/\(userID)/likes/tracks"
+        while let urlStr = nextURLStr, all.count < 500 {
+            var comps = URLComponents(string: urlStr)!
+            var items = comps.queryItems ?? []
+            func setIfMissing(_ name: String, _ value: String) {
+                if !items.contains(where: { $0.name == name }) {
+                    items.append(URLQueryItem(name: name, value: value))
+                }
+            }
+            setIfMissing("client_id",           Constants.soundcloudClientID)
+            setIfMissing("limit",               "200")
+            setIfMissing("linked_partitioning", "1")
+            comps.queryItems = items
+            guard let url = comps.url else { break }
+            let (data, resp) = try await URLSession.shared.data(from: url)
+            try validate(resp)
+            struct LikesPage: Decodable {
+                let collection: [Track]
+                // swiftlint:disable:next identifier_name
+                let next_href: String?
+            }
+            let page = try JSONDecoder().decode(LikesPage.self, from: data)
+            all.append(contentsOf: page.collection)
+            nextURLStr = page.collection.isEmpty ? nil : page.next_href
+        }
+        return all
+    }
+
     // MARK: - Stream URL resolution
 
     /// Hit the transcoding URL → get the real CDN stream URL.

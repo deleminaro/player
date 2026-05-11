@@ -8,8 +8,10 @@ struct ContentView: View {
     @ObservedObject private var spotify = SpotifyService.shared
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
-    @AppStorage("spotifyOnboardingShown") private var spotifyOnboardingShown = false
+    @AppStorage("spotifyOnboardingShown") private var spotifyOnboardingShown  = false
+    @AppStorage("scImportOffered")        private var scImportOffered          = false
     @State private var showSpotifyOnboarding = false
+    @State private var showSCImport          = false
     @State private var selectedTab: Int  = 0
     @State private var sidebarCollapsed: Bool = false
 
@@ -72,12 +74,27 @@ struct ContentView: View {
                 .presentationCornerRadius(28)
                 .onDisappear { spotifyOnboardingShown = true }
         }
+        .sheet(isPresented: $showSCImport) {
+            SCImportView()
+                .environmentObject(playerVM)
+                .environmentObject(themeManager)
+                .presentationDetents([.height(500)])
+                .presentationDragIndicator(.hidden)
+                .presentationBackground(themeManager.current.card)
+                .presentationCornerRadius(28)
+                .onDisappear { scImportOffered = true }
+        }
         .onAppear {
             // Re-apply font appearance now that tab bar exists on screen
             themeManager.applyFontAppearance()
             if !spotifyOnboardingShown && !spotify.isAuthenticated {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     showSpotifyOnboarding = true
+                }
+            }
+            if !scImportOffered && playerVM.likedTracks.isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    showSCImport = true
                 }
             }
         }

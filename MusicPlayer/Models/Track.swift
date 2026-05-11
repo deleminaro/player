@@ -47,6 +47,14 @@ struct Track: Identifiable, Hashable {
             .replacingOccurrences(of: "-t300x300.", with: "-t500x500.")
     }
 
+    // Highest quality variant for lock screen (SoundCloud originals are full-resolution)
+    var lockScreenArtworkURL: String? {
+        artworkURL?
+            .replacingOccurrences(of: "-large.", with: "-original.")
+            .replacingOccurrences(of: "-t300x300.", with: "-original.")
+            .replacingOccurrences(of: "-t500x500.", with: "-original.")
+    }
+
     var thumbnailArtworkURL: String? {
         artworkURL?
             .replacingOccurrences(of: "-t500x500.", with: "-t300x300.")

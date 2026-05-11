@@ -3,6 +3,12 @@ import Combine
 import MediaPlayer
 import UIKit
 
+enum SleepTimerMode: Equatable {
+    case off
+    case endOfTrack
+    case duration(TimeInterval)  // seconds from now
+}
+
 @MainActor
 final class PlayerViewModel: ObservableObject {
 
@@ -23,6 +29,8 @@ final class PlayerViewModel: ObservableObject {
     @Published var isShuffling:       Bool            = false
     @Published var repeatMode:        RepeatMode      = .off
     @Published var isPitchPreserved:  Bool            = true
+    @Published var sleepTimerEnd: Date? = nil
+    @Published var crossfadeDuration: Double = 0  // seconds; 0 = off
 
     var nextTrack: Track? {
         guard let idx = queue.firstIndex(where: { $0.track.id == currentTrack?.id }),
@@ -45,6 +53,12 @@ final class PlayerViewModel: ObservableObject {
     private let kSpeed      = "mp_playback_speed"
     private let kEQGains    = "mp_eq_gains"
     private let kPitch      = "mp_pitch_preserved"
+    private let kCrossfade  = "mp_crossfade"
+
+    private var sleepTimerTask: Task<Void, Never>? = nil
+    private let kSleepEndOfTrack = -1.0  // sentinel for "end of track" mode
+    @Published var sleepTimerMode: SleepTimerMode = .off
+    private var crossfadeInProgress = false
 
     // MARK: - Init
 
@@ -86,7 +100,19 @@ final class PlayerViewModel: ObservableObject {
         audio.onLoadingChange = { [weak self] on in
             if on { self?.playerState = .loading }
         }
-        audio.onTrackEnd = { [weak self] in self?.skipNext() }
+        audio.onTrackEnd = { [weak self] in
+            guard let self else { return }
+            if self.crossfadeInProgress {
+                self.crossfadeInProgress = false
+                return  // already handled by onApproachingEnd
+            }
+            self.skipNext()
+        }
+        audio.onApproachingEnd = { [weak self] in
+            guard let self, !self.crossfadeInProgress else { return }
+            self.crossfadeInProgress = true
+            self.skipNext()
+        }
     }
 
     private func bindSpotifyCallbacks() {
@@ -128,6 +154,7 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Playback
 
     func play(_ track: Track) {
+        crossfadeInProgress = false
         currentTrack = track
         playerState  = .loading
         addToRecent(track)
@@ -216,14 +243,54 @@ final class PlayerViewModel: ObservableObject {
         UserDefaults.standard.set(isPitchPreserved, forKey: kPitch)
     }
 
+    func setCrossfade(_ seconds: Double) {
+        crossfadeDuration = seconds
+        audio.crossfadeDuration = seconds
+        UserDefaults.standard.set(seconds, forKey: kCrossfade)
+    }
+
     func setEQGain(_ gain: Float, band: Int) {
         audio.setEQGain(gain, band: band)
         UserDefaults.standard.set(audio.eqGains.map { Double($0) }, forKey: kEQGains)
     }
 
+    // MARK: - Sleep Timer
+
+    func setSleepTimer(_ mode: SleepTimerMode) {
+        sleepTimerTask?.cancel()
+        sleepTimerTask = nil
+        sleepTimerEnd = nil
+        sleepTimerMode = mode
+
+        switch mode {
+        case .off: break
+        case .endOfTrack: break  // handled in onTrackEnd
+        case .duration(let secs):
+            let end = Date.now.addingTimeInterval(secs)
+            sleepTimerEnd = end
+            sleepTimerTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(secs * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                await MainActor.run { self?.executeSleepTimer() }
+            }
+        }
+    }
+
+    private func executeSleepTimer() {
+        audio.pause()
+        sleepTimerTask = nil
+        sleepTimerEnd = nil
+        sleepTimerMode = .off
+    }
+
     // MARK: - Queue navigation
 
     func skipNext() {
+        if sleepTimerMode == .endOfTrack {
+            setSleepTimer(.off)
+            audio.pause()
+            return
+        }
         switch repeatMode {
         case .one:
             if let t = currentTrack { play(t) }
@@ -336,6 +403,21 @@ final class PlayerViewModel: ObservableObject {
         saveLiked()
         updateNowPlayingLikedState(track)
         Task { await FirebaseManager.shared.syncLikedTracks(likedTracks) }
+    }
+
+    /// Merges imported tracks into likedTracks (skips duplicates). Returns count of new additions.
+    @discardableResult
+    func importSCLikes(_ tracks: [Track]) -> Int {
+        var newCount = 0
+        for track in tracks.reversed() {
+            if !isLiked(track) {
+                likedTracks.append(track)
+                newCount += 1
+            }
+        }
+        saveLiked()
+        Task { await FirebaseManager.shared.syncLikedTracks(likedTracks) }
+        return newCount
     }
 
     func loadFromFirebase() async {
@@ -459,7 +541,7 @@ final class PlayerViewModel: ObservableObject {
 
         // Fetch artwork in background — custom per-track artwork takes priority
         let trackID = track.id
-        let artworkURLStr = track.highResArtworkURL ?? track.artworkURL
+        let artworkURLStr = track.lockScreenArtworkURL ?? track.highResArtworkURL ?? track.artworkURL
         Task.detached { [trackID, artworkURLStr] in
             var image: UIImage?
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -545,6 +627,11 @@ final class PlayerViewModel: ObservableObject {
             isPitchPreserved = d.bool(forKey: kPitch)
             audio.setPitchPreserved(isPitchPreserved)
         }
+
+        // Restore crossfade duration
+        let cf = d.double(forKey: kCrossfade)
+        crossfadeDuration = cf
+        audio.crossfadeDuration = cf
     }
 
     private func saveRecent() {

@@ -92,6 +92,9 @@ final class AudioPlayerService {
     var onDurationReady:   ((Double) -> Void)?
     var onPlayStateChange: ((Bool) -> Void)?
     var onLoadingChange:   ((Bool) -> Void)?
+    var onApproachingEnd:  (() -> Void)?
+
+    var crossfadeDuration: TimeInterval = 0  // 0 = off / gapless
 
     private var player:         AVPlayer?
     private var currentItem:    AVPlayerItem?
@@ -100,6 +103,10 @@ final class AudioPlayerService {
     private var statusObserver: NSKeyValueObservation?
     private var bufferObserver: NSKeyValueObservation?
     private var rateObserver:   NSKeyValueObservation?
+
+    private var fadingPlayer:  AVPlayer?
+    private var fadeTimer:     Timer?
+    private var approachFired: Bool = false
 
     private let eqState = EQState()
 
@@ -123,25 +130,103 @@ final class AudioPlayerService {
     // MARK: - Playback
 
     func play(url: URL) {
-        stop()
-        onLoadingChange?(true)
+        let cf = crossfadeDuration
+        let hadPlayingPlayer = player != nil && (player?.rate ?? 0) > 0
 
-        let item = AVPlayerItem(url: url)
-        item.audioTimePitchAlgorithm = isPitchPreserved ? .spectral : .varispeed
-        currentItem = item
+        if cf > 0 && hadPlayingPlayer {
+            // --- Crossfade: keep old player fading out, start new one fading in ---
+            approachFired = false
+            fadeTimer?.invalidate()
+            fadeTimer = nil
 
-        if player == nil {
-            player = AVPlayer(playerItem: item)
+            // Tear down observers on the outgoing player but keep it playing
+            if let obs = timeObserver { player?.removeTimeObserver(obs); timeObserver = nil }
+            if let obs = endObserver  { NotificationCenter.default.removeObserver(obs); endObserver = nil }
+            statusObserver?.invalidate(); statusObserver = nil
+            bufferObserver?.invalidate(); bufferObserver = nil
+            rateObserver?.invalidate();   rateObserver   = nil
+            currentItem = nil
+
+            // Fade out the old player
+            let outPlayer = player!
+            fadingPlayer = outPlayer
+            let startVolume = outPlayer.volume
+            let steps = 30
+            let stepInterval = cf / Double(steps)
+            let volStep = startVolume / Float(steps)
+            var stepCount = 0
+            fadeTimer = Timer.scheduledTimer(withTimeInterval: stepInterval, repeats: true) { [weak self] t in
+                stepCount += 1
+                outPlayer.volume = max(0, startVolume - volStep * Float(stepCount))
+                if stepCount >= steps {
+                    t.invalidate()
+                    outPlayer.pause()
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        if self.fadingPlayer === outPlayer { self.fadingPlayer = nil }
+                    }
+                }
+            }
+            RunLoop.main.add(fadeTimer!, forMode: .common)
+
+            // Set up new player, start at volume 0 and fade in
+            let item = AVPlayerItem(url: url)
+            item.audioTimePitchAlgorithm = isPitchPreserved ? .spectral : .varispeed
+            currentItem = item
+            let newPlayer = AVPlayer(playerItem: item)
+            newPlayer.volume = 0
+            player = newPlayer
+            setupEQTap(for: item)
+
+            var fadeInCount = 0
+            let fadeInTimer = Timer(timeInterval: stepInterval, repeats: true) { t in
+                fadeInCount += 1
+                newPlayer.volume = min(1.0, (1.0 / Float(steps)) * Float(fadeInCount))
+                if fadeInCount >= steps { t.invalidate() }
+            }
+            RunLoop.main.add(fadeInTimer, forMode: .common)
+
         } else {
-            player?.replaceCurrentItem(with: item)
+            // No crossfade: stop cleanly then start new player
+            stop()
         }
 
-        setupEQTap(for: item)
+        onLoadingChange?(true)
+
+        let item: AVPlayerItem
+        if cf > 0 && hadPlayingPlayer {
+            item = currentItem!
+        } else {
+            let newItem = AVPlayerItem(url: url)
+            newItem.audioTimePitchAlgorithm = isPitchPreserved ? .spectral : .varispeed
+            currentItem = newItem
+            item = newItem
+            if player == nil {
+                player = AVPlayer(playerItem: item)
+            } else {
+                player?.replaceCurrentItem(with: item)
+            }
+            setupEQTap(for: item)
+        }
 
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard time.isValid, !time.isIndefinite else { return }
-            Task { @MainActor [weak self] in self?.onTimeUpdate?(time.seconds) }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.onTimeUpdate?(time.seconds)
+                // Fire approaching-end callback once per track
+                if self.crossfadeDuration > 0, !self.approachFired {
+                    let dur = item.duration.seconds
+                    if dur.isFinite && dur > 0 {
+                        let remaining = dur - time.seconds
+                        if remaining <= self.crossfadeDuration + 3 {
+                            self.approachFired = true
+                            self.onApproachingEnd?()
+                        }
+                    }
+                }
+            }
         }
 
         statusObserver = item.observe(\.status, options: [.new]) { [weak self] item, _ in
@@ -196,6 +281,9 @@ final class AudioPlayerService {
     }
 
     func stop() {
+        fadeTimer?.invalidate(); fadeTimer = nil
+        fadingPlayer?.pause();   fadingPlayer = nil
+        approachFired = false
         if let obs = timeObserver { player?.removeTimeObserver(obs); timeObserver = nil }
         if let obs = endObserver  { NotificationCenter.default.removeObserver(obs); endObserver = nil }
         statusObserver?.invalidate(); statusObserver = nil
