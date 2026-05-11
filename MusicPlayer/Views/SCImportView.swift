@@ -59,7 +59,7 @@ struct SCImportView: View {
                             .font(.app(20, .bold))
                             .foregroundStyle(.white)
 
-                        Text("Enter your username or paste your profile/likes link.")
+                        Text("Paste your SoundCloud Likes link.\nOpen SoundCloud → Likes → Share → Copy Link.")
                             .font(.app(13))
                             .foregroundStyle(.white.opacity(0.45))
                             .multilineTextAlignment(.center)
@@ -74,7 +74,7 @@ struct SCImportView: View {
                             .foregroundStyle(.white.opacity(0.35))
                             .frame(width: 20)
 
-                        TextField("username or soundcloud.com/you", text: $profileInput)
+                        TextField("soundcloud.com/you/likes", text: $profileInput)
                             .foregroundStyle(.white)
                             .tint(.white)
                             .autocorrectionDisabled()
