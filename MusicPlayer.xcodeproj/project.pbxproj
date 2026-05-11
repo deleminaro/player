@@ -56,6 +56,7 @@
 		AA181033AA181033AA181033 /* DebugLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100033AA100033AA100033 /* DebugLogView.swift */; };
 		AA181034AA181034AA181034 /* SleepTimerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100034AA100034AA100034 /* SleepTimerSheet.swift */; };
 		AA181035AA181035AA181035 /* FullArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100035AA100035AA100035 /* FullArtworkView.swift */; };
+		AA181036AA181036AA181036 /* SCImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100036AA100036AA100036 /* SCImportView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -105,6 +106,7 @@
 		AA100033AA100033AA100033 /* DebugLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogView.swift; sourceTree = "<group>"; };
 		AA100034AA100034AA100034 /* SleepTimerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepTimerSheet.swift; sourceTree = "<group>"; };
 		AA100035AA100035AA100035 /* FullArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullArtworkView.swift; sourceTree = "<group>"; };
+		AA100036AA100036AA100036 /* SCImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCImportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -208,6 +210,7 @@
 				AA100033AA100033AA100033 /* DebugLogView.swift */,
 				AA100034AA100034AA100034 /* SleepTimerSheet.swift */,
 				AA100035AA100035AA100035 /* FullArtworkView.swift */,
+				AA100036AA100036AA100036 /* SCImportView.swift */,
 				AA300007AA300007AA300007 /* Components */,
 			);
 			path = Views;
@@ -348,6 +351,7 @@
 				AA181033AA181033AA181033 /* DebugLogView.swift in Sources */,
 				AA181034AA181034AA181034 /* SleepTimerSheet.swift in Sources */,
 				AA181035AA181035AA181035 /* FullArtworkView.swift in Sources */,
+				AA181036AA181036AA181036 /* SCImportView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

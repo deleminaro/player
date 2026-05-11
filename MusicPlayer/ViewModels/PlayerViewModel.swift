@@ -405,6 +405,21 @@ final class PlayerViewModel: ObservableObject {
         Task { await FirebaseManager.shared.syncLikedTracks(likedTracks) }
     }
 
+    /// Merges imported tracks into likedTracks (skips duplicates). Returns count of new additions.
+    @discardableResult
+    func importSCLikes(_ tracks: [Track]) -> Int {
+        var newCount = 0
+        for track in tracks.reversed() {
+            if !isLiked(track) {
+                likedTracks.append(track)
+                newCount += 1
+            }
+        }
+        saveLiked()
+        Task { await FirebaseManager.shared.syncLikedTracks(likedTracks) }
+        return newCount
+    }
+
     func loadFromFirebase() async {
         let data = await FirebaseManager.shared.loadUserData()
         if !data.liked.isEmpty     { likedTracks = data.liked;     saveLiked() }

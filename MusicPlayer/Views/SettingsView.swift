@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State private var showLogoutConfirm      = false
     @State private var showNameEdit           = false
     @State private var showClearDownloads     = false
+    @State private var showSCImport           = false
     @State private var editingName            = ""
     @State private var avatarItem: PhotosPickerItem?
 
@@ -56,6 +57,32 @@ struct SettingsView: View {
                     settingsGroup("PLAYBACK") {
                         toggleRow(icon: "arrow.counterclockwise", iconBg: Color.orange.opacity(0.2), iconFg: .orange,
                                   title: "Resume on launch", value: $resumeLastTrack)
+                    }
+
+                    settingsGroup("SOUNDCLOUD") {
+                        Button {
+                            showSCImport = true
+                        } label: {
+                            HStack(spacing: 14) {
+                                iconBox("square.and.arrow.down.fill",
+                                        bg: Color(red: 1.0, green: 0.34, blue: 0.0).opacity(0.15),
+                                        fg: Color(red: 1.0, green: 0.34, blue: 0.0))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Import Likes")
+                                        .font(.app(15, .semibold)).foregroundStyle(.white)
+                                    Text(playerVM.likedTracks.isEmpty
+                                         ? "Import your liked tracks from SoundCloud"
+                                         : "\(playerVM.likedTracks.count) tracks in Library")
+                                        .font(.app(12)).foregroundStyle(.white.opacity(0.4))
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.app(12, .semibold))
+                                    .foregroundStyle(.white.opacity(0.22))
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 14).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     settingsGroup("APPEARANCE") {
@@ -161,6 +188,15 @@ struct SettingsView: View {
                 .environmentObject(themeManager)
                 .presentationDetents([.medium])
                 .presentationBackground(card)
+                .presentationCornerRadius(28)
+        }
+        .sheet(isPresented: $showSCImport) {
+            SCImportView()
+                .environmentObject(playerVM)
+                .environmentObject(themeManager)
+                .presentationDetents([.height(500)])
+                .presentationDragIndicator(.hidden)
+                .presentationBackground(themeManager.current.card)
                 .presentationCornerRadius(28)
         }
         .confirmationDialog("Sign Out", isPresented: $showLogoutConfirm, titleVisibility: .visible) {
