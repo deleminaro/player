@@ -526,7 +526,7 @@ final class PlayerViewModel: ObservableObject {
 
         // Fetch artwork in background — custom per-track artwork takes priority
         let trackID = track.id
-        let artworkURLStr = track.highResArtworkURL ?? track.artworkURL
+        let artworkURLStr = track.lockScreenArtworkURL ?? track.highResArtworkURL ?? track.artworkURL
         Task.detached { [trackID, artworkURLStr] in
             var image: UIImage?
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]

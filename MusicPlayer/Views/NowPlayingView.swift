@@ -9,10 +9,12 @@ struct NowPlayingView: View {
     @State private var showSpeed         = false
     @State private var showAddToPlaylist = false
     @State private var showSleepTimer    = false
+    @State private var showFullArtwork   = false
     @State private var isScrubbing       = false
     @State private var hasAppeared       = false
     @State private var waveProgress: Double = 0
     @State private var dragOffset: CGFloat  = 0
+    @State private var canvasPhase: Bool    = false
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private var bg:       Color { themeManager.current.background }
@@ -33,6 +35,7 @@ struct NowPlayingView: View {
                 .animation(.spring(response: 0.45, dampingFraction: 0.8), value: playerVM.currentTrack?.id)
                 .scaleEffect(playerVM.isPlaying ? 1.0 : 0.94)
                 .animation(.spring(response: 0.5, dampingFraction: 0.72), value: playerVM.isPlaying)
+                .onTapGesture { showFullArtwork = true }
 
             Spacer(minLength: 12)
 
@@ -101,12 +104,16 @@ struct NowPlayingView: View {
                     Image(uiImage: customBg)
                         .resizable()
                         .scaledToFill()
+                        .scaleEffect(canvasPhase ? 1.12 : 1.0)
+                        .offset(x: canvasPhase ? 18 : -18, y: canvasPhase ? -12 : 12)
                         .id(playerVM.currentTrack?.id)
                         .transition(.opacity)
                         .animation(.easeInOut(duration: 0.6), value: playerVM.currentTrack?.id)
                 } else if let url = URL(string: playerVM.currentTrack?.highResArtworkURL ?? "") {
                     AsyncImage(url: url) { img in
                         img.resizable().scaledToFill()
+                           .scaleEffect(canvasPhase ? 1.12 : 1.0)
+                           .offset(x: canvasPhase ? 18 : -18, y: canvasPhase ? -12 : 12)
                     } placeholder: { Color.clear }
                         .id(playerVM.currentTrack?.id)
                         .transition(.opacity)
@@ -118,6 +125,15 @@ struct NowPlayingView: View {
                 )
             }
             .ignoresSafeArea()
+            .onAppear {
+                withAnimation(.easeInOut(duration: 16).repeatForever(autoreverses: true)) {
+                    canvasPhase = true
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showFullArtwork) {
+            FullArtworkView(track: playerVM.currentTrack)
+                .environmentObject(themeManager)
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showLyrics) {
