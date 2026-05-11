@@ -1038,39 +1038,71 @@ struct SpeedPickerSheet: View {
     private var waveformBar: some View {
         let speedMin: Float = 0.5
         let speedMax: Float = 2.0
-        let progress = Double((currentSpeed - speedMin) / (speedMax - speedMin))
-        let count = 30
+        let progress = CGFloat((currentSpeed - speedMin) / (speedMax - speedMin))
 
         return VStack(spacing: 10) {
             GeometryReader { geo in
-                Canvas { ctx, size in
-                    let step = size.width / CGFloat(count)
-                    let barW = max(2, step * 0.48)
-                    for i in 0..<count {
-                        let isBig  = i % 5 == 0
-                        let h: CGFloat = isBig ? 1.0 : 0.38
-                        let filled = Double(i) / Double(count) < progress
-                        let barH   = h * size.height
-                        let rect   = CGRect(
-                            x: CGFloat(i) * step + (step - barW) / 2,
-                            y: (size.height - barH) / 2,
-                            width: barW, height: barH
-                        )
-                        ctx.fill(Path(roundedRect: rect, cornerRadius: barW / 2),
-                                 with: .color(filled ? .white : Color.white.opacity(0.2)))
+                let w  = geo.size.width
+                let h  = geo.size.height
+                let pad: CGFloat = 14
+                let sx = pad
+                let sy = h - pad * 0.4
+                let ex = w - pad
+                let ey = pad * 0.4
+
+                let cx = sx + (ex - sx) * progress
+                let cy = sy + (ey - sy) * progress
+
+                ZStack {
+                    Canvas { ctx, size in
+                        // Background diagonal line
+                        var bg = Path()
+                        bg.move(to: CGPoint(x: sx, y: sy))
+                        bg.addLine(to: CGPoint(x: ex, y: ey))
+                        ctx.stroke(bg, with: .color(.white.opacity(0.18)),
+                                   style: StrokeStyle(lineWidth: 3, lineCap: .round))
+
+                        // Filled portion (start → current dot)
+                        if progress > 0.01 {
+                            var fg = Path()
+                            fg.move(to: CGPoint(x: sx, y: sy))
+                            fg.addLine(to: CGPoint(x: cx, y: cy))
+                            ctx.stroke(fg, with: .color(.white),
+                                       style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        }
+
+                        // Snap markers at preset speeds
+                        for snapSpeed: Float in [0.75, 1.0, 1.25] {
+                            let p  = CGFloat((snapSpeed - speedMin) / (speedMax - speedMin))
+                            let mx = sx + (ex - sx) * p
+                            let my = sy + (ey - sy) * p
+                            let r: CGFloat = 3.5
+                            let rect = CGRect(x: mx - r, y: my - r, width: r * 2, height: r * 2)
+                            let isPast = progress >= p
+                            ctx.fill(Path(ellipseIn: rect),
+                                     with: .color(isPast ? .white : .white.opacity(0.35)))
+                        }
                     }
+
+                    // Draggable position dot
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 20, height: 20)
+                        .shadow(color: .black.opacity(0.45), radius: 6)
+                        .position(x: cx, y: cy)
+                        .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.75), value: progress)
                 }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0).onChanged { v in
-                    let pct   = max(0.0, min(1.0, v.location.x / geo.size.width))
+                    let pct   = max(0.0, min(1.0, (v.location.x - sx) / (ex - sx)))
                     var speed = Float(pct) * (speedMax - speedMin) + speedMin
-                    for m in modes where abs(speed - m.speed) < 0.04 { speed = m.speed; break }
+                    for m in modes where abs(speed - m.speed) < 0.045 { speed = m.speed; break }
                     speed = (speed * 100).rounded() / 100
                     currentSpeed = speed
                     onSelect(speed)
                 })
             }
-            .frame(height: 44)
+            .frame(height: 80)
 
             Text(currentSpeed == 1.0 ? "1×" : "\(String(format: "%g", currentSpeed))×")
                 .font(themeManager.font(14, .medium))
