@@ -201,7 +201,7 @@ enum AppFont: String, CaseIterable {
     }
 
     // Global reference — updated on main thread whenever ThemeManager changes the font.
-    nonisolated(unsafe) static var current: AppFont = .system
+    nonisolated(unsafe) static var current: AppFont = .minecraft
 
     func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         switch self {
@@ -230,7 +230,7 @@ final class ThemeManager: ObservableObject {
     @Published private(set) var sliderType:      SliderType     = .waveform2
     @Published private(set) var backgroundStyle: BackgroundStyle = .musicCover
     @Published private(set) var coverStyle:      CoverStyle     = .albumArt
-    @Published private(set) var appFont:         AppFont        = .system
+    @Published private(set) var appFont:         AppFont        = .minecraft
     @Published private(set) var customWallpaper: UIImage?       = nil
     @Published private(set) var customCoverImage: UIImage?      = nil
 
@@ -276,6 +276,7 @@ final class ThemeManager: ObservableObject {
         }
         // Discover the font name now — fonts are guaranteed registered by this point.
         AppFont.discoverFontName()
+        AppFont.current = appFont
         let fontInfo = AppFont.resolvedFontName.map { "Monocraft → \"\($0)\"" } ?? "Monocraft → NOT FOUND (not in bundle)"
         AppLogger.shared.log(fontInfo, category: "Font")
         applyFontAppearance()
