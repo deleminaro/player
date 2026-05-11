@@ -148,9 +148,9 @@ actor SoundCloudService {
         // Strategy 3: search by name part with larger limit
         let searchName = slug.range(of: #"-\d+$"#, options: .regularExpression)
             .map { String(slug[..<$0.lowerBound]) } ?? slug
-        AppLogger.shared.log("Searching by name: '\(searchName)' limit=200", category: "Network")
+        AppLogger.shared.log("Searching by name: '\(searchName)' limit=50", category: "Network")
         do {
-            let results = try await searchUsers(query: searchName, limit: 200)
+            let results = try await searchUsers(query: searchName, limit: 50)
             AppLogger.shared.log("Name search: \(results.count) results", category: "Network")
             if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) { return exact }
         } catch {
