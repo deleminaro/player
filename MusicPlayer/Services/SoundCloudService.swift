@@ -124,9 +124,17 @@ actor SoundCloudService {
 
         guard !slug.isEmpty else { throw SCError.invalidURL }
 
-        // Search for matching users and pick the one whose permalink matches exactly.
-        // Falls back to first result if no exact permalink match (handles display-name searches).
-        let results = try await searchArtists(query: slug)
+        // SoundCloud appends numeric suffixes when display names conflict: "delami-257483686"
+        // Search doesn't match on the number part, so strip it for the query
+        // but keep the full slug for exact permalink matching.
+        let searchQuery: String
+        if let range = slug.range(of: #"-\d+$"#, options: .regularExpression) {
+            searchQuery = String(slug[..<range.lowerBound])
+        } else {
+            searchQuery = slug
+        }
+
+        let results = try await searchArtists(query: searchQuery)
         if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) {
             return exact
         }
