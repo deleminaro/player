@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import GoogleSignIn
 
 @main
 struct MusicPlayerApp: App {
@@ -29,6 +30,8 @@ struct MusicPlayerApp: App {
             .onOpenURL { url in
                 if url.scheme == "postor" {
                     SpotifyRemoteService.shared.handleCallback(url: url)
+                } else {
+                    GIDSignIn.sharedInstance.handle(url)
                 }
             }
         }
