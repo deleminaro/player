@@ -41,13 +41,19 @@
         <string>spotify</string>
     </array>
 
-    <!-- Spotify PKCE callback URL scheme -->
+    <!-- Spotify PKCE callback + Google Sign-In callback URL schemes -->
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
             <key>CFBundleURLSchemes</key>
             <array>
                 <string>postor</string>
+            </array>
+        </dict>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.409887300739-98mplivk915u6dlm77bk6vpgn3e7b36i</string>
             </array>
         </dict>
     </array>
