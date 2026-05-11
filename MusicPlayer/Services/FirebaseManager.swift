@@ -97,7 +97,9 @@ final class FirebaseManager: ObservableObject {
     // MARK: - Sign in with Google
 
     func signInWithGoogle() async throws {
-        guard let clientID = FirebaseApp.app()?.options.clientID else { return }
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            throw PError.googleNotConfigured
+        }
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
 
         let windowScene = UIApplication.shared.connectedScenes
@@ -223,14 +225,15 @@ final class FirebaseManager: ObservableObject {
     // MARK: - Errors
 
     enum PError: LocalizedError {
-        case usernameTaken, userNotFound, invalidUsername, invalidCredential, noViewController
+        case usernameTaken, userNotFound, invalidUsername, invalidCredential, noViewController, googleNotConfigured
         var errorDescription: String? {
             switch self {
-            case .usernameTaken:     return "Username is already taken."
-            case .userNotFound:      return "No account found with that username."
-            case .invalidUsername:   return "Please enter a valid username."
-            case .invalidCredential: return "Unable to complete sign in. Please try again."
-            case .noViewController:  return "Unable to present sign in screen."
+            case .usernameTaken:       return "Username is already taken."
+            case .userNotFound:        return "No account found with that username."
+            case .invalidUsername:     return "Please enter a valid username."
+            case .invalidCredential:   return "Unable to complete sign in. Please try again."
+            case .noViewController:    return "Unable to present sign in screen."
+            case .googleNotConfigured: return "Google Sign-In is not configured. Enable it in Firebase Console and replace GoogleService-Info.plist."
             }
         }
     }
