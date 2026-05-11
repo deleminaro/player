@@ -246,6 +246,7 @@ struct SCArtist: Identifiable, Decodable {
     let username: String
     let avatarURL: String?
     let followersCount: Int?
+    let permalink: String?      // URL slug, e.g. "delami-257483686"
 
     var formattedFollowers: String {
         guard let n = followersCount else { return "" }
@@ -255,7 +256,7 @@ struct SCArtist: Identifiable, Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, username
+        case id, username, permalink
         case avatarURL      = "avatar_url"
         case followersCount = "followers_count"
     }

@@ -103,34 +103,35 @@ actor SoundCloudService {
     // MARK: - User resolve & likes import
 
     /// Resolves a SoundCloud username/URL to a user object.
+    /// Uses search + permalink matching (the /resolve endpoint is restricted for this client_id).
     func resolveUser(permalink: String) async throws -> SCArtist {
+        // Extract clean permalink slug from any input form:
+        // "delami", "@delami", "soundcloud.com/delami/likes?...", full URL, etc.
         var input = permalink
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
             .replacingOccurrences(of: "https://", with: "")
             .replacingOccurrences(of: "http://",  with: "")
             .replacingOccurrences(of: "www.",      with: "")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "@/"))
+            .trimmingCharacters(in: CharacterSet(charactersIn: "@/ "))
 
-        // Strip to first path component (handles .../username/likes, .../username/tracks, etc.)
         if input.hasPrefix("soundcloud.com/") {
-            let afterDomain = String(input.dropFirst("soundcloud.com/".count))
-            let username = afterDomain.components(separatedBy: "/").first ?? afterDomain
-            input = "soundcloud.com/\(username)"
-        } else {
-            // Plain username — take only the first path component
-            input = "soundcloud.com/\(input.components(separatedBy: "/").first ?? input)"
+            input = String(input.dropFirst("soundcloud.com/".count))
         }
-        let profileURL = "https://\(input)"
-        var comps = URLComponents(string: "\(base)/resolve")!
-        comps.queryItems = [
-            URLQueryItem(name: "url",       value: profileURL),
-            URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
-        ]
-        guard let url = comps.url else { throw SCError.invalidURL }
-        let (data, resp) = try await URLSession.shared.data(from: url)
-        try validate(resp)
-        return try JSONDecoder().decode(SCArtist.self, from: data)
+        // Take only the first path component (strips /likes, /tracks, query strings, etc.)
+        let slug = input.components(separatedBy: "/").first
+            .flatMap { $0.components(separatedBy: "?").first } ?? input
+
+        guard !slug.isEmpty else { throw SCError.invalidURL }
+
+        // Search for matching users and pick the one whose permalink matches exactly.
+        // Falls back to first result if no exact permalink match (handles display-name searches).
+        let results = try await searchArtists(query: slug)
+        if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) {
+            return exact
+        }
+        if let first = results.first { return first }
+        throw SCError.badResponse(404)
     }
 
     /// Fetches all liked tracks for a user (paginates until empty or 500 tracks).
