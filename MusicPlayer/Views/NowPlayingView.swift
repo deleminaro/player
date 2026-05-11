@@ -298,8 +298,7 @@ struct NowPlayingView: View {
     // MARK: - Track info
 
     private var trackInfo: some View {
-        let track  = playerVM.currentTrack
-        let accent = themeManager.current.primary
+        let track = playerVM.currentTrack
         return VStack(alignment: .leading, spacing: 4) {
             Text(track?.title ?? "Not Playing")
                 .font(themeManager.font(22, .bold))
