@@ -124,35 +124,41 @@ actor SoundCloudService {
 
         guard !slug.isEmpty else { throw SCError.invalidURL }
 
-        AppLogger.shared.log("Resolving SC user slug: \(slug)", category: "Network")
+        AppLogger.shared.log("Resolving SC user: \(slug)", category: "Network")
 
-        // SoundCloud encodes the real user ID as the numeric suffix: "delami-257483686"
-        // Try fetching /users/{id} directly — most reliable, no search ambiguity.
-        if let idRange = slug.range(of: #"-(\d{6,})$"#, options: .regularExpression) {
-            let idStr = String(slug[idRange].dropFirst()) // drop the leading "-"
-            if let userID = Int(idStr) {
-                AppLogger.shared.log("Trying direct /users/\(userID)", category: "Network")
-                if let user = try? await fetchUserByID(userID) {
-                    return user
-                }
-            }
+        // Strategy 1: v1 API resolve (different access policy from v2)
+        do {
+            let user = try await resolveUserV1(slug: slug)
+            AppLogger.shared.log("Resolved via v1: id=\(user.id)", category: "Network")
+            return user
+        } catch {
+            AppLogger.shared.log("v1 resolve failed: \(error)", category: "Network")
         }
 
-        // Fallback: search by display name part, match by full permalink
-        let searchQuery = slug.range(of: #"-\d+$"#, options: .regularExpression)
+        // Strategy 2: v2 /search/users — strip numeric suffix for better results
+        let searchName = slug.range(of: #"-\d+$"#, options: .regularExpression)
             .map { String(slug[..<$0.lowerBound]) } ?? slug
+        AppLogger.shared.log("Searching users: '\(searchName)'", category: "Network")
+        do {
+            let results = try await searchArtists(query: searchName)
+            AppLogger.shared.log("User search returned \(results.count) results", category: "Network")
+            if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) { return exact }
+            if let first = results.first { return first }
+        } catch {
+            AppLogger.shared.log("User search failed: \(error)", category: "Network")
+        }
 
-        AppLogger.shared.log("SC user search fallback: '\(searchQuery)'", category: "Network")
-        let results = try await searchArtists(query: searchQuery)
-        AppLogger.shared.log("SC user search returned \(results.count) results", category: "Network")
-        if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) { return exact }
-        if let first = results.first { return first }
+        AppLogger.shared.log("Could not resolve user: \(slug)", category: "Network")
         throw SCError.badResponse(404)
     }
 
-    private func fetchUserByID(_ id: Int) async throws -> SCArtist {
-        var comps = URLComponents(string: "\(base)/users/\(id)")!
-        comps.queryItems = [URLQueryItem(name: "client_id", value: Constants.soundcloudClientID)]
+    private func resolveUserV1(slug: String) async throws -> SCArtist {
+        // SoundCloud v1 API has a different allowlist from v2
+        var comps = URLComponents(string: "https://api.soundcloud.com/resolve")!
+        comps.queryItems = [
+            URLQueryItem(name: "url",       value: "https://soundcloud.com/\(slug)"),
+            URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
+        ]
         guard let url = comps.url else { throw SCError.invalidURL }
         let (data, resp) = try await URLSession.shared.data(from: url)
         try validate(resp)
