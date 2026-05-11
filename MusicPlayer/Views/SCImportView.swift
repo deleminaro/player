@@ -368,7 +368,8 @@ struct SCImportView: View {
             } catch let err as SoundCloudService.SCError {
                 let msg: String
                 switch err {
-                case .badResponse(404): msg = "Profile not found. Check your username."
+                case .badResponse(404): msg = "Could not load likes. Check the link and try again."
+                case .badResponse(401), .badResponse(403): msg = "Access denied — likes may be private."
                 default: msg = err.errorDescription ?? "Something went wrong."
                 }
                 await MainActor.run { withAnimation { phase = .error(msg) } }

@@ -165,32 +165,57 @@ actor SoundCloudService {
     }
 
     /// Fetches all liked tracks for a user (paginates until empty or 500 tracks).
+    /// Tries /likes/tracks first, falls back to /likes (mixed likes endpoint).
     func fetchUserLikes(userID: Int) async throws -> [Track] {
+        AppLogger.shared.log("Fetching likes for user \(userID)", category: "Network")
+        do {
+            let tracks = try await paginateLikes(
+                startURL: "\(base)/users/\(userID)/likes/tracks",
+                decode: { data in
+                    struct Page: Decodable { let collection: [Track]; let next_href: String? }
+                    let page = try JSONDecoder().decode(Page.self, from: data)
+                    return (page.collection, page.next_href)
+                }
+            )
+            AppLogger.shared.log("Likes via /likes/tracks: \(tracks.count) tracks", category: "Network")
+            return tracks
+        } catch {
+            AppLogger.shared.log("Likes /likes/tracks failed (\(error)), trying /likes", category: "Network")
+        }
+        // /likes returns {kind:"like", track:{...}} objects — extract the track sub-object
+        struct LikeItem: Decodable { let track: Track? }
+        let tracks = try await paginateLikes(
+            startURL: "\(base)/users/\(userID)/likes",
+            decode: { data in
+                struct Page: Decodable { let collection: [LikeItem]; let next_href: String? }
+                let page = try JSONDecoder().decode(Page.self, from: data)
+                return (page.collection.compactMap { $0.track }, page.next_href)
+            }
+        )
+        AppLogger.shared.log("Likes via /likes: \(tracks.count) tracks", category: "Network")
+        return tracks
+    }
+
+    private func paginateLikes(startURL: String,
+                                decode: (Data) throws -> ([Track], String?)) async throws -> [Track] {
         var all: [Track] = []
-        var nextURLStr: String? = "\(base)/users/\(userID)/likes/tracks"
+        var nextURLStr: String? = startURL
         while let urlStr = nextURLStr, all.count < 500 {
             var comps = URLComponents(string: urlStr)!
             var items = comps.queryItems ?? []
-            func setIfMissing(_ name: String, _ value: String) {
-                if !items.contains(where: { $0.name == name }) {
-                    items.append(URLQueryItem(name: name, value: value))
-                }
+            func set(_ name: String, _ value: String) {
+                if !items.contains(where: { $0.name == name }) { items.append(URLQueryItem(name: name, value: value)) }
             }
-            setIfMissing("client_id",           Constants.soundcloudClientID)
-            setIfMissing("limit",               "200")
-            setIfMissing("linked_partitioning", "1")
+            set("client_id", Constants.soundcloudClientID)
+            set("limit", "50")
+            set("linked_partitioning", "1")
             comps.queryItems = items
             guard let url = comps.url else { break }
             let (data, resp) = try await URLSession.shared.data(from: url)
             try validate(resp)
-            struct LikesPage: Decodable {
-                let collection: [Track]
-                // swiftlint:disable:next identifier_name
-                let next_href: String?
-            }
-            let page = try JSONDecoder().decode(LikesPage.self, from: data)
-            all.append(contentsOf: page.collection)
-            nextURLStr = page.collection.isEmpty ? nil : page.next_href
+            let (tracks, next) = try decode(data)
+            all.append(contentsOf: tracks)
+            nextURLStr = tracks.isEmpty ? nil : next
         }
         return all
     }
