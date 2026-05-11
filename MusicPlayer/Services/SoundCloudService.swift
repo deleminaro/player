@@ -135,21 +135,43 @@ actor SoundCloudService {
             AppLogger.shared.log("v1 resolve failed: \(error)", category: "Network")
         }
 
-        // Strategy 2: v2 /search/users — strip numeric suffix for better results
+        // Strategy 2: search with full slug (e.g. "delami-257483686") — finds low-follower accounts
+        AppLogger.shared.log("Searching full slug: '\(slug)'", category: "Network")
+        do {
+            let results = try await searchUsers(query: slug, limit: 10)
+            AppLogger.shared.log("Full-slug search: \(results.count) results", category: "Network")
+            if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) { return exact }
+        } catch {
+            AppLogger.shared.log("Full-slug search failed: \(error)", category: "Network")
+        }
+
+        // Strategy 3: search by name part with larger limit
         let searchName = slug.range(of: #"-\d+$"#, options: .regularExpression)
             .map { String(slug[..<$0.lowerBound]) } ?? slug
-        AppLogger.shared.log("Searching users: '\(searchName)'", category: "Network")
+        AppLogger.shared.log("Searching by name: '\(searchName)' limit=200", category: "Network")
         do {
-            let results = try await searchArtists(query: searchName)
-            AppLogger.shared.log("User search returned \(results.count) results", category: "Network")
+            let results = try await searchUsers(query: searchName, limit: 200)
+            AppLogger.shared.log("Name search: \(results.count) results", category: "Network")
             if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) { return exact }
-            if let first = results.first { return first }
         } catch {
-            AppLogger.shared.log("User search failed: \(error)", category: "Network")
+            AppLogger.shared.log("Name search failed: \(error)", category: "Network")
         }
 
         AppLogger.shared.log("Could not resolve user: \(slug)", category: "Network")
         throw SCError.badResponse(404)
+    }
+
+    private func searchUsers(query: String, limit: Int) async throws -> [SCArtist] {
+        var comps = URLComponents(string: "\(base)/search/users")!
+        comps.queryItems = [
+            URLQueryItem(name: "q",         value: query),
+            URLQueryItem(name: "client_id", value: Constants.soundcloudClientID),
+            URLQueryItem(name: "limit",     value: "\(limit)"),
+        ]
+        guard let url = comps.url else { throw SCError.invalidURL }
+        let (data, resp) = try await URLSession.shared.data(from: url)
+        try validate(resp)
+        return try JSONDecoder().decode(SearchResponse<SCArtist>.self, from: data).collection
     }
 
     private func resolveUserV1(slug: String) async throws -> SCArtist {
