@@ -19,11 +19,12 @@ struct Track: Identifiable, Hashable {
     let source: TrackSource
     let previewURL: String?    // Spotify 30s MP3 preview
     let spotifyURI: String?
+    let waveformURL: String?   // SoundCloud waveform image URL
 
     init(id: Int, title: String, username: String, artworkURL: String?,
          duration: Int, permalinkURL: String, media: Media?,
          source: TrackSource = .soundcloud, previewURL: String? = nil,
-         spotifyURI: String? = nil) {
+         spotifyURI: String? = nil, waveformURL: String? = nil) {
         self.id           = id
         self.title        = title
         self.username     = username
@@ -34,6 +35,7 @@ struct Track: Identifiable, Hashable {
         self.source       = source
         self.previewURL   = previewURL
         self.spotifyURI   = spotifyURI
+        self.waveformURL  = waveformURL
     }
 
     var durationFormatted: String {
@@ -118,6 +120,7 @@ extension Track: Codable {
         case artworkURL   = "artwork_url"
         case duration
         case permalinkURL = "permalink_url"
+        case waveformURL  = "waveform_url"
         case user
     }
 
@@ -136,6 +139,7 @@ extension Track: Codable {
         source       = (try? c.decode(TrackSource.self, forKey: .source)) ?? .soundcloud
         previewURL   = try? c.decodeIfPresent(String.self, forKey: .previewURL)
         spotifyURI   = try? c.decodeIfPresent(String.self, forKey: .spotifyURI)
+        waveformURL  = try? c.decodeIfPresent(String.self, forKey: .waveformURL)
 
         let u  = try c.nestedContainer(keyedBy: UserKeys.self, forKey: .user)
         username = try u.decode(String.self, forKey: .username)
@@ -150,8 +154,9 @@ extension Track: Codable {
         try c.encode(permalinkURL, forKey: .permalinkURL)
         try c.encodeIfPresent(media, forKey: .media)
         try c.encode(source,       forKey: .source)
-        try c.encodeIfPresent(previewURL, forKey: .previewURL)
-        try c.encodeIfPresent(spotifyURI, forKey: .spotifyURI)
+        try c.encodeIfPresent(previewURL,  forKey: .previewURL)
+        try c.encodeIfPresent(spotifyURI,  forKey: .spotifyURI)
+        try c.encodeIfPresent(waveformURL, forKey: .waveformURL)
 
         var u = c.nestedContainer(keyedBy: UserKeys.self, forKey: .user)
         try u.encode(username, forKey: .username)

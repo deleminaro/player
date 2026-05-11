@@ -15,6 +15,7 @@ struct NowPlayingView: View {
     @State private var waveProgress: Double = 0
     @State private var dragOffset: CGFloat  = 0
     @State private var canvasPhase: Bool    = false
+    @State private var waveformData: [CGFloat] = []   // real SoundCloud waveform
 
     private let speeds: [Float] = [0.5, 0.75, 1.0, 1.15, 1.25, 1.5, 2.0]
     private var bg:       Color { themeManager.current.background }
@@ -64,16 +65,19 @@ struct NowPlayingView: View {
             .onAppear {
                 hasAppeared = false
                 withAnimation { hasAppeared = true }
-                waveProgress = playerVM.duration > 0 ? playerVM.currentTime / playerVM.duration : 0
+                waveProgress = displayDuration > 0 ? playerVM.currentTime / displayDuration : 0
+                loadWaveform()
             }
             .onChange(of: playerVM.currentTrack?.id) { _, _ in
                 hasAppeared = false
                 withAnimation { hasAppeared = true }
                 waveProgress = 0
+                waveformData = []
+                loadWaveform()
             }
             .onChange(of: playerVM.currentTime) { _, t in
                 guard !isScrubbing else { return }
-                let p = playerVM.duration > 0 ? t / playerVM.duration : 0
+                let p = displayDuration > 0 ? t / displayDuration : 0
                 withAnimation(.linear(duration: 0.5)) { waveProgress = p }
             }
         }
@@ -221,6 +225,7 @@ struct NowPlayingView: View {
 
             Menu {
                 Button { showEQ = true } label: { Label("Equalizer", systemImage: "slider.vertical.3") }
+                Button { showSleepTimer = true } label: { Label("Sleep Timer", systemImage: "moon.zzz") }
                 Button { showQueue = true } label: { Label("Queue", systemImage: "list.bullet") }
                 Button { showLyrics = true } label: { Label("Lyrics", systemImage: "quote.bubble") }
                 Button { showAddToPlaylist = true } label: { Label("Add to Playlist", systemImage: "music.note.list") }
@@ -293,74 +298,33 @@ struct NowPlayingView: View {
     // MARK: - Track info
 
     private var trackInfo: some View {
-        let liked  = playerVM.currentTrack.map { playerVM.isLiked($0) } == true
         let track  = playerVM.currentTrack
         let accent = themeManager.current.primary
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(track?.title ?? "Not Playing")
+                .font(themeManager.font(22, .bold))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .contentTransition(.opacity)
+                .animation(.easeInOut(duration: 0.3), value: track?.id)
 
-        return HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(track?.title ?? "Not Playing")
-                    .font(themeManager.font(18, .bold))
-                    .foregroundStyle(.white)
+            HStack(spacing: 8) {
+                Text(track?.username ?? "")
+                    .font(themeManager.font(14))
+                    .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
                     .contentTransition(.opacity)
-                    .animation(.easeInOut(duration: 0.3), value: track?.id)
-
-                HStack(spacing: 8) {
-                    Text(track?.username ?? "")
-                        .font(themeManager.font(13))
-                        .foregroundStyle(accent.opacity(0.85))
-                        .lineLimit(1)
-                        .contentTransition(.opacity)
-                        .animation(.easeInOut(duration: 0.3).delay(0.05), value: track?.id)
-
-                    qualityBadge(for: track)
+                    .animation(.easeInOut(duration: 0.3).delay(0.05), value: track?.id)
+                if track?.source == .spotify {
+                    Text("PREVIEW")
+                        .font(.app(8, .bold)).kerning(0.5)
+                        .foregroundStyle(Color(red: 0.11, green: 0.73, blue: 0.33))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Color(red: 0.11, green: 0.73, blue: 0.33).opacity(0.15), in: Capsule())
                 }
             }
-            Spacer()
-            Button {
-                if let t = track { playerVM.toggleLike(t) }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(liked ? Color.pink.opacity(0.18) : Color.white.opacity(0.1))
-                        .frame(width: 46, height: 46)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
-                    Image(systemName: liked ? "heart.fill" : "heart")
-                        .font(.app(19))
-                        .foregroundStyle(liked ? .pink : .white.opacity(0.6))
-                        .scaleEffect(liked ? 1.1 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
-                        .contentTransition(.symbolEffect(.replace))
-                }
-            }
-            .buttonStyle(ScaleButtonStyle(scale: 0.85))
-            .sensoryFeedback(.impact(weight: .medium), trigger: liked)
         }
-    }
-
-    @ViewBuilder
-    private func qualityBadge(for track: Track?) -> some View {
-        let accent = themeManager.current.primary
-        if track?.source == .spotify {
-            badge(icon: "s.circle.fill", label: "PREVIEW", color: Color(red: 0.11, green: 0.73, blue: 0.33))
-        } else {
-            badge(icon: "waveform", label: "LOSSLESS", color: accent)
-        }
-    }
-
-    private func badge(icon: String, label: String, color: Color) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.app(8, .bold))
-            Text(label)
-                .font(.app(8, .bold))
-                .kerning(0.5)
-        }
-        .foregroundStyle(color)
-        .padding(.horizontal, 7).padding(.vertical, 3)
-        .background(color.opacity(0.15), in: Capsule())
-        .overlay(Capsule().stroke(color.opacity(0.3), lineWidth: 0.5))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Progress slider (switches on sliderType)
@@ -374,9 +338,9 @@ struct NowPlayingView: View {
         }
     }
 
-    // Waveform — symmetric bars growing from center (unique per song)
+    // Waveform — symmetric bars growing from center; uses real SoundCloud data when available
     private var waveform2Progress: some View {
-        let bars  = waveformHeights(for: playerVM.currentTrack?.id ?? 0)
+        let bars  = effectiveWaveformBars
         let accent = themeManager.current.primary
 
         return VStack(spacing: 6) {
@@ -412,7 +376,7 @@ struct NowPlayingView: View {
                         isScrubbing = true
                         let p = max(0, min(1, v.location.x / geo.size.width))
                         waveProgress = p
-                        playerVM.seek(to: p * playerVM.duration)
+                        playerVM.seek(to: p * displayDuration)
                     }
                     .onEnded { _ in isScrubbing = false }
                 )
@@ -445,7 +409,7 @@ struct NowPlayingView: View {
                             isScrubbing = true
                             let p = max(0, min(1, v.location.x / geo.size.width))
                             waveProgress = p
-                            playerVM.seek(to: p * playerVM.duration)
+                            playerVM.seek(to: p * displayDuration)
                         }
                         .onEnded { _ in isScrubbing = false }
                 )
@@ -503,7 +467,7 @@ struct NowPlayingView: View {
                             isScrubbing = true
                             let p = max(0, min(1, v.location.x / geo.size.width))
                             waveProgress = p
-                            playerVM.seek(to: p * playerVM.duration)
+                            playerVM.seek(to: p * displayDuration)
                         }
                         .onEnded { _ in isScrubbing = false }
                     )
@@ -518,11 +482,21 @@ struct NowPlayingView: View {
         HStack {
             Text(formatTime(playerVM.currentTime))
             Spacer()
-            Text(formatTime(max(0, playerVM.duration - playerVM.currentTime)))
+            Text(formatTime(max(0, displayDuration - playerVM.currentTime)))
         }
         .font(themeManager.font(11, .medium))
         .foregroundStyle(.white.opacity(0.4))
         .monospacedDigit()
+    }
+
+    // Use track metadata duration when AVPlayer reports an unreliable value (e.g. HLS streams)
+    private var displayDuration: Double {
+        let fromTrack  = Double(playerVM.currentTrack?.duration ?? 0) / 1000.0
+        let fromPlayer = playerVM.duration
+        if fromTrack > 0 && (fromPlayer <= 0 || !fromPlayer.isFinite || fromPlayer > fromTrack * 4) {
+            return fromTrack
+        }
+        return fromPlayer > 0 ? fromPlayer : fromTrack
     }
 
     // MARK: - Controls
@@ -550,14 +524,12 @@ struct NowPlayingView: View {
 
             // Previous
             Button { playerVM.skipPrevious() } label: {
-                ZStack {
-                    Circle().fill(Color.white.opacity(0.1)).frame(width: 56, height: 56)
-                    Image(systemName: "backward.end.fill")
-                        .font(.app(24, .semibold))
-                        .foregroundStyle(.white)
-                }
+                Image(systemName: "backward.end.fill")
+                    .font(.app(26, .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.88))
+            .buttonStyle(ScaleButtonStyle(scale: 0.85))
 
             Spacer()
 
@@ -566,8 +538,8 @@ struct NowPlayingView: View {
                 ZStack {
                     Circle()
                         .fill(.white)
-                        .frame(width: 72, height: 72)
-                        .shadow(color: .white.opacity(0.18), radius: 18, y: 4)
+                        .frame(width: 70, height: 70)
+                        .shadow(color: .white.opacity(0.15), radius: 16, y: 4)
                     if playerVM.playerState == .loading {
                         ProgressView().tint(.black).scaleEffect(1.1)
                     } else {
@@ -587,14 +559,12 @@ struct NowPlayingView: View {
 
             // Next
             Button { playerVM.skipNext() } label: {
-                ZStack {
-                    Circle().fill(Color.white.opacity(0.1)).frame(width: 56, height: 56)
-                    Image(systemName: "forward.end.fill")
-                        .font(.app(24, .semibold))
-                        .foregroundStyle(.white)
-                }
+                Image(systemName: "forward.end.fill")
+                    .font(.app(26, .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.88))
+            .buttonStyle(ScaleButtonStyle(scale: 0.85))
             .sensoryFeedback(.impact(weight: .medium), trigger: playerVM.currentTrack?.id)
 
             Spacer()
@@ -629,62 +599,80 @@ struct NowPlayingView: View {
         }
     }
 
-    // MARK: - Action row
+    // MARK: - Action row (two pill containers)
 
     private var actionRow: some View {
-        HStack(spacing: 0) {
-            actionPill(icon: "text.alignleft",    label: "Lyrics",
-                       tint: .white.opacity(0.65)) { showLyrics = true }
-            actionPill(icon: "slider.vertical.3", label: "EQ",
-                       tint: .white.opacity(0.65)) { showEQ = true }
-            actionPill(icon: speedIcon(playerVM.playbackSpeed),
-                       label: playerVM.playbackSpeed == 1.0 ? "Speed" : "\(String(format: "%g", playerVM.playbackSpeed))×",
-                       tint: playerVM.playbackSpeed == 1.0 ? .white.opacity(0.65) : themeManager.current.primary) { showSpeed = true }
-            actionPill(icon: "list.bullet",       label: "Queue",
-                       tint: .white.opacity(0.65),
-                       badge: playerVM.queue.isEmpty ? nil : "\(playerVM.queue.count)") { showQueue = true }
-            actionPill(
-                icon: playerVM.sleepTimerMode == .off ? "moon.zzz" : "moon.zzz.fill",
-                label: sleepTimerLabel,
-                tint: playerVM.sleepTimerMode == .off ? .white.opacity(0.65) : themeManager.current.primary
-            ) { showSleepTimer = true }
-            actionPill(icon: "music.note.list",   label: "Playlist",
-                       tint: .white.opacity(0.65)) { showAddToPlaylist = true }
-        }
-        .padding(.horizontal, 4).padding(.vertical, 6)
-        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20))
-    }
+        let liked  = playerVM.currentTrack.map { playerVM.isLiked($0) } == true
+        let track  = playerVM.currentTrack
+        let accent = themeManager.current.primary
+        let qCount = playerVM.queue.count
 
-    private func actionPill(icon: String, label: String, tint: Color,
-                            badge: String? = nil, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 5) {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: icon)
-                        .font(.app(19, .regular))
-                        .foregroundStyle(tint)
-                        .frame(height: 24)
+        return HStack(spacing: 10) {
+            // Left pill: like | lyrics | add-to-playlist
+            HStack(spacing: 20) {
+                Button {
+                    if let t = track { playerVM.toggleLike(t) }
+                } label: {
+                    Image(systemName: liked ? "heart.fill" : "heart")
+                        .font(.app(19))
+                        .foregroundStyle(liked ? .pink : .white.opacity(0.7))
+                        .scaleEffect(liked ? 1.1 : 1.0)
                         .contentTransition(.symbolEffect(.replace))
-                    if let b = badge {
-                        Text(b)
-                            .font(.app(8, .black))
-                            .foregroundStyle(.black)
-                            .padding(3.5)
-                            .background(themeManager.current.primary, in: Circle())
-                            .offset(x: 10, y: -8)
-                            .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: liked)
+                }
+                .buttonStyle(ScaleButtonStyle(scale: 0.85))
+                .sensoryFeedback(.impact(weight: .medium), trigger: liked)
+
+                Button { showLyrics = true } label: {
+                    Image(systemName: "quote.bubble")
+                        .font(.app(19))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .buttonStyle(ScaleButtonStyle(scale: 0.85))
+
+                Button { showAddToPlaylist = true } label: {
+                    Image(systemName: "music.note.list")
+                        .font(.app(19))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .buttonStyle(ScaleButtonStyle(scale: 0.85))
+            }
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .background(Color.white.opacity(0.1), in: Capsule())
+
+            Spacer()
+
+            // Right pill: speed | queue
+            HStack(spacing: 16) {
+                Button { showSpeed = true } label: {
+                    Text(playerVM.playbackSpeed == 1.0 ? "1×"
+                         : "\(String(format: "%g", playerVM.playbackSpeed))×")
+                        .font(themeManager.font(14, .semibold))
+                        .foregroundStyle(playerVM.playbackSpeed == 1.0 ? .white.opacity(0.7) : accent)
+                        .monospacedDigit()
+                }
+                .buttonStyle(ScaleButtonStyle(scale: 0.85))
+
+                Button { showQueue = true } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "list.bullet")
+                            .font(.app(19))
+                            .foregroundStyle(.white.opacity(0.7))
+                        if qCount > 0 {
+                            Text("\(qCount)")
+                                .font(.app(8, .black))
+                                .foregroundStyle(.black)
+                                .padding(3)
+                                .background(accent, in: Circle())
+                                .offset(x: 10, y: -8)
+                        }
                     }
                 }
-                Text(label)
-                    .font(themeManager.font(9, .medium))
-                    .foregroundStyle(.white.opacity(0.4))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                .buttonStyle(ScaleButtonStyle(scale: 0.85))
             }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 52)
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .background(Color.white.opacity(0.1), in: Capsule())
         }
-        .buttonStyle(ScaleButtonStyle(scale: 0.84))
     }
 
     // MARK: - Helpers
@@ -714,12 +702,38 @@ struct NowPlayingView: View {
         return "play.circle"
     }
 
-    private func waveformHeights(for seed: Int) -> [CGFloat] {
+    // Returns real waveform data if loaded, otherwise a seeded pseudo-random fallback
+    private var effectiveWaveformBars: [CGFloat] {
+        if !waveformData.isEmpty { return waveformData }
+        return pseudoWaveform(for: playerVM.currentTrack?.id ?? 0)
+    }
+
+    private func pseudoWaveform(for seed: Int) -> [CGFloat] {
         var rng = seed &* 1664525 &+ 1013904223
         return (0..<52).map { _ in
             rng = rng &* 1664525 &+ 1013904223
             let v = CGFloat((rng >> 16) & 0xFFFF) / 65535.0
             return 0.2 + v * 0.8
+        }
+    }
+
+    private func loadWaveform() {
+        guard let rawURL = playerVM.currentTrack?.waveformURL else { return }
+        // SoundCloud serves waveforms as PNG; the JSON variant uses the same URL with .json
+        let jsonURLStr = rawURL.replacingOccurrences(of: ".png", with: ".json")
+        guard let url = URL(string: jsonURLStr) else { return }
+        Task {
+            guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
+            struct WF: Decodable { let samples: [Int]; let height: Int }
+            guard let wf = try? JSONDecoder().decode(WF.self, from: data), wf.height > 0 else { return }
+            let maxH = CGFloat(wf.height)
+            // Downsample to 52 bars
+            let raw  = wf.samples.map { CGFloat($0) / maxH }
+            let step = max(1, raw.count / 52)
+            let bars = stride(from: 0, to: raw.count, by: step).prefix(52).map {
+                max(0.07, raw[$0])
+            }
+            await MainActor.run { waveformData = Array(bars) }
         }
     }
 }
