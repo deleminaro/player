@@ -3,6 +3,12 @@ import Combine
 import MediaPlayer
 import UIKit
 
+enum SleepTimerMode: Equatable {
+    case off
+    case endOfTrack
+    case duration(TimeInterval)  // seconds from now
+}
+
 @MainActor
 final class PlayerViewModel: ObservableObject {
 
@@ -23,6 +29,7 @@ final class PlayerViewModel: ObservableObject {
     @Published var isShuffling:       Bool            = false
     @Published var repeatMode:        RepeatMode      = .off
     @Published var isPitchPreserved:  Bool            = true
+    @Published var sleepTimerEnd: Date? = nil
 
     var nextTrack: Track? {
         guard let idx = queue.firstIndex(where: { $0.track.id == currentTrack?.id }),
@@ -45,6 +52,10 @@ final class PlayerViewModel: ObservableObject {
     private let kSpeed      = "mp_playback_speed"
     private let kEQGains    = "mp_eq_gains"
     private let kPitch      = "mp_pitch_preserved"
+
+    private var sleepTimerTask: Task<Void, Never>? = nil
+    private let kSleepEndOfTrack = -1.0  // sentinel for "end of track" mode
+    @Published var sleepTimerMode: SleepTimerMode = .off
 
     // MARK: - Init
 
@@ -221,9 +232,43 @@ final class PlayerViewModel: ObservableObject {
         UserDefaults.standard.set(audio.eqGains.map { Double($0) }, forKey: kEQGains)
     }
 
+    // MARK: - Sleep Timer
+
+    func setSleepTimer(_ mode: SleepTimerMode) {
+        sleepTimerTask?.cancel()
+        sleepTimerTask = nil
+        sleepTimerEnd = nil
+        sleepTimerMode = mode
+
+        switch mode {
+        case .off: break
+        case .endOfTrack: break  // handled in onTrackEnd
+        case .duration(let secs):
+            let end = Date.now.addingTimeInterval(secs)
+            sleepTimerEnd = end
+            sleepTimerTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(secs * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                await MainActor.run { self?.executeSleepTimer() }
+            }
+        }
+    }
+
+    private func executeSleepTimer() {
+        audio.pause()
+        sleepTimerTask = nil
+        sleepTimerEnd = nil
+        sleepTimerMode = .off
+    }
+
     // MARK: - Queue navigation
 
     func skipNext() {
+        if sleepTimerMode == .endOfTrack {
+            setSleepTimer(.off)
+            audio.pause()
+            return
+        }
         switch repeatMode {
         case .one:
             if let t = currentTrack { play(t) }

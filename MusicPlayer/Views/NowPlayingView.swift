@@ -8,6 +8,7 @@ struct NowPlayingView: View {
     @State private var showEQ            = false
     @State private var showSpeed         = false
     @State private var showAddToPlaylist = false
+    @State private var showSleepTimer    = false
     @State private var isScrubbing       = false
     @State private var hasAppeared       = false
     @State private var waveProgress: Double = 0
@@ -147,6 +148,15 @@ struct NowPlayingView: View {
                     .presentationBackground(themeManager.current.background)
                     .presentationCornerRadius(28)
             }
+        }
+        .sheet(isPresented: $showSleepTimer) {
+            SleepTimerSheet()
+                .environmentObject(playerVM)
+                .environmentObject(themeManager)
+                .presentationDetents([.height(340)])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(themeManager.current.card)
+                .presentationCornerRadius(24)
         }
     }
 
@@ -617,6 +627,11 @@ struct NowPlayingView: View {
             actionPill(icon: "list.bullet",       label: "Queue",
                        tint: .white.opacity(0.65),
                        badge: playerVM.queue.isEmpty ? nil : "\(playerVM.queue.count)") { showQueue = true }
+            actionPill(
+                icon: playerVM.sleepTimerMode == .off ? "moon.zzz" : "moon.zzz.fill",
+                label: sleepTimerLabel,
+                tint: playerVM.sleepTimerMode == .off ? .white.opacity(0.65) : themeManager.current.primary
+            ) { showSleepTimer = true }
             actionPill(icon: "music.note.list",   label: "Playlist",
                        tint: .white.opacity(0.65)) { showAddToPlaylist = true }
         }
@@ -657,6 +672,19 @@ struct NowPlayingView: View {
     }
 
     // MARK: - Helpers
+
+    private var sleepTimerLabel: String {
+        if let end = playerVM.sleepTimerEnd {
+            let secs = Int(end.timeIntervalSinceNow)
+            guard secs > 0 else { return "Sleep" }
+            if secs < 3600 { return "\(secs / 60)m" }
+            return "\(secs / 3600)h"
+        }
+        switch playerVM.sleepTimerMode {
+        case .endOfTrack: return "Track"
+        default: return "Sleep"
+        }
+    }
 
     private func formatTime(_ s: Double) -> String {
         guard s.isFinite else { return "0:00" }
