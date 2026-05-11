@@ -41,21 +41,13 @@
         <string>spotify</string>
     </array>
 
-    <!-- Spotify PKCE callback URL scheme + Google Sign-In callback URL scheme -->
-    <!-- IMPORTANT: replace YOUR_REVERSED_CLIENT_ID with the REVERSED_CLIENT_ID value
-         from the GoogleService-Info.plist you download after enabling Google Auth in Firebase -->
+    <!-- Spotify PKCE callback URL scheme -->
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
             <key>CFBundleURLSchemes</key>
             <array>
                 <string>postor</string>
-            </array>
-        </dict>
-        <dict>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>YOUR_REVERSED_CLIENT_ID</string>
             </array>
         </dict>
     </array>
