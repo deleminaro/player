@@ -157,6 +157,16 @@ actor SoundCloudService {
             AppLogger.shared.log("Name search failed: \(error)", category: "Network")
         }
 
+        // Strategy 4: scrape the profile webpage for the embedded user ID
+        AppLogger.shared.log("Trying webpage scrape for: '\(slug)'", category: "Network")
+        do {
+            let user = try await resolveUserFromPage(slug: slug)
+            AppLogger.shared.log("Resolved via page scrape: id=\(user.id)", category: "Network")
+            return user
+        } catch {
+            AppLogger.shared.log("Page scrape failed: \(error)", category: "Network")
+        }
+
         AppLogger.shared.log("Could not resolve user: \(slug)", category: "Network")
         throw SCError.badResponse(404)
     }
@@ -172,6 +182,41 @@ actor SoundCloudService {
         let (data, resp) = try await URLSession.shared.data(from: url)
         try validate(resp)
         return try JSONDecoder().decode(SearchResponse<SCArtist>.self, from: data).collection
+    }
+
+    private func resolveUserFromPage(slug: String) async throws -> SCArtist {
+        guard let pageURL = URL(string: "https://soundcloud.com/\(slug)") else { throw SCError.invalidURL }
+        var request = URLRequest(url: pageURL)
+        request.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+            forHTTPHeaderField: "User-Agent"
+        )
+        let (data, _) = try await URLSession.shared.data(for: request)
+        guard let html = String(data: data, encoding: .utf8) else { throw SCError.invalidURL }
+        AppLogger.shared.log("Page fetched, length=\(html.count)", category: "Network")
+
+        // SoundCloud embeds "soundcloud:users:XXXXXXX" in the page hydration JSON
+        guard let urnRange = html.range(of: #"soundcloud:users:(\d+)"#, options: .regularExpression) else {
+            AppLogger.shared.log("No user urn found in page HTML", category: "Network")
+            throw SCError.badResponse(nil)
+        }
+        let urnFragment = String(html[urnRange])
+        guard let idStr = urnFragment.components(separatedBy: ":").last, let userID = Int(idStr) else {
+            throw SCError.badResponse(nil)
+        }
+        AppLogger.shared.log("Extracted user ID from page: \(userID)", category: "Network")
+
+        // Try fetching the full user object from the API; fall back to a stub if blocked
+        var comps = URLComponents(string: "\(base)/users/\(userID)")!
+        comps.queryItems = [URLQueryItem(name: "client_id", value: Constants.soundcloudClientID)]
+        if let apiURL = comps.url,
+           let (userData, userResp) = try? await URLSession.shared.data(from: apiURL),
+           (userResp as? HTTPURLResponse)?.statusCode == 200,
+           let artist = try? JSONDecoder().decode(SCArtist.self, from: userData) {
+            return artist
+        }
+        // API blocked — return stub; fetchUserLikes only needs the id
+        return SCArtist(id: userID, username: slug, avatarURL: nil, followersCount: nil, permalink: slug)
     }
 
     private func resolveUserV1(slug: String) async throws -> SCArtist {
