@@ -30,6 +30,7 @@ final class PlayerViewModel: ObservableObject {
     @Published var repeatMode:        RepeatMode      = .off
     @Published var isPitchPreserved:  Bool            = true
     @Published var sleepTimerEnd: Date? = nil
+    @Published var crossfadeDuration: Double = 0  // seconds; 0 = off
 
     var nextTrack: Track? {
         guard let idx = queue.firstIndex(where: { $0.track.id == currentTrack?.id }),
@@ -52,10 +53,12 @@ final class PlayerViewModel: ObservableObject {
     private let kSpeed      = "mp_playback_speed"
     private let kEQGains    = "mp_eq_gains"
     private let kPitch      = "mp_pitch_preserved"
+    private let kCrossfade  = "mp_crossfade"
 
     private var sleepTimerTask: Task<Void, Never>? = nil
     private let kSleepEndOfTrack = -1.0  // sentinel for "end of track" mode
     @Published var sleepTimerMode: SleepTimerMode = .off
+    private var crossfadeInProgress = false
 
     // MARK: - Init
 
@@ -97,7 +100,19 @@ final class PlayerViewModel: ObservableObject {
         audio.onLoadingChange = { [weak self] on in
             if on { self?.playerState = .loading }
         }
-        audio.onTrackEnd = { [weak self] in self?.skipNext() }
+        audio.onTrackEnd = { [weak self] in
+            guard let self else { return }
+            if self.crossfadeInProgress {
+                self.crossfadeInProgress = false
+                return  // already handled by onApproachingEnd
+            }
+            self.skipNext()
+        }
+        audio.onApproachingEnd = { [weak self] in
+            guard let self, !self.crossfadeInProgress else { return }
+            self.crossfadeInProgress = true
+            self.skipNext()
+        }
     }
 
     private func bindSpotifyCallbacks() {
@@ -139,6 +154,7 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Playback
 
     func play(_ track: Track) {
+        crossfadeInProgress = false
         currentTrack = track
         playerState  = .loading
         addToRecent(track)
@@ -225,6 +241,12 @@ final class PlayerViewModel: ObservableObject {
         isPitchPreserved.toggle()
         audio.setPitchPreserved(isPitchPreserved)
         UserDefaults.standard.set(isPitchPreserved, forKey: kPitch)
+    }
+
+    func setCrossfade(_ seconds: Double) {
+        crossfadeDuration = seconds
+        audio.crossfadeDuration = seconds
+        UserDefaults.standard.set(seconds, forKey: kCrossfade)
     }
 
     func setEQGain(_ gain: Float, band: Int) {
@@ -590,6 +612,11 @@ final class PlayerViewModel: ObservableObject {
             isPitchPreserved = d.bool(forKey: kPitch)
             audio.setPitchPreserved(isPitchPreserved)
         }
+
+        // Restore crossfade duration
+        let cf = d.double(forKey: kCrossfade)
+        crossfadeDuration = cf
+        audio.crossfadeDuration = cf
     }
 
     private func saveRecent() {
