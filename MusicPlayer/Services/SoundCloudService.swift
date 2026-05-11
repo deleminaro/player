@@ -110,8 +110,16 @@ actor SoundCloudService {
             .replacingOccurrences(of: "https://", with: "")
             .replacingOccurrences(of: "http://",  with: "")
             .replacingOccurrences(of: "www.",      with: "")
-        if !input.hasPrefix("soundcloud.com/") {
-            input = "soundcloud.com/\(input)"
+            .trimmingCharacters(in: CharacterSet(charactersIn: "@/"))
+
+        // Strip to first path component (handles .../username/likes, .../username/tracks, etc.)
+        if input.hasPrefix("soundcloud.com/") {
+            let afterDomain = String(input.dropFirst("soundcloud.com/".count))
+            let username = afterDomain.components(separatedBy: "/").first ?? afterDomain
+            input = "soundcloud.com/\(username)"
+        } else {
+            // Plain username — take only the first path component
+            input = "soundcloud.com/\(input.components(separatedBy: "/").first ?? input)"
         }
         let profileURL = "https://\(input)"
         var comps = URLComponents(string: "\(base)/resolve")!
