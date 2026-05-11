@@ -3,6 +3,7 @@ import PhotosUI
 
 struct CustomizationView: View {
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var playerVM: PlayerViewModel
     @State private var tab: CTab = .cover
     @State private var coverPhotoItem: PhotosPickerItem?
     private var bg:     Color { themeManager.current.background }
@@ -300,6 +301,29 @@ struct CustomizationView: View {
                 }
             }
             .padding(.horizontal, 16)
+
+            // Crossfade
+            sectionHeader("CROSSFADE")
+
+            VStack(spacing: 12) {
+                HStack {
+                    Text(playerVM.crossfadeDuration == 0 ? "Off" : "\(Int(playerVM.crossfadeDuration))s")
+                        .font(.app(13, .semibold))
+                        .foregroundStyle(themeManager.current.primary)
+                        .frame(width: 36, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { playerVM.crossfadeDuration },
+                        set: { playerVM.setCrossfade(Double(Int($0))) }
+                    ), in: 0...12, step: 1)
+                    .tint(themeManager.current.primary)
+                }
+                .padding(.horizontal, 16)
+
+                Text("Smoothly blend between tracks. 0 = gapless (instant transition, no silence).")
+                    .font(.app(11))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .padding(.horizontal, 16)
+            }
         }
     }
 
