@@ -4,6 +4,8 @@ actor SoundCloudService {
     static let shared = SoundCloudService()
 
     private let base = Constants.SoundCloud.baseURL
+    // Starts with the hardcoded key; auto-refreshed from SoundCloud web app on stream auth failure
+    private var streamClientID: String = Constants.soundcloudClientID
 
     // MARK: - Search
 
@@ -223,19 +225,83 @@ actor SoundCloudService {
     // MARK: - Stream URL resolution
 
     /// Hit the transcoding URL → get the real CDN stream URL.
+    /// On auth failure (401/403/404), refreshes client_id from SoundCloud web app and retries once.
     func resolveStreamURL(transcodingURL: String) async throws -> URL {
+        do {
+            return try await doResolveStream(transcodingURL, clientID: streamClientID)
+        } catch SCError.badResponse(let code) where [401, 403, 404].contains(code ?? -1) {
+            AppLogger.shared.log("Stream \(code ?? 0) — refreshing client_id", category: "Network")
+            let fresh = try await fetchWebClientID()
+            streamClientID = fresh
+            AppLogger.shared.log("Stream client_id refreshed: \(fresh.prefix(8))…", category: "Network")
+            return try await doResolveStream(transcodingURL, clientID: fresh)
+        }
+    }
+
+    private func doResolveStream(_ transcodingURL: String, clientID: String) async throws -> URL {
         var comps = URLComponents(string: transcodingURL)!
         var items = comps.queryItems ?? []
-        items.append(URLQueryItem(name: "client_id", value: Constants.soundcloudClientID))
+        items.removeAll { $0.name == "client_id" }
+        items.append(URLQueryItem(name: "client_id", value: clientID))
         comps.queryItems = items
         guard let url = comps.url else { throw SCError.invalidURL }
-
         let (data, resp) = try await URLSession.shared.data(from: url)
         try validate(resp)
-
         let result = try JSONDecoder().decode(StreamURLResponse.self, from: data)
         guard let streamURL = URL(string: result.url) else { throw SCError.invalidURL }
         return streamURL
+    }
+
+    /// Fetches SoundCloud's web-app JS bundles to extract a client_id that has streaming access.
+    private func fetchWebClientID() async throws -> String {
+        guard let mainURL = URL(string: "https://soundcloud.com") else { throw SCError.invalidURL }
+        var req = URLRequest(url: mainURL)
+        req.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+                     forHTTPHeaderField: "User-Agent")
+        guard let (pageData, _) = try? await URLSession.shared.data(for: req),
+              let html = String(data: pageData, encoding: .utf8) else { throw SCError.invalidURL }
+
+        // Collect all JS bundle URLs from the page
+        var bundleURLs: [String] = []
+        var searchRange = html.startIndex..<html.endIndex
+        let bundlePattern = #"https://a-v2\.sndcdn\.com/assets/[^"' ]+\.js"#
+        while let r = html.range(of: bundlePattern, options: .regularExpression, range: searchRange) {
+            bundleURLs.append(String(html[r]))
+            searchRange = r.upperBound..<html.endIndex
+        }
+        AppLogger.shared.log("SC bundles found: \(bundleURLs.count)", category: "Network")
+
+        // Try last 5 bundles (app bundles, not vendor ones, are at the end)
+        for bundleStr in bundleURLs.suffix(5).reversed() {
+            guard let bundleURL = URL(string: bundleStr),
+                  let (jsData, _) = try? await URLSession.shared.data(from: bundleURL),
+                  let js = String(data: jsData, encoding: .utf8) else { continue }
+            if let id = extractClientID(from: js) {
+                AppLogger.shared.log("Extracted web client_id from \(bundleStr.suffix(24))", category: "Network")
+                return id
+            }
+        }
+        throw SCError.invalidURL
+    }
+
+    private func extractClientID(from source: String) -> String? {
+        // SoundCloud JS bundles embed the client_id in forms like:
+        //   client_id:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        //   "client_id","XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        let patterns = [
+            #"client_id["\s]*[,:][\s"]*([a-zA-Z0-9]{20,40})"#,
+            #""client_id":"([a-zA-Z0-9]{20,40})""#,
+        ]
+        for pattern in patterns {
+            guard let r = source.range(of: pattern, options: .regularExpression) else { continue }
+            let match = String(source[r])
+            if let idR = match.range(of: #"[a-zA-Z0-9]{20,40}"#,
+                                     options: .regularExpression,
+                                     range: match.index(match.startIndex, offsetBy: 9)..<match.endIndex) {
+                return String(match[idR])
+            }
+        }
+        return nil
     }
 
     // MARK: - Helpers
