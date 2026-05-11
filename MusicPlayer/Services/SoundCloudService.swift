@@ -124,22 +124,39 @@ actor SoundCloudService {
 
         guard !slug.isEmpty else { throw SCError.invalidURL }
 
-        // SoundCloud appends numeric suffixes when display names conflict: "delami-257483686"
-        // Search doesn't match on the number part, so strip it for the query
-        // but keep the full slug for exact permalink matching.
-        let searchQuery: String
-        if let range = slug.range(of: #"-\d+$"#, options: .regularExpression) {
-            searchQuery = String(slug[..<range.lowerBound])
-        } else {
-            searchQuery = slug
+        AppLogger.shared.log("Resolving SC user slug: \(slug)", category: "Network")
+
+        // SoundCloud encodes the real user ID as the numeric suffix: "delami-257483686"
+        // Try fetching /users/{id} directly — most reliable, no search ambiguity.
+        if let idRange = slug.range(of: #"-(\d{6,})$"#, options: .regularExpression) {
+            let idStr = String(slug[idRange].dropFirst()) // drop the leading "-"
+            if let userID = Int(idStr) {
+                AppLogger.shared.log("Trying direct /users/\(userID)", category: "Network")
+                if let user = try? await fetchUserByID(userID) {
+                    return user
+                }
+            }
         }
 
+        // Fallback: search by display name part, match by full permalink
+        let searchQuery = slug.range(of: #"-\d+$"#, options: .regularExpression)
+            .map { String(slug[..<$0.lowerBound]) } ?? slug
+
+        AppLogger.shared.log("SC user search fallback: '\(searchQuery)'", category: "Network")
         let results = try await searchArtists(query: searchQuery)
-        if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) {
-            return exact
-        }
+        AppLogger.shared.log("SC user search returned \(results.count) results", category: "Network")
+        if let exact = results.first(where: { $0.permalink?.lowercased() == slug }) { return exact }
         if let first = results.first { return first }
         throw SCError.badResponse(404)
+    }
+
+    private func fetchUserByID(_ id: Int) async throws -> SCArtist {
+        var comps = URLComponents(string: "\(base)/users/\(id)")!
+        comps.queryItems = [URLQueryItem(name: "client_id", value: Constants.soundcloudClientID)]
+        guard let url = comps.url else { throw SCError.invalidURL }
+        let (data, resp) = try await URLSession.shared.data(from: url)
+        try validate(resp)
+        return try JSONDecoder().decode(SCArtist.self, from: data)
     }
 
     /// Fetches all liked tracks for a user (paginates until empty or 500 tracks).
