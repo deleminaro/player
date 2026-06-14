@@ -1,0 +1,4 @@
+// Config.xcconfig
+SOUNDCLOUD_BASE_URL = https://api-v2.soundcloud.com
+SPOTIFY_BASE_URL    = https://api.spotify.com/v1
+SPOTIFY_TOKEN_URL   = https://accounts.spotify.com/api/token

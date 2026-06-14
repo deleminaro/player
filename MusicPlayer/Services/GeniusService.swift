@@ -1,0 +1,140 @@
+import Foundation
+
+actor GeniusService {
+    static let shared = GeniusService()
+
+    /// Returns the Genius web-page URL for the best-matching song, or nil if nothing found.
+    func searchLyricsURL(title: String, artist: String) async throws -> URL? {
+        let q = "\(cleanTitle(title)) \(artist.trimmingCharacters(in: .whitespaces))"
+        return try await directSearch(q: q)
+    }
+
+    private func directSearch(q: String) async throws -> URL? {
+        guard !Constants.geniusToken.isEmpty else { return nil }
+        var comps = URLComponents(string: "https://api.genius.com/search")!
+        comps.queryItems = [.init(name: "q", value: q)]
+        guard let url = comps.url else { return nil }
+        var req = URLRequest(url: url)
+        req.setValue("Bearer \(Constants.geniusToken)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            return nil
+        }
+        struct R: Decodable {
+            struct Response: Decodable { struct Hit: Decodable { struct Result: Decodable { let url: String }; let result: Result }; let hits: [Hit] }; let response: Response
+        }
+        let decoded = try JSONDecoder().decode(R.self, from: data)
+        return decoded.response.hits.first.flatMap { URL(string: $0.result.url) }
+    }
+
+    // MARK: - Title cleaning
+
+    private func cleanTitle(_ raw: String) -> String {
+        var s = raw
+        let patterns = [
+            #"\s*[\(\[][^)\]]*(?:prod\.?(?:\s+by)?|feat\.?|ft\.?|w\/)[^\)\]]*[\)\]]"#,
+            #"\s*[\(\[](?:prod\.?(?:\s+by)?|feat\.?|ft\.?|w\/)[^\)\]]*[\)\]]"#,
+            #"\s*\((?:original mix|remix|radio edit|extended mix)\)"#
+        ]
+        for p in patterns {
+            s = s.replacingOccurrences(of: p, with: "",
+                                       options: [.regularExpression, .caseInsensitive])
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func fetchLyricsText(from url: URL) async -> String? {
+        var req = URLRequest(url: url)
+        req.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+            forHTTPHeaderField: "User-Agent"
+        )
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let html = String(data: data, encoding: .utf8) else { return nil }
+        return parseLyricsHTML(html)
+    }
+
+    private func parseLyricsHTML(_ html: String) -> String? {
+        // Strip <script> blocks first — __PRELOADED_STATE__ JSON contains
+        // "data-lyrics-container" as a string literal and would cause false matches.
+        let stripped = stripScripts(html)
+
+        var blocks: [String] = []
+        var search = stripped[...]
+        let marker = #"data-lyrics-container="true""#
+
+        while let r = search.range(of: marker) {
+            search = search[r.upperBound...]
+            guard let tagEnd = search.range(of: ">") else { break }
+            search = search[tagEnd.upperBound...]
+
+            var block = ""
+            var divDepth = 0   // nested <div> depth; when > 0 we skip (Genius injects ads here)
+            var i = search.startIndex
+            var done = false
+
+            while i < search.endIndex && !done {
+                if search[i] == "<" {
+                    let rest = search[i...]
+                    guard let end = rest.range(of: ">") else { break }
+                    let tag = String(rest[rest.startIndex ..< end.upperBound]).lowercased()
+
+                    if tag.hasPrefix("</div") {
+                        if divDepth > 0 { divDepth -= 1 } else { done = true }
+                    } else if tag.hasPrefix("<div") && !tag.hasSuffix("/>") {
+                        divDepth += 1          // skip inner div subtree
+                    } else if tag.hasPrefix("<br") {
+                        if divDepth == 0 { block += "\n" }
+                    }
+                    // all other tags (<a>, <span>, <i> …): skip tag markup, keep text
+
+                    i = rest[end.upperBound...].startIndex
+                } else {
+                    if divDepth == 0 { block.append(search[i]) }
+                    i = search.index(after: i)
+                }
+            }
+
+            let cleaned = decodeEntities(block)
+                .components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .joined(separator: "\n")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if !cleaned.isEmpty { blocks.append(cleaned) }
+        }
+
+        guard !blocks.isEmpty else { return nil }
+        return blocks.joined(separator: "\n\n")
+    }
+
+    private func stripScripts(_ html: String) -> String {
+        var result = ""
+        var src = html[...]
+        while !src.isEmpty {
+            if let s = src.range(of: "<script", options: .caseInsensitive) {
+                result += src[src.startIndex ..< s.lowerBound]
+                src = src[s.lowerBound...]
+                if let e = src.range(of: "</script>", options: .caseInsensitive) {
+                    src = src[e.upperBound...]
+                } else { break }
+            } else {
+                result += src; break
+            }
+        }
+        return result
+    }
+
+    private func decodeEntities(_ s: String) -> String {
+        s
+            .replacingOccurrences(of: "&amp;",  with: "&")
+            .replacingOccurrences(of: "&lt;",   with: "<")
+            .replacingOccurrences(of: "&gt;",   with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;",  with: "'")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&#x27;", with: "'")
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+    }
+
+}

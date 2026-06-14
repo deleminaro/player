@@ -1,6 +1,45 @@
-node_modules
-dist
+# Xcode
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods (if ever used)
+Pods/
+Podfile.lock
+
+# ============================================================
+# SECRETS — never commit these
+# ============================================================
+# Local xcconfig with real keys (committed template has placeholders)
+MusicPlayer/Config/Secrets.xcconfig
+# dotenv files
+.env
+.env.*
+!.env.example
+!*.example
+# Any file named secrets.* except .example templates
+secrets.*
+Secrets.*
+!secrets.*.example
+!Secrets.*.example
+# Fastlane credentials
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+# Keystore / certificates with private keys
+*.p12
+*.mobileprovision
+
+# macOS
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+*.DS_Store
