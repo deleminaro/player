@@ -1,0 +1,65 @@
+name: "POSTOR"
+
+on:
+  push:
+    branches: [ main, master ] # Triggers on main or master branches
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build POSTOR IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup CocoaPods (If needed)
+        run: |
+          if [ -f "Podfile" ]; then
+            echo "Podfile found. Installing dependencies..."
+            pod install
+          else
+            echo "No Podfile found. Skipping step."
+          fi
+
+      - name: Build Xcode Archive (No Signing)
+        run: |
+          # Automatically detects if it should build using a .xcworkspace or .xcodeproj
+          if [ -d "POSTOR.xcworkspace" ]; then
+            TARGET_FLAG="-workspace POSTOR.xcworkspace"
+          else
+            TARGET_FLAG="-project POSTOR.xcodeproj"
+          fi
+
+          xcodebuild archive \
+            $TARGET_FLAG \
+            -scheme POSTOR \
+            -configuration Release \
+            -archivePath build/POSTOR.xcarchive \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Packaging .app into .ipa
+        run: |
+          mkdir -p build/ipa/Payload
+          
+          # Locates the compiled POSTOR.app file inside the archive folder
+          APP_PATH=$(find build/POSTOR.xcarchive/Products/Applications -name "*.app" -maxdepth 1 | head -n 1)
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ Error: Could not find compiled .app file. Build failed."
+            exit 1
+          fi
+          
+          cp -r "$APP_PATH" build/ipa/Payload/
+          
+          cd build/ipa
+          zip -r POSTOR_Unsigned.ipa Payload
+          echo "✅ POSTOR Unsigned IPA successfully created."
+
+      - name: Upload IPA to GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: POSTOR-Sideload-IPA
+          path: build/ipa/POSTOR_Unsigned.ipa
